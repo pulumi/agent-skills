@@ -1,5 +1,5 @@
 ---
-name: terraform-to-pulumi
+name: pulumi-terraform-to-pulumi
 description: Migrate Terraform projects to Pulumi. Use when users need to move infrastructure from Terraform to Pulumi, translate HCL configurations, or convert Terraform modules to Pulumi components.
 ---
 
