@@ -33,14 +33,14 @@ Skill content here...
 
 | Field | Description |
 |-------|-------------|
-| `name` | Lowercase with hyphens, must match directory name |
-| `description` | When the AI should use this skill (1-2 sentences) |
+| `name`        | Lowercase with hyphens, must match directory name  |
+| `description` | When the AI should use this skill (1-2 sentences)  |
 
 ### Optional Frontmatter
 
-| Field | Description |
-|-------|-------------|
-| `version` | Semantic version (e.g., "1.0.0") |
+| Field     | Description                                        |
+|-----------|----------------------------------------------------|
+| `version` | Semantic version (e.g., "1.0.0")                   |
 | `author` | Author name or organization |
 | `license` | License identifier (defaults to repository license) |
 
@@ -129,17 +129,18 @@ Guide users through common failure scenarios:
 This usually means the resource ID format is incorrect. Use `pulumi plugin run cdk2pulumi -- ids <resource-type>` to find the correct format.
 ```
 
-
 ## Standalone Requirement
 
 **Skills must work without proprietary tools or internal APIs.**
 
 ### Do
+
 - Reference publicly available CLI tools
 - Link to public documentation
 - Use standard credential methods (env vars, config files)
 
 ### Don't
+
 - Reference internal APIs or tools
 - Assume specific organizational context
 - Require proprietary services not available to all users
@@ -206,6 +207,7 @@ Before submitting a skill, verify:
 ### Reporting Issues
 
 Open an issue with:
+
 - Which skill has the problem
 - What you expected to happen
 - What actually happened

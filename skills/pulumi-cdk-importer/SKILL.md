@@ -1,5 +1,5 @@
 ---
-name: cdk-importer
+name: pulumi-cdk-importer
 description: Automated import of CDK-managed AWS infrastructure into Pulumi state
 ---
 
@@ -35,19 +35,23 @@ pulumi plugin run cdk-importer -- program import \
 ```
 
 **Required flags:**
+
 - `--program-dir`: Path to an existing Pulumi program generated from a CDK app
 - `--stack`: CloudFormation stack name (can be specified multiple times or comma-separated)
 
 **Optional flags:**
+
 - `--import-file`: Path to write a Pulumi bulk import file with failing resources (defaults to `import.json` when provided without a value)
 - `--debug`: Enable line by line logging of imported resources
 
 **Behavior:**
+
 - Runs against the selected Pulumi stack.
 - With `--import-file`, writes the bulk import file after import. The file will only contain entries for resources that failed to import with `<PLACEHOLDER>` ids.
 - Can be run iteratively to progressively import resources.
 
-**Example Output**
+**Example Output:**
+
 ```shell
 [INFO] Getting stack resources component="cdk-importer" stack=NeoExample-Dev
 [INFO] Starting up providers... component="cdk-importer"
@@ -55,10 +59,10 @@ pulumi plugin run cdk-importer -- program import \
 [INFO] Run complete component="cdk-importer" status="success" resourcesImported=50 resourcesFailedToImport=0 stack="NeoExample-Dev" importFile="/workspace/pulumi-example-app-neo/import.json" importFileExists=true
 ```
 
-
 ## Import File Output
 
 The generated `import.json` includes:
+
 - Full AWS resource metadata (type, logical name, provider reference, component bit, provider version)
 - Property subsets captured during provider interception
 
@@ -67,12 +71,15 @@ Resources with composite identifiers may show `<PLACEHOLDER>` IDs that need manu
 ## Unsupported Resources
 
 **Resources that cannot be imported:**
+
 - CFN Custom Resources (`aws-native:cloudformation:CustomResourceEmulator`)
 
 ## Example Workflow
 
 1. Generate a Pulumi program from your CDK app using `cdk2pulumi`
+
 2. Import into your real stack:
+
    ```shell
    pulumi plugin run cdk-importer -- program import \
      --program-dir ./pulumi-program-dir \
@@ -81,10 +88,10 @@ Resources with composite identifiers may show `<PLACEHOLDER>` IDs that need manu
 
 ## Handling Failures
 
-This tool may not support 100% of the CloudFormation resources in the stack. For unsupported resources it is necessary to find the import ID
-and import manually.
+This tool may not support 100% of the CloudFormation resources in the stack. For unsupported resources it is necessary to find the import ID and import manually.
 
-**Example output**
+**Example output:**
+
 ```shell
 [INFO] Getting stack resources component="cdk-importer" stack=NeoExample-Dev
 [INFO] Starting up providers... component="cdk-importer"
@@ -96,10 +103,12 @@ update failed
 - operation failed
 ```
 
-**Example Failure Workflow**
+**Example Failure Workflow:**
 
 1. Import ran with error
+
 2. Review failures and run `pulumi preview`.
-  - Any resources that fail to import should appear as creations in the preview.
-  - Optionally run `program import` with the `--import-file` flag to generate a `import.json` file with the failing resources.
+   - Any resources that fail to import should appear as creations in the preview.
+   - Optionally run `program import` with the `--import-file` flag to generate a `import.json` file with the failing resources.
+
 3. Manually import remaining resources

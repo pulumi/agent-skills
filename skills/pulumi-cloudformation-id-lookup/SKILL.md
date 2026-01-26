@@ -1,5 +1,5 @@
 ---
-name: cloudformation-id-lookup
+name: pulumi-cloudformation-id-lookup
 description: Look up information on Pulumi import identifiers for AWS CloudFormation resources
 ---
 
@@ -28,6 +28,7 @@ The tool returns two key pieces of information:
 ### 1. Import ID Format
 
 Shows the structure of the ID required by Pulumi's `import` command. Examples:
+
 - **Single-part ID**: `<BucketName>` - Just the bucket name
 - **Composite ID**: `<FunctionName>|<StatementId>` - Multiple parts separated by delimiters
 - **Complex ID**: `<CertificateAuthorityArn>|<CertificateArn>` - ARNs or other identifiers
@@ -35,6 +36,7 @@ Shows the structure of the ID required by Pulumi's `import` command. Examples:
 ### 2. Finding the ID Hint
 
 Provides guidance on how to obtain the actual ID value from AWS:
+
 - **Single-part IDs**: "Use the CloudFormation PhysicalResourceId"
   - Find this in CloudFormation via `aws cloudformation describe-stack-resources` or `aws cloudformation list-stack-resources`
 - **Composite IDs**: Shows an `aws cloudcontrol list-resources` command example
@@ -68,6 +70,7 @@ Finding the ID: aws cloudcontrol list-resources --type-name AWS::ACMPCA::Certifi
 ```
 
 ## Tips for Running
+
 - Always use `--` to separate Pulumi CLI arguments from plugin arguments
 - For composite IDs, pay attention to the delimiter (usually `|`, `/`, or `:`)
 - When the hint shows `--resource-model`, you'll need to provide known properties to list the resources

@@ -1,5 +1,5 @@
 ---
-name: cdk-to-pulumi
+name: pulumi-cdk-to-pulumi
 description: Convert an AWS CDK application to Pulumi. This skill MUST be loaded whenever a user requests migration or conversion of a CDK application to Pulumi.
 ---
 
@@ -24,15 +24,18 @@ The migration output MUST meet all of the following:
      - Missing or manually required steps
      - Validation instructions
 
-# WHEN INFORMATION IS MISSING
+## WHEN INFORMATION IS MISSING
+
 If a user-provided CDK project is incomplete, ambiguous, or missing artifacts (such as `cdk.out`), ask **targeted questions** before generating Pulumi code.
 
-# MIGRATION WORKFLOW  
+## MIGRATION WORKFLOW
+
 Follow this workflow **exactly** and in this order:
 
-## 1. INFORMATION GATHERING
+### 1. INFORMATION GATHERING
 
-### 1.1 Verify AWS Credentials (ESC)
+#### 1.1 Verify AWS Credentials (ESC)
+
 Running AWS commands (e.g., `aws cloudformation list-stack-resources`) and CDK commands (e.g. `cdk synth`) requires credentials loaded via Pulumi ESC.
 
 - If the user has already provided an ESC environment, use it.
@@ -40,8 +43,10 @@ Running AWS commands (e.g., `aws cloudformation list-stack-resources`) and CDK c
 
 You MUST confirm the AWS region with the user. The `cdk synth` results may be incorrect if ran with the wrong AWS Region.
 
-### 1.2 Synthesize CDK
+#### 1.2 Synthesize CDK
+
 Run/inspect:
+
 ```bash
 npx cdk synth --quiet
 ```
@@ -51,20 +56,23 @@ npx cdk synth --quiet
 If failing, inspect `cdk.json` or `package.json` for custom synth behavior.
 
 #### 1.3 Identify CDK Stacks & Environments
+
 Read `cdk.out/manifest.json`:
+
 ```bash
 jq '.artifacts | to_entries | map(select(.value.type == "aws:cloudformation:stack") | {displayName: .key, environment: .value.environment}) | .[]' cdk.out/manifest.json
 ```
 
 Example output:
+
 ```json
 {
-  "displayName": "DataStack-dev", 
+  "displayName": "DataStack-dev",
   "environment": "aws://616138583583/us-east-2"
 }
 {
   "displayName": "AppStack-dev",
-  "environment": "aws://616138583583/us-east-2" 
+  "environment": "aws://616138583583/us-east-2"
 }
 ```
 
@@ -76,7 +84,9 @@ pulumi config set aws:region us-east-2 --stack dev
 ```
 
 #### 1.4 Build Resource Inventory
+
 For each stack:
+
 ```bash
 aws cloudformation list-stack-resources \
   --region <region> \
@@ -85,7 +95,9 @@ aws cloudformation list-stack-resources \
 ```
 
 #### 1.5 Analyze CDK Structure
+
 Extract:
+
 - Environment-specific conditionals
 - Stack dependencies & cross-stack references
 - Runtime config (context/env vars)
@@ -101,6 +113,7 @@ Always start with automated conversion using the `cdk2pulumi` tool. You MUST loa
 #### 2.1 Custom Resources Handling
 
 CDK uses Lambda-backed Custom Resources for functionality not available in CloudFormation. In synthesized CloudFormation, these appear as:
+
 - Resource type: `AWS::CloudFormation::CustomResource` or `Custom::<name>`
 - Metadata contains `aws:cdk:path` with the handler name (e.g., `aws-s3/auto-delete-objects-handler`)
 
@@ -121,10 +134,12 @@ CDK uses Lambda-backed Custom Resources for functionality not available in Cloud
 | `aws-dynamodb/replica-handler` | Replace with `aws.dynamodb.TableReplica` |
 
 **Cross-account/region handlers:**
+
 - `aws-cloudfront/edge-function` → Use `aws.lambda.Function` with `region: "us-east-1"`
 - `aws-route53/cross-account-zone-delegation-handler` → Use separate aws provider with cross-account role assumption
 
 **Graceful degradation for unknown handlers:**
+
 1. Keep the `CustomResourceEmulator` (default behavior)
 2. Document the custom resource in the migration report with:
    - Original handler name and purpose (if discernible from CDK path)
@@ -132,6 +147,7 @@ CDK uses Lambda-backed Custom Resources for functionality not available in Cloud
    - Recommend user review for potential native replacement
 
 #### 2.2 Provider Strategy
+
 - **Default**: Use `aws-native` whenever the resource type is available.
 - **Fallback**: Use `aws` when aws-native does not support equivalent features.
 
@@ -162,6 +178,7 @@ Check the CDK source code for bundling constructs (`NodejsFunction`, `PythonFunc
 > **Build Step Detected**: This CDK application uses <BUNDLING_TYPE> which builds deployable artifacts during synthesis. This build step needs to be replicated in Pulumi for ongoing development.
 >
 > **Options:**
+>
 > 1. **CI/CD Pipeline** (Recommended): Move the build step to your CI pipeline and reference the pre-built artifact in Pulumi
 > 2. **Pulumi Command Provider**: Use `command.local.Command` to run the build command during `pulumi up`
 > 3. **Pre-build Script**: Create a build script that runs before `pulumi up` and outputs to a known location
@@ -169,17 +186,19 @@ Check the CDK source code for bundling constructs (`NodejsFunction`, `PythonFunc
 > Each option has tradeoffs around caching, reproducibility, and deployment speed. For production workloads, option 1 is typically preferred.
 
 #### 2.4 TypeScript Handling for aws-native
+
 aws-native outputs often include undefined. Avoid `!` non-null assertions. Always safely unwrap with `.apply()`:
 
 ```ts
 // ❌ WRONG - Will cause TypeScript errors
 functionName: lambdaFunction.functionName!,
 
-// ✅ CORRECT - Handle undefined safely  
+// ✅ CORRECT - Handle undefined safely
 functionName: lambdaFunction.functionName.apply(name => name || ""),
 ```
 
 #### 2.5 Environment Logic Preservation
+
 Carry forward all conditional behaviors:
 
 ```ts
@@ -203,10 +222,10 @@ If you need to manually import resources:
 - Load the `cloudformation-id-lookup` tool
 - Use the web-fetch tool to get content from the official Pulumi documentation.
 
-- **Finding AWS import IDs** -> https://www.pulumi.com/docs/iac/guides/migration/aws-import-ids/
-- **Manual migration approaches** -> https://www.pulumi.com/docs/iac/guides/migration/migrating-to-pulumi/migrating-from-cdk/migrating-existing-cdk-app/#approach-b-manual-migration
+- **Finding AWS import IDs** -> <https://www.pulumi.com/docs/iac/guides/migration/aws-import-ids/>
+- **Manual migration approaches** -> <https://www.pulumi.com/docs/iac/guides/migration/migrating-to-pulumi/migrating-from-cdk/migrating-existing-cdk-app/#approach-b-manual-migration>
 
-### 3.1 Running preview after import
+#### 3.1 Running preview after import
 
 After performing an import you need to run `pulumi preview` to ensure there are no changes. No changes means:
 
@@ -223,7 +242,7 @@ If the user asks for help planning or performing a CDK to Pulumi migration use t
 
 ## For Detailed Documentation
 
-When the user wants to deviate from the recommended path detailed above, use the web-fetch tool to get content from the official Pulumi documentation -> https://www.pulumi.com/docs/iac/guides/migration/migrating-to-pulumi/migrating-from-cdk/migrating-existing-cdk-app
+When the user wants to deviate from the recommended path detailed above, use the web-fetch tool to get content from the official Pulumi documentation -> <https://www.pulumi.com/docs/iac/guides/migration/migrating-to-pulumi/migrating-from-cdk/migrating-existing-cdk-app>
 
 This documentation covers topics:
 

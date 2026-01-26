@@ -1,11 +1,12 @@
 ---
-name: arm-to-pulumi
+name: pulumi-arm-to-pulumi
 description: Convert or migrate Azure ARM (Azure Resource Manager) templates, Bicep templates, or code to Pulumi, including importing existing Azure resources. This skill MUST be loaded whenever a user requests migration, conversion, or import of ARM templates, Bicep templates, ARM code, Bicep code, or Azure resources to Pulumi.
 ---
 
 ## IMPORTANT: PLAN ADJUSTMENT REQUIRED
 
 **If you have already generated a migration plan before loading this skill, you MUST:**
+
 1. Review your existing plan against the workflows and requirements in this skill
 2. Identify any gaps, missing steps, or incorrect assumptions
 3. Update and revise your plan to align with this skill's guidance
@@ -60,6 +61,7 @@ Running Azure CLI commands (e.g., `az resource list`, `az resource show`). Requi
 - If no ESC environment is specified, **ask the user which ESC environment to use** before proceeding with Azure CLI commands.
 
 **Setting up Azure CLI using ESC:**
+
 - ESC environments can provide Azure credentials through environment variables or Azure CLI configuration
 - Login to Azure using ESC to provide credentials, e.g: `pulumi env run {org}/{project}/{environment} -- bash -c 'az login --service-principal -u "$ARM_CLIENT_ID" --tenant "$ARM_TENANT_ID" --federated-token "$ARM_OIDC_TOKEN"'`. ESC is not required after establishing the session
 - Verify credentials are working: `az account show`
@@ -83,6 +85,7 @@ cat template.json | jq '.variables'
 ```
 
 Extract:
+
 - Resource types and names
 - Parameters and their default values
 - Variables and expressions
