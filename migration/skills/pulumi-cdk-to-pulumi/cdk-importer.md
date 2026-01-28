@@ -1,9 +1,3 @@
----
-name: pulumi-cdk-importer
-description: Automated import of CDK-managed AWS infrastructure into Pulumi state
-user-invocable: false
----
-
 # Pulumi CDK Importer Tool
 
 This tool assists migrating CDK-managed infrastructure to Pulumi. It imports existing AWS resources from CloudFormation stacks into Pulumi state.

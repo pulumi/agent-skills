@@ -1,12 +1,6 @@
----
-name: pulumi-arm-import
-description: Import existing Azure resources into Pulumi. This skill MUST be loaded whenever importing Azure resources into Pulumi management, resolving import preview diffs, or achieving zero-diff after import. Handles both ARM-deployed and manually-created Azure resources.
-user-invocable: false
----
+# Importing Azure Resources into Pulumi
 
-## OVERVIEW
-
-This skill provides detailed procedures for importing existing Azure resources into Pulumi state and resolving preview diffs to achieve zero-diff validation.
+This document provides detailed procedures for importing existing Azure resources into Pulumi state and resolving preview diffs to achieve zero-diff validation.
 
 **Key Principle**: Azure will return many default values it has set dynamically that are not represented in code/state. You must systematically resolve each diff type to achieve zero-diff.
 
@@ -236,10 +230,10 @@ const appSettings = new azure_native.web.WebAppApplicationSettings("appSettings"
 
 After importing resources, you MUST run `pulumi preview` to ensure there are no changes. The goal is **zero diff**:
 
-- ✅ NO updates
-- ✅ NO replaces
-- ✅ NO creates
-- ✅ NO deletes
+- NO updates
+- NO replaces
+- NO creates
+- NO deletes
 
 **If there are changes, follow the Preview Resolution Workflow below.**
 
@@ -391,9 +385,9 @@ const vnet = new azure_native.network.VirtualNetwork("vnet", {
    - Check property descriptions, types, and defaults
 
 5. **Determine resolution strategy:**
-   - **Added (+) and not in ARM template** → `ignoreChanges`
-   - **Removed (-) and exists in Azure** → Add to code
-   - **Changed (~)** → Update code to desired value
+   - **Added (+) and not in ARM template** -> `ignoreChanges`
+   - **Removed (-) and exists in Azure** -> Add to code
+   - **Changed (~)** -> Update code to desired value
 
 6. **Apply fix and re-run preview** until zero diff is achieved
 
@@ -401,25 +395,25 @@ const vnet = new azure_native.network.VirtualNetwork("vnet", {
 
 ### Storage Accounts
 
-- `creationTime`, `statusOfPrimary`, `statusOfSecondary` → ignore (computed)
-- `minimumTlsVersion`, `allowBlobPublicAccess` → often need to be added
-- `encryption.services.*` → may need to be added with defaults
+- `creationTime`, `statusOfPrimary`, `statusOfSecondary` -> ignore (computed)
+- `minimumTlsVersion`, `allowBlobPublicAccess` -> often need to be added
+- `encryption.services.*` -> may need to be added with defaults
 
 ### Web Apps
 
-- `state`, `hostNames`, `repositorySiteName` → ignore (computed)
-- `httpsOnly`, `clientAffinityEnabled` → often need to be added
-- `siteConfig` nested properties → many defaults need explicit values
+- `state`, `hostNames`, `repositorySiteName` -> ignore (computed)
+- `httpsOnly`, `clientAffinityEnabled` -> often need to be added
+- `siteConfig` nested properties -> many defaults need explicit values
 
 ### Virtual Networks
 
-- `subnets[*].id`, `subnets[*].etag` → ignore (computed)
-- `enableDdosProtection`, `enableVmProtection` → may need to be added
+- `subnets[*].id`, `subnets[*].etag` -> ignore (computed)
+- `enableDdosProtection`, `enableVmProtection` -> may need to be added
 
 ### Network Security Groups
 
-- `securityRules[*].etag`, `securityRules[*].id` → ignore (computed)
-- Default rules → Azure adds default rules; handle via ignoreChanges or import separately
+- `securityRules[*].etag`, `securityRules[*].id` -> ignore (computed)
+- Default rules -> Azure adds default rules; handle via ignoreChanges or import separately
 
 ## ITERATION PROCESS
 
@@ -436,8 +430,8 @@ The preview resolution process is iterative:
 
 ## COMMON PITFALLS TO AVOID
 
-- ❌ Using `ignoreChanges` for properties that exist in ARM template
-- ❌ Not querying Azure API to verify actual property values
-- ❌ Stopping at first preview without resolving all diffs
-- ❌ Forgetting to import child resources separately (like WebAppApplicationSettings)
-- ❌ Not documenting which properties were ignored vs. added
+- Using `ignoreChanges` for properties that exist in ARM template
+- Not querying Azure API to verify actual property values
+- Stopping at first preview without resolving all diffs
+- Forgetting to import child resources separately (like WebAppApplicationSettings)
+- Not documenting which properties were ignored vs. added

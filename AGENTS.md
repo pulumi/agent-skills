@@ -11,12 +11,8 @@ Skills are organized into two plugin groups:
 Skills for converting and importing infrastructure from other tools to Pulumi:
 
 - **pulumi-terraform-to-pulumi**: Migrate Terraform projects to Pulumi
-- **pulumi-cdk-to-pulumi**: Convert AWS CDK applications to Pulumi
-- **pulumi-cdk-convert**: Automated CDK conversion using the cdk2pulumi tool
-- **pulumi-cdk-importer**: Automated import of CDK-managed AWS infrastructure
-- **pulumi-arm-to-pulumi**: Convert Azure ARM templates and Bicep to Pulumi
-- **pulumi-arm-import**: Import existing Azure resources into Pulumi
-- **pulumi-cloudformation-id-lookup**: Look up CloudFormation import identifiers
+- **pulumi-cdk-to-pulumi**: Migrate AWS CDK applications to Pulumi
+- **pulumi-arm-to-pulumi**: Migrate Azure ARM templates and Bicep to Pulumi
 
 ### Authoring Plugin (`authoring/`)
 
@@ -48,21 +44,13 @@ npx skills add pulumi/agent-skills
 Or install individual plugin groups:
 
 ```bash
-npx skills add pulumi/agent-skills/migration      # 7 migration skills
+npx skills add pulumi/agent-skills/migration      # 3 migration skills
 npx skills add pulumi/agent-skills/authoring      # 4 authoring skills
 ```
 
 This works with Claude Code, Cursor, Copilot, Codex, and other agent tools.
 
 ## Skill Writing Conventions
-
-### Cross-Skill References
-
-When one skill references another, use the pattern: `Use skill <skill-name>`.
-
-Examples:
-- "Use skill `pulumi-arm-import` for zero-diff import validation"
-- "Use skill `pulumi-component` for in-depth component authoring guidance"
 
 ### Skill Name Format
 
@@ -79,7 +67,28 @@ description: Convert an AWS CDK application to Pulumi. This skill MUST be loaded
 
 ### Progressive Disclosure
 
-Keep the main SKILL.md file focused and concise (under 500 lines recommended). For detailed reference material, use a `references/` subdirectory with specific topic files.
+Keep the main SKILL.md file focused and concise (under 500 lines recommended). For detailed reference material, add additional markdown files in the skill directory with meaningful names.
+
+Example structure:
+```
+pulumi-cdk-to-pulumi/
+├── SKILL.md              # Main skill file
+├── cdk-convert.md        # Reference: cdk2pulumi tool usage
+├── cdk-importer.md       # Reference: cdk-importer tool usage
+└── cloudformation-id-lookup.md  # Reference: import ID lookup
+```
+
+Reference these files from the main SKILL.md using relative links:
+```markdown
+For detailed tool usage, see [cdk-convert.md](cdk-convert.md).
+```
+
+### Cross-Skill References
+
+When one skill references another, use the pattern: `Use skill <skill-name>`.
+
+Example:
+- "Use skill `pulumi-component` for in-depth component authoring guidance"
 
 ## Adding a New Skill
 

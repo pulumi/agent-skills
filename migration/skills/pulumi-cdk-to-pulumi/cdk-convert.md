@@ -1,9 +1,3 @@
----
-name: pulumi-cdk-convert
-description: Automatically Convert an AWS CDK application to Pulumi using the cdk2pulumi tool.
-user-invocable: false
----
-
 # Pulumi CDK Conversion Tool (`cdk2pulumi`)
 
 This tool plugin converts AWS CDK Cloud Assemblies to Pulumi YAML programs.
@@ -88,8 +82,3 @@ pulumi plugin run cdk2pulumi -- --assembly path/to/cdk.out
 - When converting specific stacks, use comma-separated names without spaces: `--stacks Stack1,Stack2`
 - For multi-stage CDK apps, use `--stage <name>` to target nested assemblies
 - The tool outputs to `Pulumi.yaml` by default; use `--out` to specify a different location
-
-## Related Skills
-
-- **pulumi-cdk-importer**: Automated import of CDK-managed AWS infrastructure into Pulumi state. Use skill `pulumi-cdk-importer`.
-- **pulumi-cloudformation-id-lookup**: Look up CloudFormation import identifiers for manual imports. Use skill `pulumi-cloudformation-id-lookup`.

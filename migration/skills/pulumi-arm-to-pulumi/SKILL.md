@@ -30,7 +30,7 @@ The migration output MUST meet all of the following:
      - NO replaces
      - NO creates
      - NO deletes
-   - Any diffs must be resolved using the Preview Resolution Workflow. Use skill `pulumi-arm-import`.
+   - Any diffs must be resolved using the Preview Resolution Workflow. See [arm-import.md](arm-import.md).
 
 4. **Final Migration Report**
    - Always output a formal migration report suitable for a Pull Request.
@@ -659,9 +659,9 @@ Check the Pulumi Registry documentation for which API version each resource uses
 
 After conversion, you can optionally import existing resources to be managed by Pulumi. If the user does not request this, suggest it as a follow-up step to conversion.
 
-**CRITICAL**: When the user requests importing existing Azure resources into Pulumi, use skill `pulumi-arm-import` for detailed import procedures and zero-diff validation workflows.
+**CRITICAL**: When the user requests importing existing Azure resources into Pulumi, see [arm-import.md](arm-import.md) for detailed import procedures and zero-diff validation workflows.
 
-The `pulumi-arm-import` skill provides:
+[arm-import.md](arm-import.md) provides:
 
 - Inline import ID patterns and examples
 - Azure Resource ID format conventions
@@ -768,7 +768,3 @@ When performing a migration, always produce:
    - Example `pulumi config set` commands
 
 Keep code syntactically valid and clearly separated by files.
-
-## RELATED SKILLS
-
-- **pulumi-arm-import**: Importing existing Azure resources with zero-diff validation. Use skill `pulumi-arm-import`.
