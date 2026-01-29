@@ -23,6 +23,7 @@ Skills for writing quality Pulumi programs, components, automation, and secrets 
 - **pulumi-component**: Guide for authoring ComponentResource classes
 - **pulumi-automation-api**: Best practices for using Pulumi Automation API
 - **pulumi-esc**: Guidance for working with Pulumi ESC (Environments, Secrets, and Configuration)
+- **pulumi-drift-adopt**: Adopt infrastructure drift back into Pulumi code
 
 ## Installation
 
@@ -46,7 +47,7 @@ Or install individual plugin groups:
 
 ```bash
 npx skills add pulumi/agent-skills/migration      # 4 migration skills
-npx skills add pulumi/agent-skills/authoring      # 4 authoring skills
+npx skills add pulumi/agent-skills/authoring      # 5 authoring skills
 ```
 
 This works with Claude Code, Cursor, Copilot, Codex, and other agent tools.
