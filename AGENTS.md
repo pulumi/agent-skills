@@ -23,6 +23,7 @@ Skills for writing quality Pulumi programs, components, automation, and secrets 
 - **pulumi-component**: Guide for authoring ComponentResource classes
 - **pulumi-automation-api**: Best practices for using Pulumi Automation API
 - **pulumi-esc**: Guidance for working with Pulumi ESC (Environments, Secrets, and Configuration)
+- **pulumi-policy-pack**: Author Pulumi policy packs for compliance and security enforcement
 
 ## Installation
 

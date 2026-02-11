@@ -45,6 +45,7 @@ Write quality Pulumi programs, components, automation, and secrets management:
 | [pulumi-component](authoring/skills/pulumi-component) | Guide for authoring ComponentResource classes |
 | [pulumi-automation-api](authoring/skills/pulumi-automation-api) | Best practices for using Pulumi Automation API |
 | [pulumi-esc](authoring/skills/pulumi-esc) | Guidance for working with Pulumi ESC (Environments, Secrets, and Configuration) |
+| [pulumi-policy-pack](authoring/skills/pulumi-policy-pack) | Author Pulumi policy packs for compliance and security enforcement |
 
 ## Installation
 
@@ -68,7 +69,7 @@ Or install individual plugin groups:
 
 ```bash
 npx skills add pulumi/agent-skills/migration --skill '*'     # 4 migration skills
-npx skills add pulumi/agent-skills/authoring --skill '*'     # 4 authoring skills
+npx skills add pulumi/agent-skills/authoring --skill '*'     # 5 authoring skills
 ```
 
 This works with Claude Code, Cursor, Copilot, Codex, and other agent tools.
@@ -91,6 +92,16 @@ Help me migrate my CDK application to Pulumi
 ```
 
 The assistant will use the `pulumi-cdk-to-pulumi` skill to guide you through the complete migration workflow.
+
+### Writing Policy Packs
+
+Ask your AI assistant:
+
+```text
+Help me create a policy pack that enforces S3 encryption and blocks public RDS instances
+```
+
+The assistant will use the `pulumi-policy-pack` skill to guide you through policy pack authoring, testing, and deployment.
 
 ### Managing Secrets with ESC
 
