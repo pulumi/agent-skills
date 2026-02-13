@@ -48,7 +48,6 @@ my-policy-pack/
 ├── PulumiPolicy.yaml         # Pack metadata (name, runtime)
 ├── package.json              # Dependencies and build scripts
 ├── tsconfig.json             # TypeScript config
-├── rollup.config.mjs         # Bundling (for production packs)
 ├── policies/                 # Policy implementations by category
 │   ├── encryption/
 │   │   └── s3-encryption-policy.ts
@@ -98,7 +97,7 @@ description: Enforces security and compliance policies for AWS resources.
 }
 ```
 
-For production packs, use Rollup to bundle into a single `index.js`. See [policy-pack-project-setup.md](policy-pack-project-setup.md) for the full Rollup and tsconfig configuration.
+See [policy-pack-project-setup.md](policy-pack-project-setup.md) for metadata fields, Python policy packs, versioning, and CI/CD setup.
 
 ## Policy Types
 
@@ -454,7 +453,7 @@ Use `severity` metadata on policies for dashboard categorization:
 4. **Always provide `remediationSteps`** with code examples showing the fix
 5. **Support configuration** for policies that need flexibility (exempt resources, required values)
 6. **Default to `advisory`** enforcement and let pack consumers override to `mandatory`
-7. **Include JSDoc metadata** (`@severity`, `@topics`, `@services`, `@platform`) for dashboard integration
+7. **Include metadata** (`severity`, `tags`, `remediationSteps`, `framework`) for dashboard integration
 8. **Test every policy** with positive (pass) and negative (fail) cases
 9. **Use semantic versioning**: major for breaking changes, minor for new policies, patch for fixes
 

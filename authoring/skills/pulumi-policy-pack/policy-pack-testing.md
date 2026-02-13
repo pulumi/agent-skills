@@ -305,6 +305,45 @@ npx mocha --require ts-node/register test/networking/rds-no-public-access-policy
 npx mocha --require ts-node/register --recursive 'test/**/*.spec.ts' --reporter spec --exit
 ```
 
+## Python Unit Testing
+
+Use pytest to test Python policy packs. Create a `ResourceValidationArgs` directly:
+
+```python
+import pytest
+from pulumi_policy import ResourceValidationArgs
+
+def test_bucket_with_correct_prefix():
+    args = ResourceValidationArgs(
+        resource_type="aws:s3/bucket:Bucket",
+        props={"bucketPrefix": "mycompany-data"},
+        urn="urn:pulumi:dev::test::aws:s3/bucket:Bucket::my-bucket",
+        name="my-bucket",
+        opts={},
+        provider="",
+    )
+
+    violations = []
+    s3_bucket_prefix_validator(args, lambda msg: violations.append(msg))
+    assert len(violations) == 0
+
+def test_bucket_with_wrong_prefix():
+    args = ResourceValidationArgs(
+        resource_type="aws:s3/bucket:Bucket",
+        props={"bucketPrefix": "wrongprefix-data"},
+        urn="urn:pulumi:dev::test::aws:s3/bucket:Bucket::my-bucket",
+        name="my-bucket",
+        opts={},
+        provider="",
+    )
+
+    violations = []
+    s3_bucket_prefix_validator(args, lambda msg: violations.append(msg))
+    assert len(violations) == 1
+```
+
+Run with: `pytest tests/`
+
 ## Test Coverage Checklist
 
 For each policy, test:
@@ -314,5 +353,4 @@ For each policy, test:
 - [ ] Undefined/missing properties handled safely
 - [ ] Multiple violation scenarios if the policy checks multiple properties
 - [ ] Configuration overrides work (if policy is configurable)
-- [ ] Edge cases: empty values, null, unexpected types
 - [ ] Multiple resources in stack (for stack validation policies)
