@@ -1,0 +1,4 @@
+interface:
+  display_name: "Pulumi Best Practices"
+  short_description: "Best practices for robust Pulumi programs"
+  default_prompt: "Use $pulumi-best-practices to apply reliable Pulumi coding patterns to this task."

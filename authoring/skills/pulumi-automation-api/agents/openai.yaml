@@ -1,0 +1,4 @@
+interface:
+  display_name: "Pulumi Automation API"
+  short_description: "Orchestrate Pulumi stacks via Automation API"
+  default_prompt: "Use $pulumi-automation-api to design or improve this Automation API workflow."

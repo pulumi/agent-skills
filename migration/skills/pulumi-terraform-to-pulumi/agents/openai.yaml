@@ -1,0 +1,4 @@
+interface:
+  display_name: "Terraform to Pulumi Migration"
+  short_description: "Migrate Terraform projects to Pulumi"
+  default_prompt: "Use $pulumi-terraform-to-pulumi to migrate Terraform infrastructure to Pulumi."

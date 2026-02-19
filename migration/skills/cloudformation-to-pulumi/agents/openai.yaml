@@ -1,0 +1,4 @@
+interface:
+  display_name: "CloudFormation to Pulumi Migration"
+  short_description: "Convert CloudFormation stacks/templates to Pulumi"
+  default_prompt: "Use $cloudformation-to-pulumi to migrate an AWS CloudFormation stack or template to Pulumi."

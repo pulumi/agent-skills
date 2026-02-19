@@ -1,0 +1,4 @@
+interface:
+  display_name: "AWS CDK to Pulumi Migration"
+  short_description: "Convert an AWS CDK application to Pulumi"
+  default_prompt: "Use $pulumi-cdk-to-pulumi to convert an AWS CDK application to Pulumi."

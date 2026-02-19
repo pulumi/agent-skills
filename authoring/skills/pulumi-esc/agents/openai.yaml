@@ -1,0 +1,4 @@
+interface:
+  display_name: "Pulumi ESC"
+  short_description: "Manage Pulumi environments, secrets, and config"
+  default_prompt: "Use $pulumi-esc to set up or troubleshoot Pulumi ESC environments and secrets."

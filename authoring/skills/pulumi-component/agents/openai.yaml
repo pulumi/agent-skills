@@ -1,0 +1,4 @@
+interface:
+  display_name: "Pulumi Component"
+  short_description: "Author reusable Pulumi ComponentResource classes"
+  default_prompt: "Use $pulumi-component to design or refine this Pulumi ComponentResource implementation."
