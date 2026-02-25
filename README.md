@@ -14,12 +14,13 @@ Agent Skills are reusable knowledge packages that teach AI coding assistants dom
 
 ## Repository Structure
 
-Skills are organized into two plugin groups:
+Skills are organized into three plugin groups:
 
 ```
 pulumi-agent-skills/
 ├── migration/          # Convert and import from other tools
-└── authoring/          # Write quality Pulumi programs
+├── authoring/          # Write quality Pulumi programs
+└── operations/         # Manage and operate Pulumi infrastructure
 ```
 
 ## Available Skills
@@ -49,6 +50,14 @@ Write quality Pulumi programs, components, automation, and secrets management:
 | [pulumi-upgrade-provider](authoring/skills/pulumi-upgrade-provider) | Automate Pulumi provider repo upgrades |
 | [upstream-patches](authoring/skills/upstream-patches) | Manage upstream Terraform patch stacks in provider repos |
 
+### Operations Skills
+
+Manage and operate Pulumi infrastructure:
+
+| Skill | Description |
+|-------|-------------|
+| [pulumi-adopt-drift](operations/skills/pulumi-adopt-drift) | Adopt infrastructure drift into Pulumi code using the drift-adopter CLI tool |
+
 ## Installation
 
 ### Claude Code Plugin System
@@ -57,6 +66,7 @@ Write quality Pulumi programs, components, automation, and secrets management:
 /plugin marketplace add pulumi/agent-skills
 /plugin install pulumi-migration     # Install migration skills
 /plugin install pulumi-authoring     # Install authoring skills
+/plugin install pulumi-operations    # Install operations skills
 ```
 
 ### Universal (all agents)
@@ -72,6 +82,7 @@ Or install individual plugin groups:
 ```bash
 npx skills add pulumi/agent-skills/migration --skill '*'     # 4 migration skills
 npx skills add pulumi/agent-skills/authoring --skill '*'     # 5 authoring skills
+npx skills add pulumi/agent-skills/operations --skill '*'    # 1 operations skill
 ```
 
 This works with Claude Code, Cursor, Copilot, Codex, and other agent tools.
