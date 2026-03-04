@@ -1,0 +1,36 @@
+# Queries that should activate the pulumi-cdk-to-pulumi skill
+queries:
+  # Full migration (convert + import deployed state)
+  - "We're migrating from CDK to Pulumi with several deployed stacks in AWS"
+  - "Convert our AWS CDK application to Pulumi and import the existing state"
+  - "I have a CDK app with 3 stacks deployed, help me migrate everything to Pulumi"
+  - "Migrate our CDK infrastructure to Pulumi without downtime"
+
+  # Conversion only (no import needed)
+  - "Convert this CDK TypeScript code to Pulumi"
+  - "Help me translate my CDK constructs to Pulumi resources"
+
+  # cdk.out / cdk synth workflows (uses cdk-convert supplemental tool)
+  - "I have a cdk.out directory, convert it to Pulumi YAML"
+  - "Run cdk synth and then convert the output to Pulumi"
+
+  # Import-focused (uses cdk-importer supplemental tool)
+  - "I already have Pulumi code from CDK, now I need to import the CloudFormation state"
+  - "Import my existing CDK-deployed resources into Pulumi state"
+  - "The CDK stack is deployed in AWS, I need to import those resources into Pulumi"
+  - "The cdk-importer failed for AWS::ECS::Service, what's the correct import ID?"
+  - "The CDK import is failing because I don't know what ID to use for AWS::Lambda::Function"
+
+  # Real-world prompts from users
+  - "Convert my CDK stack to Pulumi"
+  - "Convert my CDK stack to Pulumi please"
+  - "Convert my CDK code to a Pulumi Typescript program"
+  - "Import existing resources from AWS that were created by CDK"
+  - "Convert my CDK code to a Pulumi Typescript program and import existing resources from AWS that were created by CDK"
+  - "This repo contains a CDK project written in TypeScript. I'd like you to migrate it to Pulumi python"
+  - "Begin converting the CDK code. Use the Pulumi AWS Cloud Control provider"
+  - "Map any CDK constructs to Pulumi components for the migration"
+
+  # Implicit (CDK context is implied)
+  - "Our CloudFormation stacks were created by CDK originally"
+  - "The cdk.out folder has the synthesized CloudFormation templates"

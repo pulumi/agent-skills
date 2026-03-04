@@ -1,0 +1,26 @@
+# Queries that should activate the pulumi-terraform-to-pulumi skill
+queries:
+  # Explicit conversion requests
+  - "I have a Terraform configuration and want to migrate it to Pulumi"
+  - "Convert my Terraform code to Pulumi TypeScript"
+  - "Help me translate this HCL to Pulumi"
+  - "Can you convert this .tf file to Pulumi?"
+  - "Translate our Terraform modules to Pulumi components"
+  - "Our team wants to switch from TF to Pulumi, where do I start?"
+
+  # Implicit/contextual (file references, HCL mentions)
+  - "I have main.tf, variables.tf and outputs.tf - help me convert these"
+  - "This HCL defines an EKS cluster, I need the Pulumi equivalent"
+  - "terraform plan shows these resources, how would I create them in Pulumi?"
+  - "I have these .tf files from our old setup"
+  - "Our HCL modules define the entire network infrastructure"
+
+  # Real-world prompts from users
+  - "I have a lambda app in AWS provisioned with terraform. I'd like to migrate from Terraform to Pulumi"
+  - "Please help migrate infra from Terraform to Pulumi by creating a matching Pulumi program"
+  - "I need to migrate my Terraform state to Pulumi, how do I do that?"
+  - "Create a pulumi program to match the terraform one and validate it has no diffs"
+  - "What does the migration process from Terraform to Pulumi look like?"
+  - "how to convert terraform to pulumi"
+  - "The code is in tf-to-pulumi-app repo. Migrate the terraform code to pulumi typescript"
+  - "I'd like to migrate from Terraform to Pulumi. The end result should be a PR with a pulumi program"

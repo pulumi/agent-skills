@@ -1,0 +1,30 @@
+# Queries that should activate the pulumi-esc skill
+queries:
+  # OIDC / workload identity setup
+  - "Set up OIDC authentication for AWS in my Pulumi project"
+  - "Configure OpenID Connect for Azure with Pulumi ESC"
+  - "I need short-term AWS credentials using OIDC"
+  - "Help me set up workload identity federation for GCP"
+
+  # Secrets management via ESC
+  - "How do I store secrets in Pulumi ESC?"
+  - "Configure AWS Secrets Manager integration with ESC"
+  - "I want to pull secrets from HashiCorp Vault into my Pulumi stack"
+  - "Set up 1Password integration with Pulumi ESC"
+  - "How do I reference Azure Key Vault secrets in ESC?"
+
+  # Environment management
+  - "Create a new ESC environment for our production stack"
+  - "How do I compose ESC environments with imports?"
+  - "Set up environment layering in Pulumi ESC"
+  - "Run a command with ESC environment variables loaded"
+  - "Link an ESC environment to my Pulumi stack"
+  - "pulumi env init - help me create a new environment"
+
+  # Dynamic / rotating credentials
+  - "Generate temporary AWS credentials for my CI/CD pipeline"
+  - "I need dynamic credentials that rotate automatically"
+
+  # Implicit (keyless auth, no long-lived keys)
+  - "We're moving to Pulumi and need AWS access without long-term keys"
+  - "I want keyless authentication to AWS from GitHub Actions"

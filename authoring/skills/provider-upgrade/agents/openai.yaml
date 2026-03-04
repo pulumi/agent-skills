@@ -1,0 +1,4 @@
+interface:
+  display_name: "Pulumi Provider Upgrade"
+  short_description: "Upgrade Pulumi providers across stacks"
+  default_prompt: "Use $provider-upgrade to upgrade a Pulumi provider to the latest version across affected stacks."

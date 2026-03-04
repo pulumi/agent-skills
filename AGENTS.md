@@ -91,6 +91,44 @@ When one skill references another, use the pattern: `Use skill <skill-name>`.
 Example:
 - "Use skill `pulumi-component` for in-depth component authoring guidance"
 
+## Testing
+
+The `tests/` directory contains two pytest-based test suites. Both require `ANTHROPIC_API_KEY` and run automatically on every pull request via `.github/workflows/tests.yml`.
+
+### Skill routing accuracy (`test_skill_selection_accuracy.py`)
+
+Each skill directory contains a `use_cases.yaml` file with a `queries:` list of user prompts that are expected to activate that skill:
+
+```yaml
+# <skill-name>/use_cases.yaml
+queries:
+  - "Convert my Terraform code to Pulumi TypeScript"
+  - "Migrate our Terraform state to Pulumi"
+```
+
+The test loads every `use_cases.yaml` across the tree and asserts that each query triggers the owning skill.
+
+**When adding or modifying a skill**, update (or create) `use_cases.yaml` with representative prompts that should activate it.
+
+### Skill quality review (`test_skill_quality.py`)
+
+An LLM judge reads each `SKILL.md` and checks it against a quality rubric (description clarity and trigger precision, lean body, explains WHY not just what, progressive disclosure). The test fails on HIGH-severity findings and prints all issues — including medium and low — for visibility.
+
+### Running locally
+
+```bash
+uv sync --group dev
+
+# Routing accuracy
+uv run pytest tests/test_skill_selection_accuracy.py -v
+
+# Quality review (use -s to see the full critique)
+uv run pytest tests/test_skill_quality.py -v -s
+
+# All tests
+uv run pytest tests/ -v
+```
+
 ## Adding a New Skill
 
 1. Determine which plugin group the skill belongs to (migration or authoring)
@@ -102,9 +140,10 @@ Example:
    description: Clear description with activation triggers
    ---
    ```
-4. Update this AGENTS.md file to list the new skill in the appropriate plugin section
-5. Update [README.md](README.md) to add the skill to the skills table
-6. Submit a pull request
+4. Add `use_cases.yaml` with representative trigger queries (see [Testing](#testing) above)
+5. Update this AGENTS.md file to list the new skill in the appropriate plugin section
+6. Update [README.md](README.md) to add the skill to the skills table
+7. Submit a pull request
 
 The skill will automatically be included in its plugin group. No manifest updates are needed.
 

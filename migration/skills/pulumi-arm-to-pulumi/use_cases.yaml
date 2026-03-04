@@ -1,0 +1,15 @@
+# Queries that should activate the pulumi-arm-to-pulumi skill
+queries:
+  # Conversion + import workflows
+  - "Convert the ARM template and import the resources into Pulumi"
+  - "Convert my ARM code to a Pulumi Typescript program"
+  - "Convert my ARM code to a Pulumi Typescript program and import the existing resources"
+
+  # Migration requests
+  - "Migrate our Azure ARM templates to Pulumi"
+  - "I have an ARM template for an Azure web app, convert it to Pulumi"
+  - "Help me translate this azuredeploy.json to Pulumi TypeScript"
+
+  # Import-focused
+  - "Import existing Azure resources that were deployed with ARM into Pulumi"
+  - "The ARM template deployed resources to Azure, now I need them in Pulumi"

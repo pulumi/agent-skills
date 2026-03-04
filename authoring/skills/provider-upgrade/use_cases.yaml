@@ -1,0 +1,24 @@
+# Queries that should activate the provider-upgrade skill
+queries:
+  # Explicit upgrade requests
+  - "Upgrade the pulumi-aws provider in my project to the latest version"
+  - "How do I upgrade from pulumi-aws v5 to v6?"
+  - "Bump the pulumi-azure-native provider to v3 in my TypeScript project"
+  - "Upgrade pulumi-kubernetes from v3 to v4 across my stacks"
+  - "Update my GCP provider to the latest version"
+
+  # Breaking changes / migration
+  - "What are the breaking changes when upgrading pulumi-aws from v5 to v6?"
+  - "Is there a migration guide for pulumi-azure-native v2 to v3?"
+  - "The aws provider upgrade broke my S3 bucket resource, how do I fix it?"
+  - "After upgrading pulumi-aws, my preview shows resource replacements I didn't expect"
+  - "How do I add an alias for a renamed resource after a provider major version bump?"
+
+  # Dependency management
+  - "How do I update @pulumi/aws to a newer version in my npm project?"
+  - "Update the pulumi_aws dependency in my Python requirements.txt"
+  - "Run go get to upgrade the Pulumi AWS provider SDK to the latest major version"
+
+  # Workflow / process questions
+  - "Walk me through upgrading the kubernetes provider without breaking my production stack"
+  - "What's the safe process for upgrading a Pulumi provider in a team environment?"
