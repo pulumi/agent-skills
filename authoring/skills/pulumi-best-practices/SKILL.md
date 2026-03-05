@@ -1,20 +1,24 @@
 ---
 name: pulumi-best-practices
 version: 1.0.0
-description: Best practices for writing reliable Pulumi programs. Covers Output handling, resource dependencies, component structure, secrets management, safe refactoring with aliases, and deployment workflows.
+description: Best practices for writing reliable Pulumi programs. Use when writing new Pulumi programs or components, reviewing Pulumi code for correctness, refactoring existing Pulumi infrastructure, debugging resource dependency issues, fixing Output handling problems, setting up configuration and secrets, or troubleshooting deployment failures.
 ---
 
 # Pulumi Best Practices
 
-## When to Use This Skill
+## Table of Contents
 
-Invoke this skill when:
-
-- Writing new Pulumi programs or components
-- Reviewing Pulumi code for correctness
-- Refactoring existing Pulumi infrastructure
-- Debugging resource dependency issues
-- Setting up configuration and secrets
+- [Practices](#practices)
+  - [Never Create Resources Inside apply()](#1-never-create-resources-inside-apply)
+  - [Pass Outputs Directly as Inputs](#2-pass-outputs-directly-as-inputs)
+  - [Use Components for Related Resources](#3-use-components-for-related-resources)
+  - [Always Set parent: this in Components](#4-always-set-parent-this-in-components)
+  - [Encrypt Secrets from Day One](#5-encrypt-secrets-from-day-one)
+  - [Use Aliases When Refactoring](#6-use-aliases-when-refactoring)
+  - [Preview Before Every Deployment](#7-preview-before-every-deployment)
+- [Quick Reference](#quick-reference)
+- [Validation Checklist](#validation-checklist)
+- [Related Skills](#related-skills)
 
 ## Practices
 

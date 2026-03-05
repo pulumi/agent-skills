@@ -1,7 +1,24 @@
 ---
 name: pulumi-arm-to-pulumi
-description: Convert or migrate Azure ARM (Azure Resource Manager) templates, Bicep templates, or code to Pulumi, including importing existing Azure resources. This skill MUST be loaded whenever a user requests migration, conversion, or import of ARM templates, Bicep templates, ARM code, Bicep code, or Azure resources to Pulumi.
+description: Convert or migrate Azure ARM (Azure Resource Manager) templates, Bicep templates, or code to Pulumi, including importing existing Azure resources. Use when users need to migrate ARM templates to Pulumi, convert Bicep templates to Pulumi code, import existing Azure resources into Pulumi, or translate Azure infrastructure-as-code to TypeScript, Python, Go, C#, Java, or YAML.
 ---
+
+# Migrating ARM/Bicep to Pulumi
+
+## Table of Contents
+
+- [Critical Success Requirements](#critical-success-requirements)
+- [Migration Workflow](#migration-workflow)
+  - [Information Gathering](#1-information-gathering)
+  - [Code Conversion](#2-code-conversion-arm--pulumi)
+  - [Resource Import](#3-resource-import-existing-resources---optional)
+  - [Pulumi Configuration](#4-pulumi-configuration)
+  - [Validation](#5-validation)
+- [ARM Template Conversion Patterns](#arm-template-conversion-patterns)
+- [Azure Classic Provider Examples](#azure-classic-provider-examples)
+- [Working with the User](#working-with-the-user)
+- [Output Format](#output-format-required)
+- [For Detailed Documentation](#for-detailed-documentation)
 
 ## IMPORTANT: PLAN ADJUSTMENT REQUIRED
 

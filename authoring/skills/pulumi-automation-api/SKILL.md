@@ -1,21 +1,21 @@
 ---
 name: pulumi-automation-api
 version: 1.0.0
-description: Best practices for using Pulumi Automation API to programmatically orchestrate infrastructure operations. Covers multi-stack orchestration, embedding Pulumi in applications, architecture choices, and common patterns.
+description: Best practices for using Pulumi Automation API to programmatically orchestrate infrastructure operations. Use when orchestrating deployments across multiple Pulumi stacks, embedding Pulumi operations in custom applications, building self-service infrastructure platforms, replacing fragile Bash/Makefile orchestration scripts, creating custom CLIs for infrastructure management, or building web applications that provision infrastructure.
 ---
 
 # Pulumi Automation API
 
-## When to Use This Skill
+## Table of Contents
 
-Invoke this skill when:
-
-- Orchestrating deployments across multiple Pulumi stacks
-- Embedding Pulumi operations in custom applications
-- Building self-service infrastructure platforms
-- Replacing fragile Bash/Makefile orchestration scripts
-- Creating custom CLIs for infrastructure management
-- Building web applications that provision infrastructure
+- [What is Automation API](#what-is-automation-api)
+- [When to Use Automation API](#when-to-use-automation-api)
+- [Architecture Choices](#architecture-choices)
+- [Common Patterns](#common-patterns)
+- [Best Practices](#best-practices)
+- [Quick Reference](#quick-reference)
+- [Related Skills](#related-skills)
+- [References](#references)
 
 ## What is Automation API
 
