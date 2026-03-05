@@ -30,15 +30,20 @@ def _skills_to_tests() -> list[pytest.param]:
     return cases
 
 
-@pytest.mark.parametrize("skill_name,skill_content", _skills_to_tests())
+@pytest.mark.parametrize(("skill_name", "skill_content"), _skills_to_tests())
 async def test_skill_quality(skill_name: str, skill_content: str) -> None:
-    kwargs = dict(
-        model=SONNET_MODEL,
-        max_tokens=4096,
-        temperature=0,
-        system=_QUALITY_JUDGEMENT_SYSTEM_PROMPT,
-        messages=[{"role": "user", "content": f"Please review this skill:\n\n```\n{skill_content}\n```"}],
-    )
+    kwargs = {
+        "model": SONNET_MODEL,
+        "max_tokens": 4096,
+        "temperature": 0,
+        "system": _QUALITY_JUDGEMENT_SYSTEM_PROMPT,
+        "messages": [
+            {
+                "role": "user",
+                "content": f"Please review this skill:\n\n```\n{skill_content}\n```",
+            }
+        ],
+    }
     result: dict = {}
     for attempt in range(MAX_ATTEMPTS):
         response = await create_message(**kwargs)
@@ -48,7 +53,9 @@ async def test_skill_quality(skill_name: str, skill_content: str) -> None:
             break
         except json.JSONDecodeError:
             if attempt >= MAX_ATTEMPTS - 1:
-                pytest.fail(f"Judge returned non-JSON response after all retries:\n{raw}")
+                pytest.fail(
+                    f"Judge returned non-JSON response after all retries:\n{raw}"
+                )
             await asyncio.sleep(RETRY_BASE_DELAY)
 
     score: int = result.get("overall_score", 0)

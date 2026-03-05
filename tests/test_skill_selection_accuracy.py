@@ -18,8 +18,14 @@ import anthropic
 import frontmatter  # type: ignore[import-untyped]
 import pytest
 import yaml
-from llm_client import HAIKU_MODEL, MAX_ATTEMPTS, RETRY_BASE_DELAY, ToolCall, create_message, get_tool_calls
-
+from llm_client import (
+    HAIKU_MODEL,
+    MAX_ATTEMPTS,
+    RETRY_BASE_DELAY,
+    ToolCall,
+    create_message,
+    get_tool_calls,
+)
 
 _PASS_THRESHOLD = 0.80
 
@@ -42,7 +48,7 @@ def _use_cases_to_tests() -> list[pytest.param]:
     return cases
 
 
-@pytest.mark.parametrize("skill,queries", _use_cases_to_tests())
+@pytest.mark.parametrize(("skill", "queries"), _use_cases_to_tests())
 async def test_skill_selection_accuracy(skill: str, queries: list[str]) -> None:
     skills = _load_skills()
     results: list[tuple[str, set[str], bool]] = []
@@ -76,15 +82,15 @@ async def _select_skills_for_query(
     if not skills:
         return []
 
-    kwargs = dict(
-        model=HAIKU_MODEL,
-        max_tokens=1000,
-        temperature=0,
-        system=_build_system_prompt(skills),
-        tools=[_EVALUATE_SKILLS_TOOL],
-        tool_choice={"type": "any"},
-        messages=[{"role": "user", "content": user_message}],
-    )
+    kwargs = {
+        "model": HAIKU_MODEL,
+        "max_tokens": 1000,
+        "temperature": 0,
+        "system": _build_system_prompt(skills),
+        "tools": [_EVALUATE_SKILLS_TOOL],
+        "tool_choice": {"type": "any"},
+        "messages": [{"role": "user", "content": user_message}],
+    }
     for attempt in range(MAX_ATTEMPTS):
         response = await create_message(**kwargs)
         tool_calls = get_tool_calls(response)
@@ -101,7 +107,7 @@ def _load_skills() -> dict[str, Skill]:
     skills_root = Path(__file__).parent.parent
     result: dict[str, Skill] = {}
     for skill_file in sorted(skills_root.rglob("SKILL.md")):
-        with open(skill_file, "r", encoding="utf-8-sig") as f:
+        with skill_file.open(encoding="utf-8-sig") as f:
             post = frontmatter.load(f)
         if "name" not in post.metadata or "description" not in post.metadata:
             continue
@@ -207,10 +213,10 @@ _SKILL_CONFIDENCE_THRESHOLD = 0.6
 
 
 def _parse_evaluated_skills(
-    toolCalls: list[ToolCall], skills: dict[str, Skill]
+    tool_calls: list[ToolCall], skills: dict[str, Skill]
 ) -> list[str]:
     result: list[str] = []
-    for call in toolCalls:
+    for call in tool_calls:
         if call.name == "evaluate_skills":
             for eval_data in call.input.get("evaluations", []):
                 skill_name = eval_data.get("skill_name")
