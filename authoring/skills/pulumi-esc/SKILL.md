@@ -1,11 +1,21 @@
 ---
 name: pulumi-esc
-description: Guidance for working with Pulumi ESC (Environments, Secrets, and Configuration). Use when users ask about managing secrets, configuration, environments, short-term credentials, configuring OIDC for AWS, Azure, GCP, integrating with secret stores (AWS Secrets Manager, Azure Key Vault, HashiCorp Vault, 1Password), or using ESC with Pulumi stacks.
+description: Guidance for working with Pulumi ESC (Environments, Secrets, and Configuration). Use when users ask about managing secrets, configuration, environments, short-term credentials, configuring OIDC for AWS, Azure, GCP, integrating with secret stores (AWS Secrets Manager, Azure Key Vault, HashiCorp Vault, 1Password), linking ESC environments to Pulumi stacks, or running commands with environment variables from ESC.
 ---
 
 # Pulumi ESC (Environments, Secrets, and Configuration)
 
 Pulumi ESC is a centralized service for managing environments, secrets, and configuration across cloud infrastructure and applications.
+
+## Table of Contents
+
+- [What is ESC?](#what-is-esc)
+- [Essential CLI Commands](#essential-cli-commands)
+- [Key Concepts](#key-concepts)
+- [Working with the User](#working-with-the-user)
+- [Common Workflows](#common-workflows)
+- [Best Practices](#best-practices)
+- [Quick Troubleshooting](#quick-troubleshooting)
 
 ## What is ESC?
 

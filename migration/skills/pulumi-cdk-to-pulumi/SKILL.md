@@ -1,7 +1,20 @@
 ---
 name: pulumi-cdk-to-pulumi
-description: Convert an AWS CDK application to Pulumi. This skill MUST be loaded whenever a user requests migration or conversion of a CDK application to Pulumi.
+description: Convert an AWS CDK application to Pulumi. Use when users need to migrate AWS CDK applications to Pulumi, convert CDK constructs to Pulumi components, import CDK-managed AWS resources into Pulumi, translate CDK TypeScript or Python code to Pulumi, or migrate from CDK stacks to Pulumi stacks.
 ---
+
+# Migrating AWS CDK to Pulumi
+
+## Table of Contents
+
+- [Critical Success Requirements](#critical-success-requirements)
+- [Migration Workflow](#migration-workflow)
+  - [Information Gathering](#1-information-gathering)
+  - [Code Conversion](#2-code-conversion-cdk--pulumi)
+  - [Resource Import](#3-resource-import-optional)
+- [Working with the User](#working-with-the-user)
+- [For Detailed Documentation](#for-detailed-documentation)
+- [Output Format](#output-format-required)
 
 # CRITICAL SUCCESS REQUIREMENTS
 

@@ -1,7 +1,7 @@
 ---
 name: pulumi-component
 version: 1.0.0
-description: Guide for authoring Pulumi ComponentResource classes. Use when creating reusable infrastructure components, designing component interfaces, setting up multi-language support, or distributing component packages.
+description: Guide for authoring Pulumi ComponentResource classes. Use when creating a new ComponentResource class, designing args interfaces for components, making components consumable from multiple Pulumi languages, publishing or distributing component packages, refactoring inline resources into reusable components, or debugging component behavior such as missing outputs, stuck creating, or children appearing at wrong level.
 ---
 
 # Authoring Pulumi Components
@@ -10,16 +10,23 @@ A ComponentResource groups related infrastructure resources into a reusable, log
 
 This skill covers the full component authoring lifecycle. For general Pulumi coding patterns (Output handling, secrets, aliases, preview workflows), use the `pulumi-best-practices` skill instead.
 
-## When to Use This Skill
+## Table of Contents
 
-Invoke this skill when:
-
-- Creating a new ComponentResource class
-- Designing the args interface for a component
-- Making a component consumable from multiple Pulumi languages
-- Publishing or distributing a component package
-- Refactoring inline resources into a reusable component
-- Debugging component behavior (missing outputs, stuck creating, children at wrong level)
+- [Component Anatomy](#component-anatomy)
+  - [TypeScript](#typescript)
+  - [Python](#python)
+  - [Type URN Format](#type-urn-format)
+  - [registerOutputs Is Required](#registeroutputs-is-required)
+  - [Derive Child Names from the Component Name](#derive-child-names-from-the-component-name)
+- [Designing the Args Interface](#designing-the-args-interface)
+- [Exposing Outputs](#exposing-outputs)
+- [Component Design Patterns](#component-design-patterns)
+- [Multi-Language Components](#multi-language-components)
+- [Distribution](#distribution)
+- [Anti-Patterns](#anti-patterns)
+- [Quick Reference](#quick-reference)
+- [Related Skills](#related-skills)
+- [References](#references)
 
 ## Component Anatomy
 

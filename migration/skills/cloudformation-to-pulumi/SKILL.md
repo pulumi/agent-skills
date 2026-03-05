@@ -1,7 +1,19 @@
 ---
 name: cloudformation-to-pulumi
-description: Convert an AWS CloudFormation stack or template to Pulumi. This skill MUST be loaded whenever a user requests migration or conversion of CloudFormation to Pulumi.
+description: Convert an AWS CloudFormation stack or template to Pulumi. Use when users need to migrate CloudFormation stacks to Pulumi, convert CloudFormation templates to Pulumi code, import existing CloudFormation-managed AWS resources into Pulumi, or translate CloudFormation YAML/JSON to TypeScript, Python, Go, or other Pulumi languages.
 ---
+
+# Migrating CloudFormation to Pulumi
+
+## Table of Contents
+
+- [Critical Success Requirements](#critical-success-requirements)
+- [Migration Workflow](#migration-workflow)
+  - [Information Gathering](#1-information-gathering)
+  - [Code Conversion](#2-code-conversion-cloudformation--pulumi)
+  - [Resource Import](#3-resource-import)
+- [Output Format](#output-format-required)
+- [For Detailed Documentation](#for-detailed-documentation)
 
 ## IMPORTANT: PLAN ADJUSTMENT REQUIRED
 

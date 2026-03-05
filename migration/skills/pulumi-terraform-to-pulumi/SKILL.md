@@ -1,6 +1,6 @@
 ---
 name: pulumi-terraform-to-pulumi
-description: Migrate Terraform projects to Pulumi. Use when users need to move infrastructure from Terraform to Pulumi, translate HCL configurations, or convert Terraform modules to Pulumi components.
+description: Migrate Terraform projects to Pulumi. Use when users need to move infrastructure from Terraform to Pulumi, translate HCL configurations to Pulumi code, convert Terraform modules to Pulumi components, import Terraform-managed state into Pulumi, or migrate from OpenTofu to Pulumi.
 ---
 
 # Migrating from Terraform to Pulumi
