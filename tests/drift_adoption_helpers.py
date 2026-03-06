@@ -291,6 +291,41 @@ def _get_repo_root() -> Path:
         ) from e
 
 
+def _scrub_worktree(worktree_path: Path) -> None:
+    """
+    Remove test evidence from the worktree so the agent cannot read test
+    files and derive expected answers.
+
+    Keeps only:
+    - .git/              (needed for git operations)
+    - tests/drift-adoption/  (the actual Pulumi fixture programs)
+    - operations/        (contains SKILL.md)
+    """
+    for entry in sorted(worktree_path.iterdir()):
+        rel = entry.name
+        # Always keep .git
+        if rel == ".git":
+            continue
+        # Keep operations/ directory
+        if rel == "operations":
+            continue
+        # For tests/, selectively keep only drift-adoption/
+        if rel == "tests" and entry.is_dir():
+            for test_entry in sorted(entry.iterdir()):
+                if test_entry.name == "drift-adoption":
+                    continue
+                if test_entry.is_dir():
+                    shutil.rmtree(test_entry)
+                else:
+                    test_entry.unlink()
+            continue
+        # Remove everything else
+        if entry.is_dir():
+            shutil.rmtree(entry)
+        else:
+            entry.unlink()
+
+
 @dataclass
 class DriftTestContext:
     """Complete context for a drift adoption test."""
@@ -355,6 +390,9 @@ def setup_drift_test(
 
     # Ensure HTTPS remote
     ensure_https_remote(worktree.path)
+
+    # Remove test evidence so the agent can't cheat by reading test files
+    _scrub_worktree(worktree.path)
 
     # Get example directory within the worktree
     # In agent-skills, examples are under tests/drift-adoption/

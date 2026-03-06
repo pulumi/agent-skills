@@ -1,7 +1,4 @@
-"""Pytest configuration for agent-skills drift adoption tests.
-
-Simplified from agents-test-fixtures, supporting only AnthropicAgent.
-"""
+"""Pytest configuration for agent-skills drift adoption tests."""
 
 import os
 import pathlib
@@ -12,6 +9,15 @@ import pytest
 
 from anthropic_agent import Agent, AnthropicAgent
 from simple_shell_mcp import create_shell_mcp
+
+
+def pytest_addoption(parser: pytest.Parser) -> None:
+    parser.addoption(
+        "--log-messages",
+        action="store",
+        default=None,
+        help="Directory to write agent message logs to (one file per test).",
+    )
 
 
 @pytest.fixture()
@@ -35,7 +41,19 @@ def skill_md_content() -> str:
 
 
 @pytest.fixture()
-def agent(skill_md_content: str) -> Agent:
+def message_log_path(request: pytest.FixtureRequest) -> pathlib.Path | None:
+    """Return a file path to log agent messages, or None if --log-messages not set."""
+    log_dir = request.config.getoption("--log-messages")
+    if log_dir is None:
+        return None
+    log_dir_path = pathlib.Path(log_dir)
+    log_dir_path.mkdir(parents=True, exist_ok=True)
+    test_name = request.node.name
+    return log_dir_path / f"{test_name}.log"
+
+
+@pytest.fixture()
+def agent(skill_md_content: str, message_log_path: pathlib.Path | None) -> Agent:
     """Create an AnthropicAgent with shell MCP and skill instructions."""
     # Check credentials
     if os.getenv("ANTHROPIC_API_KEY") is None:
@@ -51,7 +69,7 @@ def agent(skill_md_content: str) -> Agent:
                 "AWS credentials required for Bedrock; set ANTHROPIC_API_KEY to use Anthropic API instead"
             )
 
-    agent_instance = AnthropicAgent()
+    agent_instance = AnthropicAgent(message_log_path=message_log_path)
 
     pulumi_token = os.getenv("PULUMI_ACCESS_TOKEN", "")
     github_token = os.getenv("GITHUB_TOKEN") or os.getenv("GH_TOKEN", "")

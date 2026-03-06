@@ -7,6 +7,7 @@ Uses fastmcp.Client directly for MCP server communication.
 import json
 import logging
 import os
+import pathlib
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Any, AsyncGenerator, Mapping
@@ -165,6 +166,7 @@ class AnthropicAgent(Agent):
         model: str = DEFAULT_MODEL,
         max_tokens: int = MAX_TOKENS,
         max_iterations: int = MAX_ITERATIONS,
+        message_log_path: pathlib.Path | None = None,
     ) -> None:
         if os.getenv("ANTHROPIC_API_KEY") is not None:
             self._client = anthropic.AsyncAnthropic()
@@ -178,6 +180,8 @@ class AnthropicAgent(Agent):
         self._mcp_tool_client: InlineMCPToolClient | None = None
         self._mcp_server_configs: dict[str, Any] = {}
         self._custom_instructions: str | None = None
+        self._message_log_path = message_log_path
+        self._message_log_file = None
 
     @property
     def mcp_servers(self) -> dict[str, Any]:
@@ -198,6 +202,17 @@ class AnthropicAgent(Agent):
 
     def cancel(self) -> None:
         pass
+
+    def _log(self, label: str, content: str) -> None:
+        """Write a labeled message to the log file if logging is enabled."""
+        if self._message_log_path is None:
+            return
+        with open(self._message_log_path, "a") as f:
+            f.write(f"\n{'=' * 80}\n")
+            f.write(f"[{label}]\n")
+            f.write(f"{'=' * 80}\n")
+            f.write(content)
+            f.write("\n")
 
     def _build_system_prompt(self) -> str:
         parts = [SYSTEM_PROMPT]
@@ -268,6 +283,15 @@ class AnthropicAgent(Agent):
 
             text_content = "\n".join(text_parts)
 
+            # Log assistant message
+            if text_content:
+                self._log(f"ASSISTANT (iter {iteration + 1})", text_content)
+            for tu in tool_uses:
+                self._log(
+                    f"TOOL_CALL (iter {iteration + 1}): {tu.name}",
+                    json.dumps(tu.input, indent=2) if isinstance(tu.input, dict) else str(tu.input),
+                )
+
             yield AssistantMessage(
                 content=text_content,
                 tool_calls=None,
@@ -300,6 +324,11 @@ class AnthropicAgent(Agent):
                         arguments=tool_use.input,
                     )
 
+                    self._log(
+                        f"TOOL_RESULT: {tool_use.name}",
+                        result_content[:2000] if len(result_content) > 2000 else result_content,
+                    )
+
                     yield ToolResponse(
                         tool_call_id=tool_use.id,
                         name=tool_use.name,
@@ -315,6 +344,7 @@ class AnthropicAgent(Agent):
                     )
                 except Exception as e:
                     logger.error(f"Tool call failed: {tool_use.name}: {e}")
+                    self._log(f"TOOL_ERROR: {tool_use.name}", str(e))
                     tool_results.append(
                         {
                             "type": "tool_result",
