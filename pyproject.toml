@@ -4,6 +4,11 @@ version = "0.1.0"
 requires-python = ">=3.11"
 dependencies = [
     "anthropic>=0.75.0",
+    "boto3>=1.35.0",
+    "fastmcp>=2.10.6",
+    "pulumi>=3.189.0",
+    "pulumitest",
+    "pydantic>=2.11.7",
     "python-frontmatter>=1.1.0",
     "pyyaml>=6.0",
 ]
@@ -12,10 +17,19 @@ dependencies = [
 dev = [
     "pytest>=9.0.3",
     "pytest-asyncio>=0.23.0",
+    "pytest-json-report>=1.5.0",
     "pytest-xdist>=3.0.0",
 ]
 
+[tool.uv.sources]
+pulumitest = { git = "https://github.com/pulumi/pulumitest-python.git" }
+
 [tool.pytest.ini_options]
+markers = [
+    "integration: integration test",
+    "write_permissions: test requires write permissions",
+]
 asyncio_mode = "auto"
+addopts = "-s"
 testpaths = ["tests"]
 pythonpath = ["tests"]
