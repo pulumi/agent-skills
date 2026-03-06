@@ -4,7 +4,7 @@ This repository contains official Pulumi agent skills for infrastructure as code
 
 ## Repository Structure
 
-Skills are organized into three plugin groups:
+Skills are organized into two plugin groups:
 
 ### Migration Plugin (`migration/`)
 
@@ -26,11 +26,6 @@ Skills for writing quality Pulumi programs, components, automation, and secrets 
 - **provider-upgrade**: Safe workflows for upgrading Pulumi providers without unintended infrastructure changes
 - **pulumi-upgrade-provider**: Automate Pulumi provider repo upgrades with the upgrade-provider tool
 - **upstream-patches**: Create, amend, remove, and rebase patches for Terraform provider submodules
-
-### Operations Plugin (`operations/`)
-
-Skills for managing and operating Pulumi infrastructure:
-
 - **pulumi-adopt-drift**: Adopt infrastructure drift into Pulumi code using the drift-adopter CLI tool
 
 ## Installation

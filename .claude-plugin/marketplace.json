@@ -19,12 +19,6 @@
       "source": "./authoring",
       "description": "Write quality Pulumi programs, components, and automation",
       "category": "development"
-    },
-    {
-      "name": "pulumi-operations",
-      "source": "./operations",
-      "description": "Skills for managing and operating Pulumi infrastructure",
-      "category": "operations"
     }
   ]
 }

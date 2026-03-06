@@ -299,15 +299,15 @@ def _scrub_worktree(worktree_path: Path) -> None:
     Keeps only:
     - .git/              (needed for git operations)
     - tests/drift-adoption/  (the actual Pulumi fixture programs)
-    - operations/        (contains SKILL.md)
+    - authoring/         (contains SKILL.md)
     """
     for entry in sorted(worktree_path.iterdir()):
         rel = entry.name
         # Always keep .git
         if rel == ".git":
             continue
-        # Keep operations/ directory
-        if rel == "operations":
+        # Keep authoring/ directory
+        if rel == "authoring":
             continue
         # For tests/, selectively keep only drift-adoption/
         if rel == "tests" and entry.is_dir():

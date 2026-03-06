@@ -27,10 +27,10 @@ def testdata_dir() -> pathlib.Path:
 
 @pytest.fixture()
 def skill_md_content() -> str:
-    """Load SKILL.md content from the operations directory."""
+    """Load SKILL.md content from the authoring directory."""
     skill_path = (
         pathlib.Path(__file__).resolve().parent.parent
-        / "operations"
+        / "authoring"
         / "skills"
         / "pulumi-adopt-drift"
         / "SKILL.md"

@@ -19,6 +19,8 @@
     "secrets",
     "configuration",
     "upgrade-provider",
-    "upstream-patches"
+    "upstream-patches",
+    "drift",
+    "operations"
   ]
 }
