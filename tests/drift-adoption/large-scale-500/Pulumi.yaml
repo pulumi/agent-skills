@@ -1,0 +1,3 @@
+name: large-scale-500
+runtime: nodejs
+description: Large-scale drift adoption test (500 resources)
