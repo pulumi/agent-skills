@@ -1,0 +1,3 @@
+name: small-scale-10
+runtime: nodejs
+description: Small-scale drift adoption test (10 resources)
