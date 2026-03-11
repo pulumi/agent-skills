@@ -1,0 +1,3 @@
+name: full-drift-100
+runtime: nodejs
+description: Full-drift adoption test (100 resources, all creates)
