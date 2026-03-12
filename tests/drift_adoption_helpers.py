@@ -16,6 +16,7 @@ import shutil
 import string
 import subprocess
 import tempfile
+import uuid
 import warnings
 from collections.abc import Generator
 from contextlib import contextmanager
@@ -291,6 +292,25 @@ def _get_repo_root() -> Path:
         ) from e
 
 
+def _copy_stack_config(example_dir: Path, stack_name: str) -> None:
+    """
+    Copy the static Pulumi.test.yaml to Pulumi.<stack_name>.yaml so that
+    CLI commands pick up the ESC environment for dynamically-named stacks.
+
+    Copies to both the example dir and its drifted/ subdir (if present).
+    """
+    source = example_dir / "Pulumi.test.yaml"
+    if not source.exists():
+        return
+    dest = example_dir / f"Pulumi.{stack_name}.yaml"
+    shutil.copy2(source, dest)
+
+    drifted_source = example_dir / "drifted" / "Pulumi.test.yaml"
+    if drifted_source.exists():
+        drifted_dest = example_dir / "drifted" / f"Pulumi.{stack_name}.yaml"
+        shutil.copy2(drifted_source, drifted_dest)
+
+
 def _scrub_worktree(worktree_path: Path) -> None:
     """
     Remove test evidence from the worktree so the agent cannot read test
@@ -326,6 +346,32 @@ def _scrub_worktree(worktree_path: Path) -> None:
             entry.unlink()
 
 
+def _rmtree_onerror(func, path, exc_info):
+    """Handle permission errors during rmtree by chmod and retry."""
+    import stat
+
+    os.chmod(path, stat.S_IRWXU)
+    func(path)
+
+
+def scrub_drifted_dirs(worktree_path: Path) -> None:
+    """Remove all drifted/ subdirs from the worktree so the agent cannot
+    read the expected answers.
+
+    Must be called AFTER create_drift_with_program() and verify_drift_exists()
+    have completed, but BEFORE the agent is invoked.
+    """
+    drift_adoption_dir = worktree_path / "tests" / "drift-adoption"
+    if not drift_adoption_dir.is_dir():
+        return
+    for example_entry in drift_adoption_dir.iterdir():
+        drifted_subdir = example_entry / "drifted"
+        if drifted_subdir.is_dir():
+            shutil.rmtree(drifted_subdir, onerror=_rmtree_onerror)
+            if drifted_subdir.exists():
+                raise RuntimeError(f"Failed to remove {drifted_subdir}")
+
+
 @dataclass
 class DriftTestContext:
     """Complete context for a drift adoption test."""
@@ -335,13 +381,15 @@ class DriftTestContext:
     working_dir: pathlib.Path
     worktree: WorktreeContext
     stack_name: str
+    skip_esc: bool = False
     agent_branches: list[str] = field(default_factory=list)
 
 
 def setup_drift_test(
     example_name: str,
-    stack_name: str = "test",
+    stack_name: str | None = None,
     base_branch: Optional[str] = None,
+    skip_esc: bool = False,
 ) -> DriftTestContext:
     """
     Set up a complete drift test environment.
@@ -351,8 +399,9 @@ def setup_drift_test(
 
     Args:
         example_name: Name of the example directory in drift-adoption/
-        stack_name: Name of the Pulumi stack (default: "test")
+        stack_name: Name of the Pulumi stack (default: auto-generated unique name)
         base_branch: Branch to base worktree on (default: current branch)
+        skip_esc: If True, skip ESC environment setup (for local-only providers)
 
     Returns:
         DriftTestContext with all necessary components
@@ -360,6 +409,9 @@ def setup_drift_test(
     Raises:
         GitWorktreeError: If worktree creation fails
     """
+    if stack_name is None:
+        stack_name = f"test-{uuid.uuid4().hex[:8]}"
+
     repo_root = _get_repo_root()
 
     # Determine base branch from the current repo
@@ -406,8 +458,19 @@ def setup_drift_test(
     )
 
     # Add ESC environment for AWS credentials (skip if already available via OIDC in CI)
-    if not os.environ.get("AWS_SESSION_TOKEN"):
+    if not skip_esc and not os.environ.get("AWS_SESSION_TOKEN"):
         program.add_environments("default/dev-sandbox")
+
+        # Copy the static Pulumi.test.yaml (which contains the ESC env reference)
+        # to match the dynamic stack name so CLI commands also pick it up.
+        _copy_stack_config(example_dir, stack_name)
+
+    # Copy installed node_modules to the worktree so the agent (and drift-adopter)
+    # can run pulumi preview without needing to install dependencies first.
+    installed_node_modules = Path(program.working_dir) / "node_modules"
+    worktree_node_modules = example_dir / "node_modules"
+    if installed_node_modules.is_dir() and not worktree_node_modules.exists():
+        shutil.copytree(installed_node_modules, worktree_node_modules)
 
     return DriftTestContext(
         program=program,
@@ -415,6 +478,7 @@ def setup_drift_test(
         working_dir=worktree.path,
         worktree=worktree,
         stack_name=stack_name,
+        skip_esc=skip_esc,
     )
 
 
@@ -473,8 +537,9 @@ def teardown_drift_test(context: DriftTestContext) -> None:
 @contextmanager
 def drift_test_context(
     example_name: str,
-    stack_name: str = "test",
+    stack_name: str | None = None,
     base_branch: Optional[str] = None,
+    skip_esc: bool = False,
 ) -> Generator[DriftTestContext, None, None]:
     """
     Context manager for complete drift test lifecycle.
@@ -484,8 +549,9 @@ def drift_test_context(
 
     Args:
         example_name: Name of the example directory
-        stack_name: Name of the Pulumi stack (default: "test")
+        stack_name: Name of the Pulumi stack (default: auto-generated unique name)
         base_branch: Branch to base worktree on (default: current branch)
+        skip_esc: If True, skip ESC environment setup (for local-only providers)
 
     Yields:
         DriftTestContext with all test components
@@ -496,7 +562,7 @@ def drift_test_context(
             # Run test
         # Automatic cleanup
     """
-    context = setup_drift_test(example_name, stack_name, base_branch)
+    context = setup_drift_test(example_name, stack_name, base_branch, skip_esc=skip_esc)
     try:
         yield context
     finally:
@@ -563,10 +629,12 @@ def verify_drift_exists(program: PulumiProgram) -> tuple[int, int]:
     try:
         preview_result = program.preview()
 
+        create_count = preview_result.change_summary.get(OpType.CREATE, 0)
         update_count = preview_result.change_summary.get(OpType.UPDATE, 0)
         replace_count = preview_result.change_summary.get(OpType.REPLACE, 0)
+        delete_count = preview_result.change_summary.get(OpType.DELETE, 0)
 
-        if update_count == 0 and replace_count == 0:
+        if create_count == 0 and update_count == 0 and replace_count == 0 and delete_count == 0:
             raise DriftCreationError("No drift detected after creating drift")
 
         return (update_count, replace_count)
@@ -583,7 +651,7 @@ def verify_drift_exists(program: PulumiProgram) -> tuple[int, int]:
 
 
 def build_drift_prompt(
-    context: DriftTestContext, include_instructions: bool = True
+    context: DriftTestContext, include_instructions: bool = True, baseline: bool = False
 ) -> str:
     """
     Build a structured prompt for the agent to adopt drift.
@@ -622,10 +690,6 @@ def build_drift_prompt(
         f"Stack: {context.stack_name}",
     ]
 
-    # Only mention ESC environment if we're using it (not in CI with OIDC)
-    if not os.environ.get("AWS_SESSION_TOKEN"):
-        prompt_parts.append("ESC Environment: creds/dev-sandbox")
-
     prompt_parts.extend(
         [
             f"Repository: {repo_url}",
@@ -635,22 +699,27 @@ def build_drift_prompt(
     )
 
     if include_instructions:
-        instruction_parts = [
-            "",
-            "Please:",
-            f"1. Navigate to the project directory: {context.example_dir}",
-            "2. Use the adopt-drift skill to detect and fix the drift",
-            "",
-            "IMPORTANT: This is a test. Do not create a pull request.",
-        ]
-        # Only mention ESC if we're using it
-        if not os.environ.get("AWS_SESSION_TOKEN"):
-            instruction_parts.extend(
-                [
-                    "",
-                    "Make sure to use the ESC environment for AWS credentials.",
-                ]
-            )
+        if baseline:
+            instruction_parts = [
+                "",
+                "Please:",
+                f"1. Navigate to the project directory: {context.example_dir}",
+                "2. Run `pulumi refresh --yes` to sync the state with the actual infrastructure",
+                "3. Run `pulumi preview` to detect what has drifted",
+                "4. Modify the code to match the current infrastructure state",
+                "5. Run `pulumi preview` again to verify there are no remaining changes",
+                "",
+                "IMPORTANT: This is a test. Do not create a pull request.",
+            ]
+        else:
+            instruction_parts = [
+                "",
+                "Please:",
+                f"1. Navigate to the project directory: {context.example_dir}",
+                "2. Use the adopt-drift skill to detect and fix the drift",
+                "",
+                "IMPORTANT: This is a test. Do not create a pull request.",
+            ]
         prompt_parts.extend(instruction_parts)
 
     return "\n".join(prompt_parts)
@@ -769,6 +838,20 @@ def verify_code_changes(working_dir: Path, expected_changes: dict[str, bool]) ->
             assert change not in diff, (
                 f"Unexpected change '{change}' found in diff:\n{diff}"
             )
+
+
+def count_drift_changes(program: "PulumiProgram") -> int:
+    """Count the total number of pending changes (creates + updates + replaces + deletes).
+
+    Returns 0 when drift is fully resolved.
+    """
+    preview_result = program.preview()
+    return (
+        preview_result.change_summary.get(OpType.CREATE, 0)
+        + preview_result.change_summary.get(OpType.UPDATE, 0)
+        + preview_result.change_summary.get(OpType.REPLACE, 0)
+        + preview_result.change_summary.get(OpType.DELETE, 0)
+    )
 
 
 def verify_drift_resolved(program: "PulumiProgram") -> None:
@@ -902,3 +985,13 @@ def verify_resource_property_in_state(
                 f"Property '{property_path}' should not exist but was found with value {value}. "
                 f"Resource: {resource.get('urn', 'unknown')}"
             )
+
+
+def get_total_resource_count(program: "PulumiProgram") -> int:
+    """Count non-stack resources in current Pulumi state."""
+    assert program.current_stack is not None, "Stack not initialized"
+    export_result = program.current_stack.export_stack()
+    deployment = export_result.deployment
+    assert deployment is not None, "No deployment in export"
+    resources = deployment["resources"]
+    return len([r for r in resources if r["type"] != "pulumi:pulumi:Stack"])

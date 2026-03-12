@@ -23,13 +23,15 @@ Adopt infrastructure drift back into Pulumi code using the `drift-adopter` CLI t
 - "Adopt the drift" / "Update code to match infrastructure" → Use this skill ✓
 - "Fix the drift" / "Overwrite the drift" / "Revert the changes" → Use `pulumi up` ✗
 
-## Prerequisites
+## Scale Strategy
 
-Install the CLI tool:
+Before starting, estimate the drift scope from Step 1 output.
 
-```bash
-pulumi plugin install tool drift-adopter --server github://api.github.com/pulumi-labs
-```
+**For large-scale drift (20+ resources):**
+1. Read the `summary` field first — it shows resource counts by type and action
+2. Group resources by type: examine a few from each group to spot patterns
+3. If resources share the same type, properties, and sequential naming → write loops
+4. Use `--max-resources 50` to limit output size (keeps output under 50KB for reliable parsing)
 
 ## Workflow
 
@@ -46,17 +48,25 @@ pulumi plugin run drift-adopter -- next --stack <stack>
 | Flag | Description |
 |------|-------------|
 | `--stack` | Pulumi stack name (default: current stack) |
-| `--max-resources` | Max resources per batch (default: 10, 0 = unlimited) |
+| `--max-resources` | Max resources per batch (default: unlimited, set >0 to limit) |
+| `--exclude-urns` | Comma-separated URNs to exclude from results |
 
 ### Step 2: Process output and make changes
 
-The CLI outputs JSON with one of three statuses:
+The CLI outputs JSON with one of these statuses:
 
 | Status | Meaning | Action |
 |--------|---------|--------|
 | `"clean"` | All drift adopted | Create PR and finish |
 | `"error"` | Code error in preview | Fix error, repeat from Step 1 |
 | `"changes_needed"` | Resources need updates | Make changes per instructions |
+| `"stop_with_skipped"` | No actionable resources remain, but some were skipped | Review `skipped` array, create PR or address skipped resources |
+
+**`stop_with_skipped` details:** Resources are skipped when:
+- **`"excluded"`**: Explicitly excluded via `--exclude-urns`
+- **`"missing_properties"`**: Resource needs changes but the CLI couldn't extract property details
+
+Review the `skipped` array to decide whether to address these manually or accept them as-is.
 
 For `"changes_needed"`, process each resource in the `resources` array:
 
@@ -64,33 +74,40 @@ For `"changes_needed"`, process each resource in the `resources` array:
 - **`delete_from_code`**: Remove the resource definition entirely
 - **`add_to_code`**: Add the resource back to code
 
+**Pattern recognition:** When the summary shows many resources of the same type:
+- Examine 2-3 resources to identify shared property patterns
+- If names are sequential (e.g., `bucket-0` through `bucket-99`) and properties are uniform, write a loop:
+
+  ```typescript
+  for (let i = 0; i < 100; i++) {
+      new aws.s3.Bucket(`bucket-${i}`, { tags: { Env: "prod" } });
+  }
+  ```
+
+- Only write individual declarations when resources have unique properties
+
 If the user specifies only certain resources or properties should have their drift adopted, only address those resources or properties.
 
-### Step 3: Iterate
+### Step 3: Verify and iterate
 
-**Repeat from Step 1** until CLI returns `status: "clean"`, then create PR.
+Re-run `drift-adopter next` to check for remaining drift. If status is `"clean"` or `"stop_with_skipped"`, create PR. Otherwise repeat from Step 2.
 
 ## CLI Output Reference
 
-### changes_needed response
+### update_code response
 
 ```json
 {
-  "status": "changes_needed",
-  "resources": [
+  "action": "update_code",
+  "urn": "urn:pulumi:dev::app::aws:s3/bucket:Bucket::my-bucket",
+  "type": "aws:s3/bucket:Bucket",
+  "name": "my-bucket",
+  "properties": [
     {
-      "action": "update_code",
-      "urn": "urn:pulumi:dev::app::aws:s3/bucket:Bucket::my-bucket",
-      "type": "aws:s3/bucket:Bucket",
-      "name": "my-bucket",
-      "properties": [
-        {
-          "path": "tags.Environment",
-          "currentValue": "dev",
-          "desiredValue": "production",
-          "kind": "update"
-        }
-      ]
+      "path": "tags.Environment",
+      "currentValue": "dev",
+      "desiredValue": "production",
+      "kind": "update"
     }
   ]
 }
@@ -105,11 +122,28 @@ If the user specifies only certain resources or properties should have their dri
   - `currentValue`: What's in code now
   - `desiredValue`: What it should be (from infrastructure)
 
+### add_to_code response
+
+```json
+{
+  "action": "add_to_code",
+  "urn": "urn:pulumi:dev::app::aws:s3/bucket:Bucket::missing-bucket",
+  "type": "aws:s3/bucket:Bucket",
+  "name": "missing-bucket",
+  "inputProperties": {
+    "bucket": "missing-bucket",
+    "tags": {"Environment": "production"}
+  }
+}
+```
+
+`inputProperties` is a flat map of property names to values — use these directly when writing the resource declaration.
+
 ## CRITICAL SUCCESS REQUIREMENTS
 
 The task is NOT complete until ALL of the following are true:
 
-1. **drift-adopter CLI returns `status: "clean"`** - no remaining drift detected
+1. **drift-adopter CLI returns `status: "clean"` or `status: "stop_with_skipped"`** — no remaining actionable drift
 2. **`pulumi preview` shows no changes** - code fully matches infrastructure state
 3. **PR created with code changes** - all modifications committed and submitted for review
 
@@ -140,7 +174,7 @@ Then: `pulumi config set bucketVersioning true`
 ## Important Notes
 
 - **Edit files in place**: DO NOT copy or move project files
-- **Batch processing**: CLI limits to 10 resources per batch by default - expect multiple iterations
+- **Batch processing**: Use `--max-resources` to limit batch size if needed - expect multiple iterations for large drift
 
 ## Troubleshooting
 

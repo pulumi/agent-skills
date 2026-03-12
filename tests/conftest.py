@@ -2,13 +2,19 @@
 
 import os
 import pathlib
+import time
 
-import boto3
-import boto3.exceptions
 import pytest
 
-from anthropic_agent import Agent, AnthropicAgent
-from simple_shell_mcp import create_shell_mcp
+from anthropic_agent import Agent
+from claude_code_agent import ClaudeCodeAgent
+from metrics import TestMetrics, format_summary_table, read_metrics, write_metrics
+
+# Collect metrics from all tests for the terminal summary.
+# NOTE: When running with pytest-xdist (-n), workers run in separate processes
+# so this list will only contain metrics from the local process. The terminal
+# summary falls back to reading metrics JSON files from --metrics-output.
+_collected_metrics: list[TestMetrics] = []
 
 
 def pytest_addoption(parser: pytest.Parser) -> None:
@@ -18,6 +24,20 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         default=None,
         help="Directory to write agent message logs to (one file per test).",
     )
+    parser.addoption(
+        "--metrics-output",
+        action="store",
+        default=None,
+        help="Directory to write per-test metrics JSON files.",
+    )
+
+
+def pytest_configure(config: pytest.Config) -> None:
+    """Resolve output paths to absolute before test_temp_dir changes cwd."""
+    for opt in ("log_messages", "metrics_output"):
+        val = config.getoption(opt, default=None)
+        if val is not None:
+            config.option.__dict__[opt] = str(pathlib.Path(val).resolve())
 
 
 @pytest.fixture()
@@ -52,37 +72,59 @@ def message_log_path(request: pytest.FixtureRequest) -> pathlib.Path | None:
     return log_dir_path / f"{test_name}.log"
 
 
+def _make_claude_code_agent(
+    message_log_path: pathlib.Path | None,
+    skill_md_content: str | None = None,
+    baseline: bool = False,
+) -> ClaudeCodeAgent:
+    """Create a ClaudeCodeAgent with optional skill instructions.
+
+    When baseline=True, the Skill tool and drift-adopter CLI are blocked
+    to prevent the agent from discovering tools it shouldn't have access to.
+    """
+    disallowed_tools: list[str] = []
+    custom_instructions: str | None = None
+    if baseline:
+        # Block the Skill tool (full tool-name match works reliably).
+        # NOTE: Bash(...) patterns only match command prefixes, NOT substrings,
+        # so they can't block `which pulumi-drift-adopt` or piped commands.
+        # Instead we use a system-prompt instruction to forbid the CLI tool.
+        disallowed_tools = ["Skill"]
+        custom_instructions = (
+            "IMPORTANT: You must NOT use the `pulumi-drift-adopt` or `drift-adopt` CLI tool. "
+            "Do not search for it, do not run it, do not pipe output to it. "
+            "You must solve drift adoption manually by reading preview output and editing code yourself."
+        )
+
+    agent_instance = ClaudeCodeAgent(
+        message_log_path=message_log_path,
+        env={
+            "PULUMI_ACCESS_TOKEN": os.getenv("PULUMI_ACCESS_TOKEN", ""),
+            "GITHUB_TOKEN": os.getenv("GITHUB_TOKEN") or os.getenv("GH_TOKEN", ""),
+        },
+        disallowed_tools=disallowed_tools,
+    )
+    if skill_md_content:
+        agent_instance.custom_instructions = skill_md_content
+    elif custom_instructions:
+        agent_instance.custom_instructions = custom_instructions
+    return agent_instance
+
+
 @pytest.fixture()
 def agent(skill_md_content: str, message_log_path: pathlib.Path | None) -> Agent:
-    """Create an AnthropicAgent with shell MCP and skill instructions."""
-    # Check credentials
-    if os.getenv("ANTHROPIC_API_KEY") is None:
-        try:
-            session = boto3.Session()
-            credentials = session.get_credentials()
-            if credentials is None:
-                pytest.skip(
-                    "AWS credentials required for Bedrock; set ANTHROPIC_API_KEY to use Anthropic API instead"
-                )
-        except boto3.exceptions.Boto3Error:
-            pytest.skip(
-                "AWS credentials required for Bedrock; set ANTHROPIC_API_KEY to use Anthropic API instead"
-            )
+    """Claude Code agent with drift adoption skill loaded."""
+    return _make_claude_code_agent(message_log_path, skill_md_content)
 
-    agent_instance = AnthropicAgent(message_log_path=message_log_path)
 
-    pulumi_token = os.getenv("PULUMI_ACCESS_TOKEN", "")
-    github_token = os.getenv("GITHUB_TOKEN") or os.getenv("GH_TOKEN", "")
+@pytest.fixture()
+def agent_no_skill(message_log_path: pathlib.Path | None) -> Agent:
+    """Claude Code agent without drift adoption skill — for baseline comparison.
 
-    shell_mcp = create_shell_mcp(
-        pulumi_access_token=pulumi_token,
-        github_token=github_token,
-    )
-
-    agent_instance.mcp_servers = {"shell": shell_mcp}
-    agent_instance.custom_instructions = skill_md_content
-
-    return agent_instance
+    The Skill tool and drift-adopter CLI are blocked to prevent the baseline
+    agent from discovering advantages it shouldn't have access to.
+    """
+    return _make_claude_code_agent(message_log_path, baseline=True)
 
 
 @pytest.fixture(autouse=True)
@@ -91,10 +133,64 @@ def test_temp_dir(tmp_path: pathlib.Path) -> pathlib.Path:
     return tmp_path
 
 
-@pytest.fixture(scope="session")
-def aws_credentials() -> None:
-    sts = boto3.client("sts")
-    try:
-        sts.get_caller_identity()
-    except Exception:  # noqa: BLE001
-        pytest.skip("AWS credentials are not available")
+# ---------------------------------------------------------------------------
+# Metrics support
+# ---------------------------------------------------------------------------
+
+
+@pytest.hookimpl(tryfirst=True, hookwrapper=True)
+def pytest_runtest_makereport(item: pytest.Item, call: pytest.CallInfo) -> None:  # type: ignore[type-arg]
+    """Stash the test outcome on the request node so the fixture can read it."""
+    outcome = yield
+    rep = outcome.get_result()
+    setattr(item, f"_report_{rep.when}", rep)
+
+
+@pytest.fixture()
+def test_metrics(request: pytest.FixtureRequest) -> TestMetrics:
+    """Provide a TestMetrics instance; finalise timing and write JSON on teardown."""
+    metrics = TestMetrics(test_name=request.node.name)
+    t0 = time.perf_counter()
+
+    yield metrics  # type: ignore[misc]
+
+    metrics.total_time_s = time.perf_counter() - t0
+
+    # Determine pass/fail from the stashed report.
+    call_report = getattr(request.node, "_report_call", None)
+    metrics.success = call_report is not None and call_report.passed
+
+    _collected_metrics.append(metrics)
+
+    metrics_dir = request.config.getoption("--metrics-output")
+    if metrics_dir is not None:
+        write_metrics(metrics, pathlib.Path(metrics_dir))
+
+
+def pytest_terminal_summary(
+    terminalreporter: pytest.TerminalReporter,
+    exitstatus: int,
+    config: pytest.Config,
+) -> None:
+    """Print a metrics summary table at the end of the test run.
+
+    When running with xdist (-n), in-memory _collected_metrics will be empty on
+    the controller.  Fall back to reading the per-test JSON files written to the
+    --metrics-output directory.
+    """
+    metrics = list(_collected_metrics)
+
+    # If no in-memory metrics (e.g. xdist controller), try loading from disk.
+    if not metrics:
+        metrics_dir = config.getoption("--metrics-output", default=None)
+        if metrics_dir is not None:
+            metrics = read_metrics(pathlib.Path(metrics_dir))
+
+    if not metrics:
+        return
+    table = format_summary_table(metrics)
+    if table:
+        terminalreporter.write_line("")
+        terminalreporter.write_line("====== Metrics Summary ======")
+        for line in table.split("\n"):
+            terminalreporter.write_line(line)

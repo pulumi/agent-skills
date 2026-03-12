@@ -5,10 +5,11 @@ requires-python = ">=3.11"
 dependencies = [
     "anthropic>=0.75.0",
     "boto3>=1.35.0",
+    "claude-agent-sdk>=0.1.48",
     "fastmcp>=2.10.6",
     "pulumi>=3.189.0",
-    "pulumitest",
     "pydantic>=2.11.7",
+    "psutil>=7.0.0",
     "python-frontmatter>=1.1.0",
     "pyyaml>=6.0",
 ]
@@ -18,18 +19,24 @@ dev = [
     "pytest>=9.0.3",
     "pytest-asyncio>=0.23.0",
     "pytest-json-report>=1.5.0",
-    "pytest-xdist>=3.0.0",
+    "pytest-xdist>=3.5.0",
 ]
-
-[tool.uv.sources]
-pulumitest = { git = "https://github.com/pulumi/pulumitest-python.git" }
 
 [tool.pytest.ini_options]
 markers = [
     "integration: integration test",
     "write_permissions: test requires write permissions",
+    "large_scale: large-scale drift adoption test (250+ resources)",
+    "baseline: baseline test without drift adoption skill",
+    "full_drift: full-drift adoption test (all creates)",
+    "complex_drift: complex drift adoption test (varied types and cross-refs)",
 ]
 asyncio_mode = "auto"
 addopts = "-s"
 testpaths = ["tests"]
 pythonpath = ["tests"]
+filterwarnings = [
+    # pulumi/pulumi#22105: detailedDiff null causes 'NoneType' .items() error.
+    # Fixed in PR #22140, shipping in pulumi >=3.226.0. Remove once we upgrade.
+    "ignore:Failed to parse engine event:UserWarning",
+]

@@ -14,8 +14,6 @@ from fastmcp import FastMCP
 DEFAULT_DENY_PATTERNS = [
     r"\bpulumi\s+(?!plugin\b).*\bup\b",
     r"\bpulumi\b.*\benv\b.*\brun\b.*\bpulumi\s+(?!plugin\b).*\bup\b",
-    r"\bpulumi\s+(?!plugin\b).*\bpreview\b",
-    r"\bpulumi\b.*\benv\b.*\brun\b.*\bpulumi\s+(?!plugin\b).*\bpreview\b",
 ]
 
 

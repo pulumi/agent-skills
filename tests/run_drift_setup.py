@@ -94,7 +94,6 @@ def trigger_deployments_preview(org: str, project: str, stack: str, branch: str)
             }
         },
         "operationContext": {
-            "options": {"refresh": True},
             "preRunCommands": ["npm install"],
         },
     }
@@ -102,8 +101,8 @@ def trigger_deployments_preview(org: str, project: str, stack: str, branch: str)
     return resp["id"]
 
 
-def wait_for_deployment(org: str, project: str, stack: str, deployment_id: str) -> str:
-    """Poll deployment status until terminal, return the update ID."""
+def wait_for_deployment(org: str, project: str, stack: str, deployment_id: str) -> None:
+    """Poll deployment status until terminal."""
     path = f"/api/stacks/{org}/{project}/{stack}/deployments/{deployment_id}"
     while True:
         resp = _api_request("GET", path)
@@ -112,13 +111,23 @@ def wait_for_deployment(org: str, project: str, stack: str, deployment_id: str) 
         if status in ("succeeded", "failed"):
             if status == "failed":
                 raise RuntimeError(f"Deployment {deployment_id} failed")
-            # The deployment response has a "version" field which is the update
-            # version number used in the engine events API path.
-            version = resp.get("version")
-            if version:
-                return str(version)
-            raise RuntimeError(f"No version found in deployment response: {list(resp.keys())}")
+            return
         time.sleep(5)
+
+
+def get_deployment_update_id(org: str, project: str, stack: str, deployment_id: str) -> str:
+    """Get the updateID for a deployment from the Deployments API.
+
+    Deployments previews don't appear in the stack's /updates endpoint.
+    Instead, use /deployments/{id}/updates to get the update ID, which can
+    then be used with /preview/{updateID}/events to fetch engine events.
+    """
+    path = f"/api/stacks/{org}/{project}/{stack}/deployments/{deployment_id}/updates"
+    resp = _api_request("GET", path)
+    update_id = resp.get("updateID")
+    if not update_id:
+        raise RuntimeError(f"No updateID in deployment updates response: {list(resp.keys())}")
+    return update_id
 
 
 def download_engine_events(org: str, project: str, stack: str, update_id: str) -> dict:
@@ -217,6 +226,8 @@ def main() -> None:
             print(f"  Warning: preview output is not valid JSON: {e}")
 
         # Step 4b: Run Deployments preview and download engine events
+        # Note: Deployments previews don't appear in the stack's /updates endpoint.
+        # The preview UUID must be extracted from the deployment logs ("View Live" URL).
         if not args.skip_deployments:
             print("\nStep 4b: Running Deployments preview...")
             try:
@@ -226,12 +237,25 @@ def main() -> None:
                 print(f"  Branch: {branch}, Org: {org}, Project: {project}, Stack: {ctx.stack_name}")
                 deployment_id = trigger_deployments_preview(org, project, ctx.stack_name, branch)
                 print(f"  Deployment ID: {deployment_id}")
-                update_id = wait_for_deployment(org, project, ctx.stack_name, deployment_id)
+                wait_for_deployment(org, project, ctx.stack_name, deployment_id)
+
+                update_id = get_deployment_update_id(org, project, ctx.stack_name, deployment_id)
                 print(f"  Update ID: {update_id}")
+
                 events = download_engine_events(org, project, ctx.stack_name, update_id)
                 DEPLOYMENTS_FILE.write_text(json.dumps(events, indent=2))
                 print(f"  Engine events saved to: {DEPLOYMENTS_FILE}")
                 print(f"  Total events: {len(events['events'])}")
+
+                # Summarize engine events by op type
+                op_counts: dict[str, int] = {}
+                for event in events["events"]:
+                    res_event = event.get("resOutputsEvent") or event.get("resourcePreEvent")
+                    if not res_event:
+                        continue
+                    op = res_event.get("metadata", {}).get("op", "unknown")
+                    op_counts[op] = op_counts.get(op, 0) + 1
+                print(f"  Engine events by op: {op_counts}")
             except Exception as e:
                 print(f"  Warning: Deployments step failed: {e}")
                 print("  (continuing with remaining steps)")
