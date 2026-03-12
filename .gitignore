@@ -2,3 +2,10 @@ __pycache__/
 *.py[cod]
 .venv/
 .pytest_cache/
+CLAUDE.local.md
+.test-output/
+.envrc
+tmp/
+pytest.log
+node_modules/
+package-lock.json
