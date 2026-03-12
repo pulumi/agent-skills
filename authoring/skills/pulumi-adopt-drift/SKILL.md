@@ -50,6 +50,7 @@ pulumi plugin run drift-adopter -- next --stack <stack>
 | `--stack` | Pulumi stack name (default: current stack) |
 | `--max-resources` | Max resources per batch (default: unlimited, set >0 to limit) |
 | `--exclude-urns` | Comma-separated URNs to exclude from results |
+| `--state-file` | Path to `pulumi stack export` JSON file (enables dependency resolution) |
 
 ### Step 2: Process output and make changes
 
@@ -138,6 +139,30 @@ Re-run `drift-adopter next` to check for remaining drift. If status is `"clean"`
 ```
 
 `inputProperties` is a flat map of property names to values — use these directly when writing the resource declaration.
+
+### Cross-Resource References
+
+When a property depends on another resource's output, `inputProperties` includes
+`dependsOn` metadata alongside the resolved value:
+
+```json
+{
+  "privateKeyPem": {
+    "value": "-----BEGIN RSA PRIVATE KEY-----\n...",
+    "dependsOn": {
+      "resourceName": "ca-key",
+      "resourceType": "tls:index/privateKey:PrivateKey",
+      "outputProperty": "privateKeyPem"
+    }
+  }
+}
+```
+
+**When you see `dependsOn`:** Use a resource reference instead of the literal value.
+Write `caKey.privateKeyPem` (not the resolved PEM string). The `resourceName` tells
+you which resource variable to reference, and `outputProperty` tells you which output.
+
+Properties without `dependsOn` are plain values — use them as-is.
 
 ## CRITICAL SUCCESS REQUIREMENTS
 
