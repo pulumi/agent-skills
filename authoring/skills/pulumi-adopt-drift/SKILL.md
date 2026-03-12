@@ -31,11 +31,9 @@ Before starting, estimate the drift scope from Step 1 output.
 1. Read the `summary` field first — it shows resource counts by type and action
 2. Group resources by type: examine a few from each group to spot patterns
 3. If resources share the same type, properties, and sequential naming → write loops
-4. Use `--max-resources 50` to limit output size (keeps output under 50KB for reliable parsing)
+4. ALWAYS use `--max-resources 50` to limit output size (keeps output under 50KB for reliable parsing)
 
 ## Workflow
-
-Create a todo list to track your progress through iterations.
 
 ### Step 1: Run drift-adopter CLI
 
@@ -50,7 +48,7 @@ pulumi plugin run drift-adopter -- next --stack <stack>
 | `--stack` | Pulumi stack name (default: current stack) |
 | `--max-resources` | Max resources per batch (default: unlimited, set >0 to limit) |
 | `--exclude-urns` | Comma-separated URNs to exclude from results |
-| `--state-file` | Path to `pulumi stack export` JSON file (enables dependency resolution) |
+**Do NOT run `pulumi stack export` manually.** The drift-adopter tool handles state export internally for dependency resolution. Running it yourself wastes iterations.
 
 ### Step 2: Process output and make changes
 
@@ -143,12 +141,11 @@ Re-run `drift-adopter next` to check for remaining drift. If status is `"clean"`
 ### Cross-Resource References
 
 When a property depends on another resource's output, `inputProperties` includes
-`dependsOn` metadata alongside the resolved value:
+`dependsOn` metadata instead of the literal value:
 
 ```json
 {
   "privateKeyPem": {
-    "value": "-----BEGIN RSA PRIVATE KEY-----\n...",
     "dependsOn": {
       "resourceName": "ca-key",
       "resourceType": "tls:index/privateKey:PrivateKey",
@@ -158,9 +155,25 @@ When a property depends on another resource's output, `inputProperties` includes
 }
 ```
 
-**When you see `dependsOn`:** Use a resource reference instead of the literal value.
-Write `caKey.privateKeyPem` (not the resolved PEM string). The `resourceName` tells
-you which resource variable to reference, and `outputProperty` tells you which output.
+**When you see `dependsOn`:** ALWAYS use a resource reference — there is no literal value provided.
+Write `caKey.privateKeyPem` (not a literal value). The `resourceName` tells you which
+resource variable to reference, and `outputProperty` tells you which output.
+
+#### Bare dependsOn (no outputProperty)
+
+When the tool cannot determine the exact output property, `outputProperty` is omitted:
+
+```json
+"triggers": {
+  "dependsOn": {
+    "resourceName": "api-pass-5",
+    "resourceType": "random:index/randomPassword:RandomPassword"
+  }
+}
+```
+
+Look up the resource type to determine which output to reference. For example,
+`RandomPassword` → `result`, so write `triggers: [apiPass5.result]`.
 
 Properties without `dependsOn` are plain values — use them as-is.
 
