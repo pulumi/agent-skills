@@ -28,10 +28,10 @@ Adopt infrastructure drift back into Pulumi code using the `drift-adopter` CLI t
 Before starting, estimate the drift scope from Step 1 output.
 
 **For large-scale drift (20+ resources):**
-1. Read the `summary` field first — it shows resource counts by type and action
-2. Group resources by type: examine a few from each group to spot patterns
+1. Read the `summary` field from stdout — it shows resource counts by type and action
+2. Use the Read tool on `outputFile` to examine resources by type groupings
 3. If resources share the same type, properties, and sequential naming → write loops
-4. ALWAYS use `--max-resources 50` to limit output size (keeps output under 50KB for reliable parsing)
+4. Use `--max-resources` if you want to limit batch size for intentional batching.
 
 ## Workflow
 
@@ -46,13 +46,35 @@ pulumi plugin run drift-adopter -- next --stack <stack>
 | Flag | Description |
 |------|-------------|
 | `--stack` | Pulumi stack name (default: current stack) |
-| `--max-resources` | Max resources per batch (default: unlimited, set >0 to limit) |
+| `--max-resources` | Max resources per batch (-1 = unlimited, default) |
 | `--exclude-urns` | Comma-separated URNs to exclude from results |
-**Do NOT run `pulumi stack export` manually.** The drift-adopter tool handles state export internally for dependency resolution. Running it yourself wastes iterations.
+| `--skip-refresh` | Omit `--refresh` from pulumi preview (use on subsequent calls) |
+| `--state-file` | Path to cached state file (use value from prior `stateFilePath` output) |
+| `--output-file` | Path for full output file (default: auto-generated temp file) |
+
+**Two-phase output:** The CLI prints a compact summary to stdout and writes full resource details to a file.
+
+**Stdout** returns a `NextSummaryOutput`:
+```json
+{
+  "status": "changes_needed",
+  "summary": { "total": 250, "byAction": {...}, "byType": {...} },
+  "outputFile": "/tmp/drift-adopter-output-123.json",
+  "stateFilePath": "/tmp/drift-adopter-state-456.json",
+  "skippedCount": 3
+}
+```
+
+**To get resource details:** Use the Read tool on the `outputFile` path. The file contains the full `NextOutput` with `resources[]`, `skipped[]`, and all property data.
+
+On subsequent calls, pass both flags to skip redundant work:
+```bash
+pulumi plugin run drift-adopter -- next --stack <stack> --skip-refresh --state-file <stateFilePath>
+```
 
 ### Step 2: Process output and make changes
 
-The CLI outputs JSON with one of these statuses:
+The CLI stdout JSON has one of these statuses:
 
 | Status | Meaning | Action |
 |--------|---------|--------|
@@ -67,7 +89,7 @@ The CLI outputs JSON with one of these statuses:
 
 Review the `skipped` array to decide whether to address these manually or accept them as-is.
 
-For `"changes_needed"`, process each resource in the `resources` array:
+For `"changes_needed"`, read the `outputFile` and process each resource in the `resources` array:
 
 - **`update_code`**: Update properties from `currentValue` to `desiredValue`
 - **`delete_from_code`**: Remove the resource definition entirely
@@ -181,9 +203,8 @@ Properties without `dependsOn` are plain values — use them as-is.
 
 The task is NOT complete until ALL of the following are true:
 
-1. **drift-adopter CLI returns `status: "clean"` or `status: "stop_with_skipped"`** — no remaining actionable drift
-2. **`pulumi preview` shows no changes** - code fully matches infrastructure state
-3. **PR created with code changes** - all modifications committed and submitted for review
+1. **drift-adopter CLI returns `status: "clean"` or `status: "stop_with_skipped"`** — no remaining actionable drift (the tool runs preview internally, so a separate `pulumi preview` is not needed)
+2. **PR created with code changes** - all modifications committed and submitted for review
 
 ## Stack Config vs Hardcoding
 
@@ -213,6 +234,7 @@ Then: `pulumi config set bucketVersioning true`
 
 - **Edit files in place**: DO NOT copy or move project files
 - **Batch processing**: Use `--max-resources` to limit batch size if needed - expect multiple iterations for large drift
+- **Reading output**: Always read `outputFile` from the summary to get full resource details — stdout only contains the summary
 
 ## Troubleshooting
 
