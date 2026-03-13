@@ -3,9 +3,10 @@
 
 Usage:
     uv run tests/analyze_logs.py                                                    # all logs in .test-output/logs/
-    uv run tests/analyze_logs.py .test-output/logs/test_drift_adoption_small_scale.log  # single file
+    uv run tests/analyze_logs.py .test-output/logs/test_complex_drift[scale-20-full].log  # single file
     uv run tests/analyze_logs.py --compare                                          # side-by-side skill vs baseline
     uv run tests/analyze_logs.py --compare .test-output/logs                        # explicit directory
+    uv run tests/analyze_logs.py --matrix .test-output/logs                         # compact matrix view
 """
 
 from __future__ import annotations
@@ -385,7 +386,13 @@ def print_session_report(name: str, session: Session) -> None:
 
 
 def find_pairs(log_dir: Path) -> list[tuple[str, Path, Path]]:
-    """Find matching skill/baseline log file pairs."""
+    """Find matching skill/baseline log file pairs.
+
+    Pairing conventions (tried in order):
+      1. test_X[param] ↔ test_X_baseline[param]       (generic parameterized)
+      2. test_drift_adoption_X ↔ test_baseline_X       (legacy simple tests)
+      3. test_X ↔ test_X_baseline                      (generic non-parameterized)
+    """
     files = {p.stem: p for p in sorted(log_dir.glob("*.log"))}
     pairs: list[tuple[str, Path, Path]] = []
 
@@ -393,7 +400,16 @@ def find_pairs(log_dir: Path) -> list[tuple[str, Path, Path]]:
         if "baseline" in name:
             continue
 
-        # test_drift_adoption_X -> test_baseline_X
+        # Generic pattern: test_X[param] -> test_X_baseline[param]
+        if "[" in name:
+            base, param = name.split("[", 1)
+            baseline_key = f"{base}_baseline[{param}"
+            if baseline_key in files:
+                label = name.removeprefix("test_drift_adoption_").removeprefix("test_")
+                pairs.append((label, path, files[baseline_key]))
+                continue
+
+        # Legacy: test_drift_adoption_X -> test_baseline_X
         if name.startswith("test_drift_adoption_"):
             suffix = name[len("test_drift_adoption_"):]
             baseline_key = f"test_baseline_{suffix}"
@@ -401,12 +417,11 @@ def find_pairs(log_dir: Path) -> list[tuple[str, Path, Path]]:
                 pairs.append((suffix, path, files[baseline_key]))
                 continue
 
-            # test_drift_adoption_X[param] -> test_drift_adoption_X_baseline[param]
-            if "[" in name:
-                base, param = name.split("[", 1)
-                baseline_key2 = f"{base}_baseline[{param}"
-                if baseline_key2 in files:
-                    pairs.append((suffix, path, files[baseline_key2]))
+        # Generic non-parameterized: test_X -> test_X_baseline
+        baseline_key = f"{name}_baseline"
+        if baseline_key in files:
+            label = name.removeprefix("test_")
+            pairs.append((label, path, files[baseline_key]))
 
     return pairs
 
@@ -496,15 +511,155 @@ def print_comparison(pairs: list[tuple[str, Path, Path]]) -> None:
         print()
 
 
+def parse_matrix_key(label: str) -> tuple[int, int] | None:
+    """Extract (scale, drift_pct) from a test label.
+
+    Patterns:
+        complex_drift[scale-20-full]    → (20, 100)
+        complex_drift[scale-20-50pct]   → (20, 50)
+        complex_drift[scale-20-15pct]   → (20, 15)
+    """
+    m = re.search(r"scale-(\d+)-(\w+)", label)
+    if not m:
+        return None
+    scale = int(m.group(1))
+    drift_tag = m.group(2)
+    if drift_tag == "full":
+        drift_pct = 100
+    elif drift_tag.endswith("pct"):
+        drift_pct = int(drift_tag[:-3])
+    else:
+        return None
+    return (scale, drift_pct)
+
+
+def _analyze_log_file(path: Path) -> tuple[int, int, dict[str, int]]:
+    """Analyze a log file and return (iterations, stuck_count, phases)."""
+    session = parse_log(path.read_text())
+    iterations = build_iterations(session)
+    stuck = detect_stuck_points(iterations)
+    phases = phase_breakdown(iterations)
+    return session.iterations, len(stuck), phases
+
+
+def fmt_log_cell(iters: int, stuck: int, phases: dict[str, int]) -> str:
+    """Format a compact cell: iters stuck U/A/V phase ratio."""
+    u = phases.get("understanding", 0)
+    a = phases.get("acting", 0)
+    v = phases.get("verifying", 0)
+    stuck_str = f"{stuck}stk" if stuck > 0 else "0stk"
+    return f"{iters}it {stuck_str} {u}/{a}/{v}"
+
+
+def print_log_matrix(pairs: list[tuple[str, Path, Path]]) -> None:
+    """Print a compact matrix grid of log analysis for skill vs baseline."""
+    cells: dict[tuple[int, int], tuple[Path, Path]] = {}
+    non_matrix: list[tuple[str, Path, Path]] = []
+
+    for label, skill_path, baseline_path in pairs:
+        key = parse_matrix_key(label)
+        if key:
+            cells[key] = (skill_path, baseline_path)
+        else:
+            non_matrix.append((label, skill_path, baseline_path))
+
+    if not cells:
+        print("No complex drift matrix data found.")
+        if non_matrix:
+            print("Non-matrix pairs found — use --compare to view.")
+        return
+
+    scales = sorted(set(s for s, _ in cells))
+    drift_pcts = sorted(set(d for _, d in cells))
+
+    col_width = 22
+    scale_col = 8
+
+    # Header
+    print()
+    print("Complex Drift: Agent Behavior Matrix")
+    print("\u2550" * (scale_col + len(drift_pcts) * (col_width + 1) + 1))
+
+    # Drift % header row
+    header = " " * scale_col + "\u2502"
+    for dp in drift_pcts:
+        header += f" {dp}% drift".center(col_width) + "\u2502"
+    print(header)
+
+    # Top border
+    border = " " * scale_col + "\u250c" + ("\u2500" * col_width + "\u252c") * (len(drift_pcts) - 1) + "\u2500" * col_width + "\u2510"
+    print(border)
+
+    # Aggregates
+    skill_stuck_total = 0
+    baseline_stuck_total = 0
+    total_cells = 0
+
+    for si, scale in enumerate(scales):
+        skill_line = f"  {scale:>4}  " + "\u2502"
+        baseline_line = " " * scale_col + "\u2502"
+
+        for dp in drift_pcts:
+            if (scale, dp) in cells:
+                s_path, b_path = cells[(scale, dp)]
+                total_cells += 1
+
+                s_iters, s_stuck, s_phases = _analyze_log_file(s_path)
+                b_iters, b_stuck, b_phases = _analyze_log_file(b_path)
+
+                skill_stuck_total += s_stuck
+                baseline_stuck_total += b_stuck
+
+                skill_line += " " + fmt_log_cell(s_iters, s_stuck, s_phases).ljust(col_width - 1) + "\u2502"
+                baseline_line += " " + fmt_log_cell(b_iters, b_stuck, b_phases).ljust(col_width - 1) + "\u2502"
+            else:
+                skill_line += " " + "(no data)".center(col_width - 1) + "\u2502"
+                baseline_line += " " + "".center(col_width - 1) + "\u2502"
+
+        print(skill_line)
+        print(baseline_line)
+
+        if si < len(scales) - 1:
+            sep = " " * scale_col + "\u251c" + ("\u2500" * col_width + "\u253c") * (len(drift_pcts) - 1) + "\u2500" * col_width + "\u2524"
+            print(sep)
+
+    # Bottom border
+    bottom = " " * scale_col + "\u2514" + ("\u2500" * col_width + "\u2534") * (len(drift_pcts) - 1) + "\u2500" * col_width + "\u2518"
+    print(bottom)
+
+    # Legend
+    print(f"\n  Legend: iterations stuck_points understanding/acting/verifying")
+    print(f"  Top line = skill, bottom line = baseline")
+
+    # Aggregates
+    if total_cells > 0:
+        print(f"\n  Aggregates ({total_cells} cells)")
+        print(f"  {'':.<30} {'Skill':>10} {'Baseline':>10}")
+        print(f"  {'Total stuck points':<30} {skill_stuck_total:>10} {baseline_stuck_total:>10}")
+
+    print()
+
+    if non_matrix:
+        print(f"  ({len(non_matrix)} non-matrix pair(s) not shown — use --compare)")
+        print()
+
+
 def main() -> None:
     args = sys.argv[1:]
     compare_mode = "--compare" in args
-    args = [a for a in args if a != "--compare"]
+    matrix_mode = "--matrix" in args
+    args = [a for a in args if a not in ("--compare", "--matrix")]
 
     if not args:
         target = Path(".test-output/logs")
     else:
         target = Path(args[0])
+
+    if matrix_mode:
+        log_dir = target if target.is_dir() else target.parent
+        pairs = find_pairs(log_dir)
+        print_log_matrix(pairs)
+        return
 
     if compare_mode:
         log_dir = target if target.is_dir() else target.parent

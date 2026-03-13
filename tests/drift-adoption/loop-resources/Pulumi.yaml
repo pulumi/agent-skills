@@ -1,3 +1,0 @@
-name: loop-resources
-runtime: nodejs
-description: Example with S3 buckets created in a loop for testing resource deletion drift

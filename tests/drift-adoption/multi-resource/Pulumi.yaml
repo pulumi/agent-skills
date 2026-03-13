@@ -1,3 +1,0 @@
-name: multi-resource
-runtime: nodejs
-description: Example with multiple S3 buckets for testing resource deletion drift

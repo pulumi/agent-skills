@@ -1,7 +1,6 @@
 """Test utilities for drift adoption integration tests.
 
-Simplified from agents-test-fixtures, with only the functions needed
-by the drift adoption tests.
+Utility functions for drift adoption integration tests.
 """
 
 from __future__ import annotations

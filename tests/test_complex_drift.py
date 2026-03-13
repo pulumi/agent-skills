@@ -15,6 +15,7 @@ import pytest
 import utils
 from drift_adoption_helpers import (
     build_drift_prompt,
+    count_drift_changes,
     create_drift_with_program,
     drift_test_context,
     get_total_resource_count,
@@ -22,6 +23,7 @@ from drift_adoption_helpers import (
     verify_drift_exists,
     verify_drift_resolved,
 )
+from generate_complex_drift import generate_drifted_code
 from metrics import TestMetrics
 
 from anthropic_agent import Agent
@@ -70,11 +72,19 @@ async def test_complex_drift(
         ctx.program.up()
         test_metrics.resource_count = get_total_resource_count(ctx.program)
 
-        # Step 2: Create drift (deploys drifted code with all resources, then reverts source)
+        # Step 2: Generate drifted code at runtime (never committed to git)
+        drifted_dir = ctx.example_dir / "drifted"
+        drifted_dir.mkdir(exist_ok=True)
+        (drifted_dir / "index.ts").write_text(generate_drifted_code(expected_resources, drift_pct))
+
+        # Deploy drifted code to create drift, then revert source
         # After this: infra = N complex resources, code = empty program
         create_drift_with_program(ctx.program, ctx.example_dir)
         test_metrics.resource_count = get_total_resource_count(ctx.program)
         verify_drift_exists(ctx.program)
+
+        # Measure initial drift count before agent runs
+        test_metrics.initial_drift_count = count_drift_changes(ctx.program)
 
         # Remove drifted/ dirs so the agent can't cheat by reading the answers
         scrub_drifted_dirs(ctx.working_dir)
@@ -91,4 +101,5 @@ async def test_complex_drift(
 
         # Step 4: Deterministic verification — no llm_judge needed
         ctx.program.update_source(str(ctx.example_dir))
+        test_metrics.remaining_drift_count = count_drift_changes(ctx.program)
         verify_drift_resolved(ctx.program)

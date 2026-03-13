@@ -1,3 +1,0 @@
-name: simple-s3
-runtime: nodejs
-description: Simple S3 bucket example for drift adoption testing

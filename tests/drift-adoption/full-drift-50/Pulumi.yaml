@@ -1,3 +1,0 @@
-name: full-drift-50
-runtime: nodejs
-description: Full-drift adoption test (50 resources, all creates)

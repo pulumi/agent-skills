@@ -6,10 +6,12 @@ local-only providers (random, command, tls) — no cloud credentials required.
 
 Each directory contains:
   - index.ts:          Original program (all N resources, or empty for 100% drift)
-  - drifted/index.ts:  Program with drift applied (property changes, deletions, creations)
   - Pulumi.yaml:       Project configuration
   - package.json:      Node.js dependencies
   - tsconfig.json:     TypeScript configuration
+
+Drifted code (drifted/index.ts) is generated at test time via generate_drifted_code()
+with a random seed, so drift varies between runs. Use --with-drifted for local debugging.
 
 Complexity vectors (what makes these fixtures hard):
   - Varied properties per instance (different lengths, optional fields)
@@ -33,7 +35,24 @@ import textwrap
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from generate_large_scale import generate_tsconfig
+def generate_tsconfig() -> str:
+    data = {
+        "compilerOptions": {
+            "strict": True,
+            "outDir": "bin",
+            "target": "es2016",
+            "module": "commonjs",
+            "moduleResolution": "node",
+            "sourceMap": True,
+            "experimentalDecorators": True,
+            "pretty": True,
+            "noFallthroughCasesInSwitch": True,
+            "noImplicitReturns": True,
+            "forceConsistentCasingInFileNames": True,
+        },
+        "files": ["index.ts"],
+    }
+    return json.dumps(data, indent=2) + "\n"
 
 SCALES = [20, 40, 60, 100]
 DRIFT_PCTS = [15, 50, 100]
@@ -759,7 +778,31 @@ def generate_package_json(scale: int, drift_pct: int) -> str:
     return json.dumps(data, indent=2) + "\n"
 
 
+def generate_drifted_code(scale: int, drift_pct: int, seed: int | None = None) -> str:
+    """Generate drifted index.ts content for a given scale and drift percentage.
+
+    Uses a random seed by default so drift varies between runs, preventing
+    agents from memorizing or deriving the expected answer.
+    """
+    resources = generate_resources_for_scale(scale)  # deterministic per scale
+    if drift_pct == 100:
+        # Full drift: empty original, all resources in drifted.
+        # Resources are deterministic per scale — randomness isn't needed here
+        # because the agent works from drift-adopter output (state), not the fixture.
+        return render_index_ts(resources)
+    drift_rng = stdlib_random.Random(seed)  # None = truly random
+    drift_config = compute_drift_config(resources, drift_pct, drift_rng)
+    return render_drifted_index_ts(resources, drift_config, drift_rng)
+
+
 def main() -> None:
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Generate complex drift test fixtures")
+    parser.add_argument("--with-drifted", action="store_true",
+                        help="Also generate drifted/ subdirectories (for local debugging)")
+    args = parser.parse_args()
+
     output_base = Path(__file__).resolve().parent / "drift-adoption"
 
     for scale in SCALES:
@@ -772,30 +815,24 @@ def main() -> None:
 
             out_dir = output_base / name
             out_dir.mkdir(parents=True, exist_ok=True)
-            drifted_dir = out_dir / "drifted"
-            drifted_dir.mkdir(parents=True, exist_ok=True)
 
             if drift_pct == 100:
                 # Full drift: empty original, all resources in drifted
                 (out_dir / "index.ts").write_text(generate_empty_index_ts())
-                (drifted_dir / "index.ts").write_text(render_index_ts(resources))
                 print(f"  {len(resources)} resources, 100% drift (all creates)")
             else:
-                # Partial drift: original has all resources, drifted has mutations
-                drift_rng = stdlib_random.Random(scale * 1000 + drift_pct)
-                drift_config = compute_drift_config(resources, drift_pct, drift_rng)
-
+                # Partial drift: original has all resources
                 (out_dir / "index.ts").write_text(render_index_ts(resources))
-                (drifted_dir / "index.ts").write_text(
-                    render_drifted_index_ts(resources, drift_config, drift_rng)
-                )
+                print(f"  {len(resources)} resources, {drift_pct}% drift")
 
-                print(
-                    f"  {len(resources)} resources, {drift_pct}% drift: "
-                    f"{len(drift_config.property_change_indices)} property changes, "
-                    f"{len(drift_config.deletion_indices)} deletions, "
-                    f"{len(drift_config.extra_resources)} creations"
+            if args.with_drifted:
+                drifted_dir = out_dir / "drifted"
+                drifted_dir.mkdir(parents=True, exist_ok=True)
+                seed = scale * 1000 + drift_pct
+                (drifted_dir / "index.ts").write_text(
+                    generate_drifted_code(scale, drift_pct, seed=seed)
                 )
+                print(f"  (wrote drifted/ with seed={seed})")
 
             # Config files
             (out_dir / "Pulumi.yaml").write_text(generate_pulumi_yaml(scale, drift_pct))

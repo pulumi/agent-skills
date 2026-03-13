@@ -1,3 +1,0 @@
-name: full-drift-800
-runtime: nodejs
-description: Full-drift adoption test (800 resources, all creates)

@@ -557,7 +557,7 @@ def drift_test_context(
         DriftTestContext with all test components
 
     Example:
-        with drift_test_context("simple-s3") as ctx:
+        with drift_test_context("complex-20-full") as ctx:
             ctx.program.up()
             # Run test
         # Automatic cleanup

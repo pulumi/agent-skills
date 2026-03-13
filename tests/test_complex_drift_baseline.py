@@ -21,6 +21,7 @@ from drift_adoption_helpers import (
     scrub_drifted_dirs,
     verify_drift_exists,
 )
+from generate_complex_drift import generate_drifted_code
 from metrics import TestMetrics
 
 from anthropic_agent import Agent
@@ -68,7 +69,12 @@ async def test_complex_drift_baseline(
         ctx.program.up()
         test_metrics.resource_count = get_total_resource_count(ctx.program)
 
-        # Step 2: Create drift (deploys drifted code with all resources, then reverts source)
+        # Step 2: Generate drifted code at runtime (never committed to git)
+        drifted_dir = ctx.example_dir / "drifted"
+        drifted_dir.mkdir(exist_ok=True)
+        (drifted_dir / "index.ts").write_text(generate_drifted_code(expected_resources, drift_pct))
+
+        # Deploy drifted code to create drift, then revert source
         create_drift_with_program(ctx.program, ctx.example_dir)
         test_metrics.resource_count = get_total_resource_count(ctx.program)
         verify_drift_exists(ctx.program)

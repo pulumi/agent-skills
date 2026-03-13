@@ -40,6 +40,28 @@ def pytest_configure(config: pytest.Config) -> None:
             config.option.__dict__[opt] = str(pathlib.Path(val).resolve())
 
 
+def pytest_collection_modifyitems(
+    session: pytest.Session,
+    config: pytest.Config,
+    items: list[pytest.Item],
+) -> None:
+    """Clear metrics files only for tests that will run in this session.
+
+    This preserves metrics from other test suites (e.g. a prior run is not
+    wiped when you later run a different subset of tests).
+    """
+    metrics_dir = config.getoption("--metrics-output", default=None)
+    if metrics_dir is None:
+        return
+    d = pathlib.Path(metrics_dir)
+    if not d.is_dir():
+        return
+    collected = {item.name for item in items}
+    for f in d.glob("*.json"):
+        if f.stem in collected:
+            f.unlink()
+
+
 @pytest.fixture()
 def testdata_dir() -> pathlib.Path:
     return pathlib.Path(__file__).parent / "data"
@@ -93,7 +115,10 @@ def _make_claude_code_agent(
         custom_instructions = (
             "IMPORTANT: You must NOT use the `pulumi-drift-adopt` or `drift-adopt` CLI tool. "
             "Do not search for it, do not run it, do not pipe output to it. "
-            "You must solve drift adoption manually by reading preview output and editing code yourself."
+            "You must solve drift adoption manually by reading preview output and editing code yourself.\n\n"
+            "IMPORTANT: Stay within the project directory you are given. "
+            "Do not browse, search, or read files from sibling directories, parent directories, "
+            "or other test fixtures. Only use the project directory and pulumi CLI output."
         )
 
     agent_instance = ClaudeCodeAgent(
@@ -176,7 +201,7 @@ def pytest_terminal_summary(
 
     When running with xdist (-n), in-memory _collected_metrics will be empty on
     the controller.  Fall back to reading the per-test JSON files written to the
-    --metrics-output directory.
+    --metrics-output directory, filtered to only tests collected in this session.
     """
     metrics = list(_collected_metrics)
 
@@ -184,7 +209,21 @@ def pytest_terminal_summary(
     if not metrics:
         metrics_dir = config.getoption("--metrics-output", default=None)
         if metrics_dir is not None:
-            metrics = read_metrics(pathlib.Path(metrics_dir))
+            all_metrics = read_metrics(pathlib.Path(metrics_dir))
+            # Filter to only tests that ran in this session.
+            collected: set[str] = set()
+            for key in ("passed", "failed", "error"):
+                for report in terminalreporter.stats.get(key, []):
+                    # xdist reports use head_line; regular reports use nodeid
+                    name = getattr(report, "head_line", "") or report.nodeid
+                    # Extract test name (last component, e.g. "test_foo[param]")
+                    if "::" in name:
+                        name = name.rsplit("::", 1)[-1]
+                    collected.add(name)
+            if collected:
+                metrics = [m for m in all_metrics if m.test_name in collected]
+            else:
+                metrics = all_metrics
 
     if not metrics:
         return
