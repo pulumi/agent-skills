@@ -12,7 +12,7 @@ from typing import Any, AsyncGenerator, Mapping
 
 from claude_agent_sdk import AssistantMessage as SdkAssistantMessage
 from claude_agent_sdk import ClaudeAgentOptions, ResultMessage, query
-from claude_agent_sdk.types import TextBlock, ToolUseBlock
+from claude_agent_sdk.types import TextBlock, ToolResultBlock, ToolUseBlock, UserMessage
 
 from anthropic_agent import (
     Agent,
@@ -43,16 +43,27 @@ class ClaudeCodeAgent(Agent):
         model: str | None = None,
         max_turns: int = 200,
         disallowed_tools: list[str] | None = None,
+        sandbox: dict[str, Any] | None = None,
+        settings_json: str | None = None,
     ) -> None:
         self._message_log_path = message_log_path
+        # Separate file for tool results (can be large): foo.log → foo.results.log
+        self._results_log_path = (
+            message_log_path.with_suffix(".results.log")
+            if message_log_path is not None
+            else None
+        )
         self._env = env or {}
         self._model = model
         self._max_turns = max_turns
         self._disallowed_tools = disallowed_tools or []
+        self._sandbox = sandbox
+        self._settings_json = settings_json
         self._cwd: str | None = None
         self._mcp_server_configs: dict[str, Any] = {}
         self._custom_instructions: str | None = None
         self._log_initialized = False
+        self._results_log_initialized = False
 
     @property
     def cwd(self) -> str | None:
@@ -99,6 +110,21 @@ class ClaudeCodeAgent(Agent):
             f.write(content)
             f.write("\n")
 
+    def _log_result(self, label: str, content: str) -> None:
+        """Log tool results to the separate .results.log file."""
+        if self._results_log_path is None:
+            return
+        mode = "a"
+        if not self._results_log_initialized:
+            mode = "w"
+            self._results_log_initialized = True
+        with open(self._results_log_path, mode) as f:
+            f.write(f"\n{'=' * 80}\n")
+            f.write(f"[{label}]\n")
+            f.write(f"{'=' * 80}\n")
+            f.write(content)
+            f.write("\n")
+
     def _build_options(self) -> ClaudeAgentOptions:
         system_prompt: Any = {
             "type": "preset",
@@ -117,15 +143,17 @@ class ClaudeCodeAgent(Agent):
             permission_mode="bypassPermissions",
             setting_sources=None,  # No filesystem skills
             disallowed_tools=[
-            "Bash(pulumi up)",
-            "Bash(pulumi destroy)",
-            *self._disallowed_tools,
-        ],
+                "Bash(pulumi up)",
+                "Bash(pulumi destroy)",
+                *self._disallowed_tools,
+            ],
             cwd=self._cwd,
             env=env,
             model=self._model,
             max_turns=self._max_turns,
             stderr=self._handle_stderr,
+            sandbox=self._sandbox,
+            settings=self._settings_json,
         )
 
     async def query(self, prompt: str) -> str:
@@ -150,12 +178,37 @@ class ClaudeCodeAgent(Agent):
         """
         options = self._build_options()
         self._log("PROMPT", prompt)
-        self._log("OPTIONS", f"cwd={options.cwd}, model={options.model}")
+        self._log(
+            "OPTIONS",
+            f"cwd={options.cwd}, model={options.model}, "
+            f"sandbox_enabled={bool(options.sandbox)}, "
+            f"settings={options.settings}",
+        )
 
         iteration = 0
 
         async for message in query(prompt=prompt, options=options):
-            if isinstance(message, SdkAssistantMessage):
+            if isinstance(message, UserMessage):
+                for block in (
+                    message.content
+                    if isinstance(message.content, list)
+                    else []
+                ):
+                    if isinstance(block, ToolResultBlock):
+                        content = block.content
+                        if isinstance(content, list):
+                            result_text = json.dumps(content, indent=2)
+                        elif content is None:
+                            result_text = "(no content)"
+                        else:
+                            result_text = content
+                        error_tag = " [ERROR]" if block.is_error else ""
+                        self._log_result(
+                            f"TOOL_RESULT{error_tag}: {block.tool_use_id}",
+                            result_text,
+                        )
+
+            elif isinstance(message, SdkAssistantMessage):
                 iteration += 1
                 text_parts = []
                 tool_uses = []

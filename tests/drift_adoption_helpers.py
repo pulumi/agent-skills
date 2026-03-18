@@ -562,11 +562,15 @@ def drift_test_context(
             # Run test
         # Automatic cleanup
     """
+    from stack_registry import register, unregister
+
     context = setup_drift_test(example_name, stack_name, base_branch, skip_esc=skip_esc)
+    register(context)
     try:
         yield context
     finally:
         teardown_drift_test(context)
+        unregister(context)
 
 
 # ============================================================================

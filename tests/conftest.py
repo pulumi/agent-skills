@@ -9,6 +9,7 @@ import pytest
 from anthropic_agent import Agent
 from claude_code_agent import ClaudeCodeAgent
 from metrics import TestMetrics, format_summary_table, read_metrics, write_metrics
+from sandbox_config import build_sandbox_config
 
 # Collect metrics from all tests for the terminal summary.
 # NOTE: When running with pytest-xdist (-n), workers run in separate processes
@@ -59,7 +60,7 @@ def pytest_collection_modifyitems(
     collected = {item.name for item in items}
     for f in d.glob("*.json"):
         if f.stem in collected:
-            f.unlink()
+            f.unlink(missing_ok=True)
 
 
 @pytest.fixture()
@@ -103,19 +104,19 @@ def _make_claude_code_agent(
 
     When baseline=True, the Skill tool and drift-adopter CLI are blocked
     to prevent the agent from discovering tools it shouldn't have access to.
+
+    All tests run inside an srt sandbox (OS-level isolation) and with
+    permission rules that block GitHub access. Baseline tests get additional
+    deny rules for the drift-adopter CLI.
     """
+    sandbox, settings_json = build_sandbox_config(baseline=baseline)
+
     disallowed_tools: list[str] = []
     custom_instructions: str | None = None
     if baseline:
         # Block the Skill tool (full tool-name match works reliably).
-        # NOTE: Bash(...) patterns only match command prefixes, NOT substrings,
-        # so they can't block `which pulumi-drift-adopt` or piped commands.
-        # Instead we use a system-prompt instruction to forbid the CLI tool.
         disallowed_tools = ["Skill"]
         custom_instructions = (
-            "IMPORTANT: You must NOT use the `pulumi-drift-adopt` or `drift-adopt` CLI tool. "
-            "Do not search for it, do not run it, do not pipe output to it. "
-            "You must solve drift adoption manually by reading preview output and editing code yourself.\n\n"
             "IMPORTANT: Stay within the project directory you are given. "
             "Do not browse, search, or read files from sibling directories, parent directories, "
             "or other test fixtures. Only use the project directory and pulumi CLI output."
@@ -128,6 +129,8 @@ def _make_claude_code_agent(
             "GITHUB_TOKEN": os.getenv("GITHUB_TOKEN") or os.getenv("GH_TOKEN", ""),
         },
         disallowed_tools=disallowed_tools,
+        sandbox=sandbox,
+        settings_json=settings_json,
     )
     if skill_md_content:
         agent_instance.custom_instructions = skill_md_content
@@ -190,6 +193,15 @@ def test_metrics(request: pytest.FixtureRequest) -> TestMetrics:
     metrics_dir = request.config.getoption("--metrics-output")
     if metrics_dir is not None:
         write_metrics(metrics, pathlib.Path(metrics_dir))
+
+
+def pytest_keyboard_interrupt(excinfo: pytest.ExceptionInfo) -> None:  # type: ignore[type-arg]
+    """Attempt graceful stack cleanup on Ctrl+C."""
+    from stack_registry import cleanup_all
+
+    cleaned = cleanup_all()
+    if cleaned:
+        print(f"\n[cleanup] Destroyed {cleaned} stack(s) on keyboard interrupt")
 
 
 def pytest_terminal_summary(
