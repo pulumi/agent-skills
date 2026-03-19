@@ -230,8 +230,8 @@ def print_matrix(pairs: list[tuple[str, dict, dict]]) -> None:
                     baseline_iters.append(b["iterations"])
                 # Drift resolution %
                 for metrics, resolved_list in [(s, skill_resolved), (b, baseline_resolved)]:
-                    initial = metrics.get("initial_drift_count", 0)
-                    remaining = metrics.get("remaining_drift_count", 0)
+                    initial = metrics.get("initial_drift_count") or 0
+                    remaining = metrics.get("remaining_drift_count") or 0
                     if initial > 0:
                         resolved_list.append((initial - remaining) / initial * 100)
             else:

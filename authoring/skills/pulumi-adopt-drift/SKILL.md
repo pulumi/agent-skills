@@ -25,13 +25,31 @@ Adopt infrastructure drift back into Pulumi code using the `drift-adopter` CLI t
 
 ## Scale Strategy
 
-Before starting, estimate the drift scope from Step 1 output.
+**For all drift (any scale) — read before you write:**
+
+1. Read the **complete** `outputFile` before writing any code. The outputFile is a single
+   non-paginated file containing all resources. For large files, use multiple Read tool
+   calls with increasing `offset` values until you reach the end.
+2. While reading, build a mental inventory: note each resource's `type`, `name`, and
+   `dependencyLevel` (absent means 0). Flag all bare `dependsOn` entries (no `outputProperty`).
+3. Write code in dependency order: write `dependencyLevel: 0` resources first, then
+   `dependencyLevel: 1`, and so on. Each referenced variable will already be declared.
+4. For bare `dependsOn` (no `outputProperty`): the tool knows which resource the property
+   depends on but could not determine the exact output property (e.g., encrypted value,
+   structural type mismatch). Use the referenced resource's type from your inventory to
+   infer which output is appropriate for the property you are setting.
 
 **For large-scale drift (20+ resources):**
-1. Read the `summary` field from stdout — it shows resource counts by type and action
-2. Use the Read tool on `outputFile` to examine resources by type groupings
-3. If resources share the same type, properties, and sequential naming → write loops
-4. Use `--max-resources` if you want to limit batch size for intentional batching.
+5. If resources share the same type, properties, and sequential naming → write loops
+6. Use `--max-resources` if you want to limit batch size for intentional batching.
+
+**Editing strategy:**
+- For **update_code** changes to an existing file: if more than ~10 resources need changes,
+  rewrite the entire file with the Write tool rather than making individual Edit calls.
+  A single Write is faster and less error-prone than many sequential Edits.
+- For **add_to_code** to an existing file with unchanged resources: use Edit to append
+  new resources, or Write if the file needs significant restructuring.
+- For **full adoption** (empty/minimal starting code): always use Write.
 
 ## Workflow
 
@@ -111,7 +129,7 @@ If the user specifies only certain resources or properties should have their dri
 
 ### Step 3: Verify and iterate
 
-Re-run `drift-adopter next` to check for remaining drift. If status is `"clean"` or `"stop_with_skipped"`, create PR. Otherwise repeat from Step 2.
+Re-run `drift-adopter next` to check for remaining drift. Do not commit changes until verification passes — committing before verification wastes an iteration. If status is `"clean"` or `"stop_with_skipped"`, create PR. Otherwise repeat from Step 2.
 
 ## CLI Output Reference
 
@@ -160,6 +178,26 @@ Re-run `drift-adopter next` to check for remaining drift. If status is `"clean"`
 
 `inputProperties` is a flat map of property names to values — use these directly when writing the resource declaration.
 
+**`dependencyLevel`**: When present, this resource references other resources in the batch.
+Write level-0 resources (field absent) first, then level 1, etc.
+
+### Runtime Values
+
+`inputProperties` values, `currentValue`, and `desiredValue` are all **runtime values** —
+the actual string/number/object that exists in infrastructure or that code evaluates to.
+Your code must be an expression that evaluates to this exact value at runtime.
+
+For strings containing backslash sequences: a JSON `\\n` in the tool output means the
+runtime string contains a literal backslash followed by `n` (two characters), not a
+newline. Write the appropriate escape for your language:
+
+| Language   | Literal `\n` in code                                    |
+|------------|--------------------------------------------------------|
+| TypeScript | `'...\\n...'` or `` `...\\n...` `` (NOT `` `...\n...` ``) |
+| Python     | `r'...\n...'` or `'...\\n...'`                          |
+| Go         | `` `...\n...` `` (raw) or `"...\\n..."`                  |
+| C#         | `@"...\n..."` (verbatim) or `"...\\n..."`               |
+
 ### Cross-Resource References
 
 When a property depends on another resource's output, `inputProperties` includes
@@ -194,8 +232,13 @@ When the tool cannot determine the exact output property, `outputProperty` is om
 }
 ```
 
-Look up the resource type to determine which output to reference. For example,
-`RandomPassword` → `result`, so write `triggers: [apiPass5.result]`.
+**When you see bare `dependsOn`:** The tool knows the dependency but could not match the
+value to a specific output — commonly because the value is encrypted or the property is
+an array or map whose values are resource outputs. The referenced resource's type is in
+your inventory. Use it to infer the correct output for the property you are setting.
+
+For example, `RandomPassword` → `result`, so `triggers: [apiPass5.result]`;
+a map property `keepers: {"ref": {"dependsOn": ...}}` → `keepers: { ref: someRes.id }`.
 
 Properties without `dependsOn` are plain values — use them as-is.
 
