@@ -35,7 +35,11 @@ Use when the user wants to know which stacks are using an outdated version of a 
 Use when the user wants to upgrade a specific stack/project to the latest version of a package.
 
 1. Get the latest version of the package
-2. Clone the stack's project repository
-3. Update the package version in the project's dependency file (e.g. `package.json`, `requirements.txt`, `go.mod`, `Pulumi.yaml`)
-4. Run `pulumi preview` to verify the change doesn't break anything
+2. Clone the stack's project repository. If the repository cannot be cloned or the agent lacks filesystem/git access, surface the required change as a diff or instruction set for the user to apply manually.
+3. Detect the project language from the `runtime` field in `Pulumi.yaml`, then update the correct dependency file:
+   - `nodejs` → `package.json`
+   - `python` → `requirements.txt` or `pyproject.toml`
+   - `go` → `go.mod`
+   - `yaml` → `Pulumi.yaml`
+4. Run `pulumi preview` to catch any breaking changes introduced by the version bump before merging.
 5. Open a pull request with the change

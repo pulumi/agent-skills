@@ -1,6 +1,6 @@
 ---
 name: cloudformation-to-pulumi
-description: Convert an AWS CloudFormation stack or template to Pulumi. This skill MUST be loaded whenever a user requests migration or conversion of CloudFormation to Pulumi.
+description: Convert, migrate, or import AWS CloudFormation stacks or templates into Pulumi programs. Load this skill whenever a user wants to move from CloudFormation to Pulumi, convert a CFN template, import existing CloudFormation-managed resources into Pulumi, or asks about CloudFormation-to-Pulumi migration in any form. Also load when the user mentions cdk-importer in a migration context.
 ---
 
 ## IMPORTANT: PLAN ADJUSTMENT REQUIRED
