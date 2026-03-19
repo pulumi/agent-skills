@@ -19,6 +19,12 @@ resources. Ensure a Pulumi stack exists.
 
 You must run `pulumi_up` tool before proceeding to ensure initial stack state is written.
 
+If no local `.tfstate` file exists in `${terraform_dir}`, the state may be in a remote backend (S3, Pulumi Cloud, Terraform Cloud, etc.). Pull it before proceeding:
+
+    cd ${terraform_dir} && terraform state pull > terraform.tfstate
+
+This works for all backends, including Pulumi Cloud. If `terraform` is not available, try `tofu state pull` instead.
+
 Now produce a draft Pulumi state translation:
 
     pulumi plugin run terraform-migrate -- stack \
