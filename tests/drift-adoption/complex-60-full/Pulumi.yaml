@@ -1,3 +1,0 @@
-name: complex-60-full
-runtime: nodejs
-description: Complex drift test (60 resources, all creates)

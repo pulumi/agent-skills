@@ -1,3 +1,0 @@
-name: complex-40-50pct
-runtime: nodejs
-description: Complex drift test (40 resources, 50% drift)

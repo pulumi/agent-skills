@@ -1,3 +1,0 @@
-name: complex-100-15pct
-runtime: nodejs
-description: Complex drift test (100 resources, 15% drift)
