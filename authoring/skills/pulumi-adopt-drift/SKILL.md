@@ -23,6 +23,14 @@ Adopt infrastructure drift back into Pulumi code using the `drift-adopter` CLI t
 - "Adopt the drift" / "Update code to match infrastructure" → Use this skill ✓
 - "Fix the drift" / "Overwrite the drift" / "Revert the changes" → Use `pulumi up` ✗
 
+## Prerequisites
+
+Install the CLI tool (RC version):
+
+```bash
+pulumi plugin install tool drift-adopter --server github://api.github.com/pulumi-labs --version v0.1.0-rc
+```
+
 ## Scale Strategy
 
 **For all drift (any scale) — read before you write:**
