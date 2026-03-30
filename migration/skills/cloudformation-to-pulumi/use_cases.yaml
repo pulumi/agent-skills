@@ -1,0 +1,14 @@
+# Queries that should activate the cloudformation-to-pulumi skill
+queries:
+  # Direct CloudFormation template conversion
+  - "Convert my CloudFormation template to Pulumi"
+
+  # Import ID lookups (cloudformation-id-lookup.md supplemental file)
+  - "What's the import ID format for an AWS::S3::Bucket?"
+  - "How do I find the physical resource ID for importing a Lambda function from cloudformation?"
+  - "Look up the import ID for AWS::RDS::DBInstance"
+  - "I need to import a CloudFormation resource, what ID format does Pulumi expect?"
+  - "What import ID do I need for an S3 bucket when importing from CloudFormation?"
+
+  # Import with ID lookup (combined workflow)
+  - "Import resources from a CloudFormation stack into Pulumi. I need help figuring out the right import IDs for each resource type"

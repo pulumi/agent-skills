@@ -1,7 +1,7 @@
 ---
 name: pulumi-automation-api
 version: 1.0.0
-description: Best practices for using Pulumi Automation API to programmatically orchestrate infrastructure operations. Covers multi-stack orchestration, embedding Pulumi in applications, architecture choices, and common patterns.
+description: Load this skill when a user asks how to run Pulumi programmatically, embed Pulumi in an application, orchestrate multiple stacks in code, build a self-service infrastructure portal, replace pulumi CLI shell scripts with code, or use the Pulumi Automation API (LocalWorkspace, createOrSelectStack, inline programs). Also load for questions about multi-stack sequencing, parallel deployments, or passing outputs between stacks via code.
 ---
 
 # Pulumi Automation API

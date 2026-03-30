@@ -1,0 +1,4 @@
+interface:
+  display_name: "Pulumi Package Usage"
+  short_description: "Track and audit Pulumi package versions across stacks"
+  default_prompt: "Use $package-usage to find which stacks use a specific Pulumi package and at what versions."

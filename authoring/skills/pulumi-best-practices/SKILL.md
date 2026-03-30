@@ -1,7 +1,7 @@
 ---
 name: pulumi-best-practices
 version: 1.0.0
-description: Best practices for writing reliable Pulumi programs. Covers Output handling, resource dependencies, component structure, secrets management, safe refactoring with aliases, and deployment workflows.
+description: Load when the user is writing, reviewing, or debugging Pulumi TypeScript/Python programs; asks about Output<T> or apply() usage; wants to create ComponentResource classes; needs to refactor resources without destroying them (aliases); is setting up secrets or config; or is configuring a pulumi preview/up CI workflow. Also load for questions about resource dependency order, parent/child resource relationships, or pulumi.interpolate.
 ---
 
 # Pulumi Best Practices

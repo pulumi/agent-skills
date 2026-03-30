@@ -1,9 +1,15 @@
 ---
 name: pulumi-terraform-to-pulumi
-description: Migrate Terraform projects to Pulumi. Use when users need to move infrastructure from Terraform to Pulumi, translate HCL configurations, or convert Terraform modules to Pulumi components.
+description: Migrate Terraform/OpenTofu projects to Pulumi, including translating HCL source code and/or importing Terraform state into a Pulumi stack. Use when a user wants to convert Terraform to Pulumi, migrate from HCL, or import tfstate into Pulumi. Do NOT trigger for general Terraform-vs-Pulumi comparisons or questions about using both tools side-by-side.
 ---
 
 # Migrating from Terraform to Pulumi
+
+> **Critical constraints — read before acting:**
+> - Do NOT run `pulumi convert` — use the terraform-migrate plugin instead, which preserves state mapping.
+> - Do NOT run `pulumi package add terraform-module` — this is for a different workflow.
+> - Do NOT create the Pulumi project under `/workspace` — create it inside the checked-out repo.
+> - Replace `${terraform_dir}` and `${pulumi_dir}` below with the actual paths confirmed with the user.
 
 First establish scope and plan the migration by working out with the user:
 
@@ -19,6 +25,12 @@ resources. Ensure a Pulumi stack exists.
 
 You must run `pulumi_up` tool before proceeding to ensure initial stack state is written.
 
+If no local `.tfstate` file exists in `${terraform_dir}`, the state may be in a remote backend (S3, Pulumi Cloud, Terraform Cloud, etc.). Pull it before proceeding:
+
+    cd ${terraform_dir} && terraform state pull > terraform.tfstate
+
+This works for all backends, including Pulumi Cloud. If `terraform` is not available, try `tofu state pull` instead.
+
 Now produce a draft Pulumi state translation:
 
     pulumi plugin run terraform-migrate -- stack \
@@ -30,7 +42,7 @@ Now produce a draft Pulumi state translation:
 Do NOT install the plugin as it will auto-install as needed.
 
 Sometimes terraform-migrate plugin fails because `tofu refresh` is not authorized. DO NOT skip this step. Work with the
-user to find or build a Pulumi ESC environment to run the command in to make it succeed.
+user to find or build a Pulumi ESC environment that provides the necessary credentials so the command can succeed. If setting up an ESC environment is not feasible, inform the user that the migration cannot proceed automatically.
 
 Read the generated `/tmp/required-providers.json` and install all these Pulumi providers into the new project,
 respecting the suggested versions even if they downgrade an already installed provider. The file will contain records
@@ -66,8 +78,3 @@ provider credentials it needs.
 
 When all looks good, create a Pull Request with the migrated source code.
 
-IMPORTANT:
-
-- when creating a Pulumi project, do NOT use /workspace, create one under the checked out project
-- do NOT run `pulumi convert`, instead use the terraform-migrate plugin
-- do NOT run `pulumi package add terraform-module`

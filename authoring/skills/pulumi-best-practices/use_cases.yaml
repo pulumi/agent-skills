@@ -1,0 +1,7 @@
+# Queries that should activate the pulumi-best-practices skill
+queries:
+  - "Review my Pulumi code for best practices"
+  - "Am I creating resources inside apply correctly?"
+  - "How do I write idiomatic Pulumi TypeScript code?"
+  - "What are the best practices for using Pulumi Output and Apply?"
+  - "My Pulumi program works but I want to make sure I'm following best practices"

@@ -1,0 +1,7 @@
+# Queries that should activate the pulumi-automation-api skill
+queries:
+  - "Help me use the Pulumi Automation API to deploy stacks from my Go program"
+  - "Write a Python script that uses Pulumi Automation API to manage stacks"
+  - "How do I embed Pulumi into my CI/CD platform using the Automation API?"
+  - "Create a LocalWorkspace with the Pulumi Automation API in TypeScript"
+  - "I want to run pulumi up programmatically from my application code"

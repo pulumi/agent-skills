@@ -1,0 +1,15 @@
+# Queries that should activate the package-usage skill
+queries:
+  # Package usage tracking
+  - "Which stacks are using our networking package?"
+  - "What version of the database component is deployed across our stacks?"
+  - "Find all stacks using an outdated version of our shared infrastructure package"
+  - "How many stacks are using the @pulumi/aws-apigateway package?"
+  - "List stacks that need to upgrade their component versions"
+  - "Which teams are still using v1.x of our VPC component?"
+  - "Show me the package usage for our internal EKS component"
+  - "I want to deprecate a component package, which stacks would be affected?"
+  - "Are there any stacks using version 2.3.0 of our monitoring package?"
+  - "Query the usage of pulumi-aws-vpc across the organization"
+  - "Before I make breaking changes, tell me which stacks import this package"
+  - "Audit our component package adoption across all projects"

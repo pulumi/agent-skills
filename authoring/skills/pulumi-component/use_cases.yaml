@@ -1,0 +1,19 @@
+# Queries that should activate the pulumi-component skill
+queries:
+  # Creating and designing components
+  - "I want to create a reusable Pulumi ComponentResource for our VPC setup"
+  - "Help me build a Pulumi component that wraps an S3 bucket with encryption and versioning"
+  - "How do I write a ComponentResource class in TypeScript?"
+  - "Create a multi-language Pulumi component that can be consumed from Python, Go, and TypeScript"
+  - "How do I design the args interface for a Pulumi component?"
+  - "Refactor these inline resources into a reusable Pulumi component"
+
+  # Publishing and distributing
+  - "I need to publish a component to the Pulumi private registry"
+  - "I want to distribute my Pulumi component package to other teams in my organization"
+  - "How do I set up PulumiPlugin.yaml for a multi-language component?"
+
+  # Debugging component issues
+  - "My component's children appear at the root level instead of nested under the component"
+  - "My Pulumi component is stuck in creating state, what's wrong?"
+  - "What's the correct way to call registerOutputs in a ComponentResource?"
