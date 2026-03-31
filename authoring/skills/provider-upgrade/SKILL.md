@@ -256,7 +256,7 @@ the best available package inventory tooling before making changes.
 - **Go**: `go get github.com/pulumi/pulumi-{provider}/sdk/v{major}@latest`, update all import paths (e.g., `v6` -> `v7`), run `go mod tidy`
 - **.NET**: `dotnet add package Pulumi.{Provider} --version {version}`
 - **Java**: Update `pom.xml` or `build.gradle` dependency version
-- **YAML**: Update provider version in resource options or provider configuration
+- **YAML**: Update provider version in resource options or provider configuration. See https://www.pulumi.com/docs/iac/languages-sdks/yaml/yaml-language-reference/#providers-and-provider-versions for examples.
 
 After installing, check the actual installed version from the lockfile (package-lock.json,
 go.sum, etc.) - use these exact versions for schema-tools comparisons.
@@ -311,7 +311,7 @@ upstream GitHub issue). "I believe this is expected" is not a source.
 ### Manual Steps Required (if any)
 1. `pulumi state delete '<urn>'` - remove old type binding
 2. `pulumi import <type> <name> <id>` - adopt under new type
-3. `pulumi preview` - verify clean
+3. `pulumi preview --refresh --run-program` - verify clean
 
 ### Deprecation Warnings (no action taken)
 - List deprecated-but-working code left intentionally

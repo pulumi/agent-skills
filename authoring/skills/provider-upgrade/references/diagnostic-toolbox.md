@@ -33,6 +33,10 @@ types actually present in the stack.
 
 **Install** (if not available):
 
+This example is intentionally lightweight and may drift over time. If the pinned version
+below is stale, use the latest available `schema-tools` release instead of treating the
+example version as authoritative.
+
 ```shell
 OS=$(uname -s | tr '[:upper:]' '[:lower:]')
 ARCH=$(uname -m)
