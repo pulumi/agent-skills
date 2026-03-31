@@ -56,7 +56,7 @@ flowchart TD
 ```
 
 1. **Bump** the provider dependency
-2. **Preview** with required environment variables
+2. **Preview** with required CLI flags
 3. **Diff Checkpoint** - categorize every non-`same` resource (see next section)
 4. **Fix Category A** - code changes that didn't produce `same`
 5. **Investigate Category B** - diffs on resources you didn't change
@@ -197,21 +197,18 @@ steps) before proceeding.
 
 ## Hard Rules
 
-### Required environment variables
+### Required CLI flags
 
-When your execution environment lets you set environment variables for preview, use
-these. A preview without them can show false diffs (phantom tag removals, region
-additions) that aren't real. Don't interpret a preview that was run without them.
+Use these flags when running preview. A preview without them can show false diffs
+(phantom tag removals, region additions) that aren't real. Don't interpret a preview
+that was run without them.
 
 ```shell
-PULUMI_OPTION_REFRESH=true
-PULUMI_RUN_PROGRAM=true
+pulumi preview --refresh --run-program
 ```
 
-- `PULUMI_OPTION_REFRESH` refreshes actual cloud state before diffing.
-- `PULUMI_RUN_PROGRAM` runs the Pulumi program during refresh.
-- Do not use `PULUMI_OPTION_RUN_PROGRAM`. That attempts to pass `--run-program` as a
-  CLI flag, which is not the same thing.
+- `--refresh` refreshes actual cloud state before diffing.
+- `--run-program` runs the Pulumi program during refresh.
 
 ### Don't chase deprecations
 
@@ -266,8 +263,7 @@ go.sum, etc.) - use these exact versions for schema-tools comparisons.
 
 ### 3. Run preview
 
-Run `pulumi preview` immediately after updating the dependency, passing the required
-environment variables through whatever CLI, wrapper, or agent tooling is available.
+Run `pulumi preview --refresh --run-program` immediately after updating the dependency.
 Do not research breaking changes first - many upgrades just work, especially minor
 versions.
 
