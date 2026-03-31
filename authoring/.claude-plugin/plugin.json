@@ -1,7 +1,7 @@
 {
   "name": "pulumi-authoring",
   "version": "1.0.0",
-  "description": "Write quality Pulumi programs, components, automation, and secrets management with ESC",
+  "description": "Write quality Pulumi programs, components, provider upgrades, automation, and secrets management with ESC",
   "author": {
     "name": "Pulumi",
     "url": "https://github.com/pulumi"
@@ -14,6 +14,7 @@
     "best-practices",
     "component",
     "automation-api",
+    "provider-upgrade",
     "esc",
     "secrets",
     "configuration"

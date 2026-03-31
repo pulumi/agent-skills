@@ -6,6 +6,8 @@ queries:
   - "Bump the pulumi-azure-native provider to v3 in my TypeScript project"
   - "Upgrade pulumi-kubernetes from v3 to v4 across my stacks"
   - "Update my GCP provider to the latest version"
+  - "Upgrade the Pulumi Cloudflare provider in this repo"
+  - "Help me bump the Datadog provider without changing real infrastructure"
 
   # Breaking changes / migration
   - "What are the breaking changes when upgrading pulumi-aws from v5 to v6?"
@@ -13,6 +15,8 @@ queries:
   - "The aws provider upgrade broke my S3 bucket resource, how do I fix it?"
   - "After upgrading pulumi-aws, my preview shows resource replacements I didn't expect"
   - "How do I add an alias for a renamed resource after a provider major version bump?"
+  - "My provider upgrade preview shows a create for infrastructure that already exists"
+  - "How do I handle deletes after a Pulumi provider major version upgrade?"
 
   # Dependency management
   - "How do I update @pulumi/aws to a newer version in my npm project?"

@@ -45,6 +45,7 @@ Write quality Pulumi programs, components, automation, and secrets management:
 | [pulumi-component](authoring/skills/pulumi-component) | Guide for authoring ComponentResource classes |
 | [pulumi-automation-api](authoring/skills/pulumi-automation-api) | Best practices for using Pulumi Automation API |
 | [pulumi-esc](authoring/skills/pulumi-esc) | Guidance for working with Pulumi ESC (Environments, Secrets, and Configuration) |
+| [provider-upgrade](authoring/skills/provider-upgrade) | Safe workflows for upgrading Pulumi providers without unintended infrastructure changes |
 
 ## Installation
 
@@ -68,7 +69,7 @@ Or install individual plugin groups:
 
 ```bash
 npx skills add pulumi/agent-skills/migration --skill '*'     # 4 migration skills
-npx skills add pulumi/agent-skills/authoring --skill '*'     # 4 authoring skills
+npx skills add pulumi/agent-skills/authoring --skill '*'     # 5 authoring skills
 ```
 
 This works with Claude Code, Cursor, Copilot, Codex, and other agent tools.
@@ -111,6 +112,16 @@ Help me create a reusable Pulumi component for a web service
 ```
 
 The assistant will use the `pulumi-component` skill to guide you through component authoring best practices.
+
+### Upgrading Providers
+
+Ask your AI assistant:
+
+```text
+Help me upgrade the Pulumi AWS provider safely without changing real infrastructure
+```
+
+The assistant will use the `provider-upgrade` skill to guide you through a low-risk upgrade workflow.
 
 ## Contributing
 

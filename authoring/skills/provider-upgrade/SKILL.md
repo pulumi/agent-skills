@@ -5,7 +5,8 @@ description: >
   update a provider, update provider dependencies, check for breaking changes, or bump provider
   versions in their code. This applies to all providers (aws, azure-native, gcp, kubernetes,
   aws-native, cloudflare, datadog, etc.) - not just Tier 1 providers. Do NOT use for just
-  querying which stacks use what versions (that's package-usage) or for general infrastructure tasks.
+  querying which stacks use what versions. Use skill `package-usage` for version audits and
+  affected-stack discovery. Do NOT use for general infrastructure tasks.
 ---
 
 # Upgrading Pulumi Providers
@@ -198,22 +199,19 @@ steps) before proceeding.
 
 ### Required environment variables
 
-A preview without these shows false diffs (phantom tag removals, region additions) that
-aren't real. Don't interpret a preview that was run without them.
+When your execution environment lets you set environment variables for preview, use
+these. A preview without them can show false diffs (phantom tag removals, region
+additions) that aren't real. Don't interpret a preview that was run without them.
 
-```
-pulumi_preview(
-    environment_variables={
-        "PULUMI_OPTION_REFRESH": "true",
-        "PULUMI_RUN_PROGRAM": "true",
-    }
-)
+```shell
+PULUMI_OPTION_REFRESH=true
+PULUMI_RUN_PROGRAM=true
 ```
 
-- `PULUMI_OPTION_REFRESH` triggers a refresh of actual cloud state before diffing.
-- `PULUMI_RUN_PROGRAM` runs the Pulumi program during refresh. This is an executor-level
-  variable - do not use `PULUMI_OPTION_RUN_PROGRAM` (that passes `--run-program` as a
-  CLI flag, which is wrong).
+- `PULUMI_OPTION_REFRESH` refreshes actual cloud state before diffing.
+- `PULUMI_RUN_PROGRAM` runs the Pulumi program during refresh.
+- Do not use `PULUMI_OPTION_RUN_PROGRAM`. That attempts to pass `--run-program` as a
+  CLI flag, which is not the same thing.
 
 ### Don't chase deprecations
 
@@ -247,10 +245,12 @@ PR -> review -> merge -> deploy via CI/CD.
 
 ### 1. Get version information
 
-Use `call_pulumi_cloud_api`:
-`GET /api/registry/packages?name={package_name}&orgLogin={orgName}`
+Determine the target version from the user's request, the Pulumi Registry, package
+manager metadata, or the repository's existing dependency constraints.
 
-Default to latest if the user hasn't specified a target version.
+Default to the latest stable version if the user hasn't specified a target version.
+If the user asks which stacks or projects are affected, use skill `package-usage` or
+the best available package inventory tooling before making changes.
 
 ### 2. Update the dependency
 
@@ -266,9 +266,10 @@ go.sum, etc.) - use these exact versions for schema-tools comparisons.
 
 ### 3. Run preview
 
-Run `pulumi_preview` with the required environment variables immediately after updating
-the dependency. Do not research breaking changes first - many upgrades just work,
-especially minor versions.
+Run `pulumi preview` immediately after updating the dependency, passing the required
+environment variables through whatever CLI, wrapper, or agent tooling is available.
+Do not research breaking changes first - many upgrades just work, especially minor
+versions.
 
 If the preview is clean (only the provider version bump), create a PR.
 
@@ -329,5 +330,5 @@ report and ask the user how they'd like to proceed before creating a PR.
 ## References
 
 - `references/diagnostic-toolbox.md` - upgrade guides, schema-tools (install, run,
-  interpret output), resource_search, SDK types, GitHub issues. Read when investigating
-  Category B diffs.
+  interpret output), stack state inspection, SDK types, GitHub issues. Read when
+  investigating Category B diffs.

@@ -17,19 +17,19 @@ no-op" - a diff that shows in preview but resolves on `pulumi up` without affect
 real infrastructure.
 
 **Pulumi upgrade guide:**
-`web_search` for `site:pulumi.com {provider} migration guide v{major}`
+Search for `site:pulumi.com {provider} migration guide v{major}`.
 
 **Terraform upgrade guide** (for Terraform-based providers):
 Check `https://registry.terraform.io/providers/{org}/{tf-provider}/latest/docs/guides/version-{major}-upgrade`
-or `web_search` for `site:registry.terraform.io {tf-provider} version {major} upgrade`
+or search for `site:registry.terraform.io {tf-provider} version {major} upgrade`.
 
 **When to use:** For any major version upgrade. Check it early.
 
 ## schema-tools - structured diff between versions
 
 A structured diff of every schema change between provider versions. For large providers,
-the diff can contain thousands of changes - always cross-reference with `resource_search`
-to filter to resources actually in the stack.
+the diff can contain thousands of changes - always cross-reference with the resource
+types actually present in the stack.
 
 **Install** (if not available):
 
@@ -89,13 +89,19 @@ kinds you'll encounter most often during upgrades:
 mismatches, or unrecognized resource types. The schema diff tells you exactly what was
 renamed, removed, or reshaped.
 
-## resource_search - scope changes to this stack
+## Stack state inspection - scope changes to this stack
 
-Query the stack's deployed resource types. Essential for large providers - filter the
-schema diff to only resources that matter.
+Inspect the stack's deployed resource types. Essential for large providers - filter the
+schema diff to only resources that matter. Use whatever state inspection tooling is
+available in the environment, such as `pulumi stack --show-urns`, `pulumi stack export`,
+state files, or backend resource inventory APIs.
 
 ```shell
-# Filter schema diff to only resource types in the stack
+# Example: list resource types from a stack export
+pulumi stack export > /tmp/stack.json
+jq -r '.deployment.resources[].type' /tmp/stack.json | sort -u
+
+# Then filter schema diff to only resource types in the stack
 jq '[.changes[] | select(.token | test("ZoneSettingsOverride|PageRule|Record|Zone"))]' \
   /tmp/{provider}-schema-diff.json
 ```
