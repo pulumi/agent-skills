@@ -46,6 +46,8 @@ Write quality Pulumi programs, components, automation, and secrets management:
 | [pulumi-automation-api](authoring/skills/pulumi-automation-api) | Best practices for using Pulumi Automation API |
 | [pulumi-esc](authoring/skills/pulumi-esc) | Guidance for working with Pulumi ESC (Environments, Secrets, and Configuration) |
 | [provider-upgrade](authoring/skills/provider-upgrade) | Safe workflows for upgrading Pulumi providers without unintended infrastructure changes |
+| [pulumi-upgrade-provider](authoring/skills/pulumi-upgrade-provider) | Automate Pulumi provider repo upgrades |
+| [upstream-patches](authoring/skills/upstream-patches) | Manage upstream Terraform patch stacks in provider repos |
 
 ## Installation
 

@@ -24,6 +24,8 @@ Skills for writing quality Pulumi programs, components, automation, and secrets 
 - **pulumi-automation-api**: Best practices for using Pulumi Automation API
 - **pulumi-esc**: Guidance for working with Pulumi ESC (Environments, Secrets, and Configuration)
 - **provider-upgrade**: Safe workflows for upgrading Pulumi providers without unintended infrastructure changes
+- **pulumi-upgrade-provider**: Automate Pulumi provider repo upgrades with the upgrade-provider tool
+- **upstream-patches**: Create, amend, remove, and rebase patches for Terraform provider submodules
 
 ## Installation
 
