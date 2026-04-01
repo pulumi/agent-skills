@@ -23,8 +23,10 @@ Skills for writing quality Pulumi programs, components, automation, and secrets 
 - **pulumi-component**: Guide for authoring ComponentResource classes
 - **pulumi-automation-api**: Best practices for using Pulumi Automation API
 - **pulumi-esc**: Guidance for working with Pulumi ESC (Environments, Secrets, and Configuration)
+- **provider-upgrade**: Safe workflows for upgrading Pulumi providers without unintended infrastructure changes
 - **pulumi-upgrade-provider**: Automate Pulumi provider repo upgrades with the upgrade-provider tool
 - **upstream-patches**: Create, amend, remove, and rebase patches for Terraform provider submodules
+
 ## Installation
 
 ### Claude Code Plugin System
@@ -47,7 +49,7 @@ Or install individual plugin groups:
 
 ```bash
 npx skills add pulumi/agent-skills/migration --skill '*'     # 4 migration skills
-npx skills add pulumi/agent-skills/authoring --skill '*'     # 4 authoring skills
+npx skills add pulumi/agent-skills/authoring --skill '*'     # 5 authoring skills
 ```
 
 This works with Claude Code, Cursor, Copilot, Codex, and other agent tools.
