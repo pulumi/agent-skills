@@ -1,12 +1,14 @@
 ---
 name: provider-upgrade
 description: >
-  Upgrade any Pulumi provider to a newer version. Use when users explicitly want to upgrade or
-  update a provider, update provider dependencies, check for breaking changes, or bump provider
-  versions in their code. This applies to all providers (aws, azure-native, gcp, kubernetes,
-  aws-native, cloudflare, datadog, etc.) - not just Tier 1 providers. Do NOT use for just
-  querying which stacks use what versions. Use skill `package-usage` for version audits and
-  affected-stack discovery. Do NOT use for general infrastructure tasks.
+  Upgrade any Pulumi provider to a newer version and reconcile the resulting diff. Use when
+  users want to upgrade or update a provider (including editing package.json, requirements.txt,
+  pyproject.toml, go.mod, or Pulumi.yaml to bump a provider SDK), check for breaking changes
+  before or during an upgrade, fix resources that broke after a provider upgrade, or resolve
+  unexpected replacements, creates, or deletes in a post-upgrade preview. Applies to all
+  providers (aws, azure-native, gcp, kubernetes, aws-native, cloudflare, datadog, etc.) — not
+  just Tier 1. Do NOT use for querying which stacks use what package versions; use skill
+  `package-usage` for cross-stack audits. Do NOT use for general infrastructure tasks.
 ---
 
 # Upgrading Pulumi Providers

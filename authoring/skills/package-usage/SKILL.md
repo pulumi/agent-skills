@@ -1,6 +1,6 @@
 ---
 name: package-usage
-description: Track which stacks use a specific Pulumi package and at what versions, or upgrade a stack to the latest version of a package. Use when users ask about package version tracking, outdated package versions across stacks, upgrade candidates, or package usage audits. Also use when users want to upgrade/update a specific package version in a stack or project. Do NOT use for general infrastructure creation, resource provisioning, or questions about how to use a package.
+description: Track which stacks across a Pulumi organization use a specific package and at what versions. Use for cross-stack audits, identifying outdated or unmaintained package versions across many stacks, finding affected stacks before publishing breaking changes to a component package, or planning coordinated upgrade rollouts. Do NOT use for upgrading a cloud provider package (pulumi-aws, pulumi-azure-native, pulumi-gcp, pulumi-kubernetes, etc.) in a single project — use skill `provider-upgrade` instead. Do NOT use for general infrastructure creation, resource provisioning, or how-to questions about a package.
 ---
 
 ## API Reference
@@ -30,16 +30,6 @@ Use when the user wants to know which stacks are using an outdated version of a 
 2. Get stack usage for the package
 3. Compare each stack's `version` against the latest to identify outdated stacks
 
-## Workflow: Upgrade a package in a stack
+## Out of scope: upgrading a specific stack
 
-Use when the user wants to upgrade a specific stack/project to the latest version of a package.
-
-1. Get the latest version of the package
-2. Clone the stack's project repository. If the repository cannot be cloned or the agent lacks filesystem/git access, surface the required change as a diff or instruction set for the user to apply manually.
-3. Detect the project language from the `runtime` field in `Pulumi.yaml`, then update the correct dependency file:
-   - `nodejs` → `package.json`
-   - `python` → `requirements.txt` or `pyproject.toml`
-   - `go` → `go.mod`
-   - `yaml` → `Pulumi.yaml`
-4. Run `pulumi preview` to catch any breaking changes introduced by the version bump before merging.
-5. Open a pull request with the change
+This skill identifies outdated stacks. It does not perform the upgrade itself. For actually bumping a package version in a project — editing `package.json`, `requirements.txt`, `pyproject.toml`, `go.mod`, or `Pulumi.yaml`, running `pulumi preview`, and reconciling the diff — hand off to the `provider-upgrade` skill.
