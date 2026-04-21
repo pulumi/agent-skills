@@ -25,7 +25,7 @@ upgrade-provider $ORG/$REPO --repo-path . > .pulumi/upgrade-provider-stdout.txt 
 
 3. Wait for completion (can take up to 10 minutes).
 4. Check for errors by scanning `.pulumi/upgrade-provider-stdout.txt` lines starting with `error: `.
-5. If failed, fix using this skill's `references/upgrade-provider-errors.md` (from the skill folder, not the repo), then rerun.
+5. If failed, fix using this skill's `references/upgrade-provider-errors.md` (from the skill folder, not the repo), then rerun. For upstream `go get` failures involving ignored `replace` directives or `unknown revision v0.0.0`, rerun with `--target-version` after applying the documented `provider/go.mod` replacements; preserve the original major/non-major intent and add `--major` only for actual major version upgrades.
 6. If a fix requires creating/amending/removing/rebasing patches, use the `upstream-patches` skill for the patch workflow.
 7. If you fixed a conflict, report exact edits (file paths + concrete changes or preserved intent).
 8. If the upgrade changed patches, run `./scripts/upstream.sh checkout` and review applied `upstream` commits:
@@ -97,4 +97,4 @@ Use REST (`gh api`) instead of `gh pr edit` to avoid GraphQL project-card errors
 
 ## References
 
-- Use this skill's `references/upgrade-provider-errors.md` (from the skill folder, not the repo) for patch conflict and new module mapping fixes.
+- Use this skill's `references/upgrade-provider-errors.md` (from the skill folder, not the repo) for patch conflict, ignored upstream replacement, vendored upstream dependency, .NET duplicate file, and new module mapping fixes.
