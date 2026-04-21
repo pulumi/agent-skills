@@ -25,10 +25,10 @@ Adopt infrastructure drift back into Pulumi code using the `drift-adopter` CLI t
 
 ## Prerequisites
 
-Install the CLI tool (RC version):
+Install the CLI tool:
 
 ```bash
-pulumi plugin install tool drift-adopter --server github://api.github.com/pulumi-labs --version v0.1.0-rc
+pulumi plugin install tool drift-adopter --server github://api.github.com/pulumi-labs
 ```
 
 ## Scale Strategy
@@ -39,17 +39,14 @@ pulumi plugin install tool drift-adopter --server github://api.github.com/pulumi
    non-paginated file containing all resources. For large files, use multiple Read tool
    calls with increasing `offset` values until you reach the end.
 2. While reading, build a mental inventory: note each resource's `type`, `name`, and
-   `dependencyLevel` (absent means 0). Flag all bare `dependsOn` entries (no `outputProperty`).
+   `dependencyLevel` (absent means 0).
 3. Write code in dependency order: write `dependencyLevel: 0` resources first, then
    `dependencyLevel: 1`, and so on. Each referenced variable will already be declared.
-4. For bare `dependsOn` (no `outputProperty`): the tool knows which resource the property
-   depends on but could not determine the exact output property (e.g., encrypted value,
-   structural type mismatch). Use the referenced resource's type from your inventory to
-   infer which output is appropriate for the property you are setting.
+4. If any `inputProperties` values contain bare `dependsOn` (no `outputProperty`), see
+   the "Bare dependsOn" section below for how to resolve them.
 
 **For large-scale drift (20+ resources):**
 5. If resources share the same type, properties, and sequential naming → write loops
-6. Use `--max-resources` if you want to limit batch size for intentional batching.
 
 **Editing strategy:**
 - For **update_code** changes to an existing file: if more than ~10 resources need changes,
@@ -72,11 +69,12 @@ pulumi plugin run drift-adopter -- next --stack <stack>
 | Flag | Description |
 |------|-------------|
 | `--stack` | Pulumi stack name (default: current stack) |
-| `--max-resources` | Max resources per batch (-1 = unlimited, default) |
 | `--exclude-urns` | Comma-separated URNs to exclude from results |
 | `--skip-refresh` | Omit `--refresh` from pulumi preview (use on subsequent calls) |
-| `--state-file` | Path to cached state file (use value from prior `stateFilePath` output) |
+| `--dep-map-file` | Path to dependency map JSON file (reuse across runs to skip state export) |
+| `--events-file` | Read preview events from file instead of running pulumi preview |
 | `--output-file` | Path for full output file (default: auto-generated temp file) |
+| `--project` | Project directory (default: current directory) |
 
 **Two-phase output:** The CLI prints a compact summary to stdout and writes full resource details to a file.
 
@@ -84,18 +82,21 @@ pulumi plugin run drift-adopter -- next --stack <stack>
 ```json
 {
   "status": "changes_needed",
-  "summary": { "total": 250, "byAction": {...}, "byType": {...} },
+  "summary": { "total": 250, "byAction": {...}, "byType": {...}, "byTypeAction": {...} },
   "outputFile": "/tmp/drift-adopter-output-123.json",
-  "stateFilePath": "/tmp/drift-adopter-state-456.json",
-  "skippedCount": 3
+  "depMapFile": "/tmp/drift-adopter-depmap-456.json",
+  "skippedCount": 3,
+  "parseErrors": 0
 }
 ```
+
+**`parseErrors`**: Count of preview steps that failed to parse. When > 0, some drift may be invisible in the results. If parseErrors is significant relative to total resources, re-run with `--events-file` using a fresh `pulumi preview --json` output to rule out transient issues.
 
 **To get resource details:** Use the Read tool on the `outputFile` path. The file contains the full `NextOutput` with `resources[]`, `skipped[]`, and all property data.
 
 On subsequent calls, pass both flags to skip redundant work:
 ```bash
-pulumi plugin run drift-adopter -- next --stack <stack> --skip-refresh --state-file <stateFilePath>
+pulumi plugin run drift-adopter -- next --stack <stack> --skip-refresh --dep-map-file <depMapFile>
 ```
 
 ### Step 2: Process output and make changes
@@ -105,20 +106,20 @@ The CLI stdout JSON has one of these statuses:
 | Status | Meaning | Action |
 |--------|---------|--------|
 | `"clean"` | All drift adopted | Create PR and finish |
-| `"error"` | Code error in preview | Fix error, repeat from Step 1 |
+| `"error"` | Code error in preview | Read the `error` field from stdout JSON, fix the issue, repeat from Step 1 |
 | `"changes_needed"` | Resources need updates | Make changes per instructions |
 | `"stop_with_skipped"` | No actionable resources remain, but some were skipped | Review `skipped` array, create PR or address skipped resources |
 
-**`stop_with_skipped` details:** Resources are skipped when:
-- **`"excluded"`**: Explicitly excluded via `--exclude-urns`
-- **`"missing_properties"`**: Resource needs changes but the CLI couldn't extract property details
+**`stop_with_skipped` details:** Resources are skipped for different reasons with different implications:
+- **`"excluded"`**: Explicitly excluded via `--exclude-urns` — acceptable, no action needed
+- **`"missing_properties"`**: Resource has drift but the CLI couldn't extract property details — this is a **partial failure**. Investigate: read the `skipped` array in the output file, note the resource type and URN, then manually examine via `pulumi stack export --show-secrets` and provider documentation to determine what properties need updating.
 
-Review the `skipped` array to decide whether to address these manually or accept them as-is.
+Only treat `stop_with_skipped` as complete if ALL skipped resources have reason `"excluded"`.
 
 For `"changes_needed"`, read the `outputFile` and process each resource in the `resources` array:
 
 - **`update_code`**: Update properties from `currentValue` to `desiredValue`
-- **`delete_from_code`**: Remove the resource definition entirely
+- **`delete_from_code`**: Remove the resource definition from code. Check whether other resources reference this one — if so, update or remove those references too. Note: this means the resource exists in code but NOT in infrastructure; confirm it isn't an intentionally new resource awaiting its first deployment
 - **`add_to_code`**: Add the resource back to code
 
 **Pattern recognition:** When the summary shows many resources of the same type:
@@ -137,7 +138,7 @@ If the user specifies only certain resources or properties should have their dri
 
 ### Step 3: Verify and iterate
 
-Re-run `drift-adopter next` to check for remaining drift. Do not commit changes until verification passes — committing before verification wastes an iteration. If status is `"clean"` or `"stop_with_skipped"`, create PR. Otherwise repeat from Step 2.
+Re-run `drift-adopter next` to check for remaining drift. Do not commit changes until verification passes — committing before verification wastes an iteration. If status is `"clean"`, create PR. If `"stop_with_skipped"`, check whether ALL skipped resources have reason `"excluded"`. If yes, create PR. If any have reason `"missing_properties"`, investigate those resources before finishing (see stop_with_skipped details above). Otherwise repeat from Step 2.
 
 ## CLI Output Reference
 
@@ -153,8 +154,7 @@ Re-run `drift-adopter next` to check for remaining drift. Do not commit changes 
     {
       "path": "tags.Environment",
       "currentValue": "dev",
-      "desiredValue": "production",
-      "kind": "update"
+      "desiredValue": "production"
     }
   ]
 }
@@ -168,6 +168,11 @@ Re-run `drift-adopter next` to check for remaining drift. Do not commit changes 
   - `path`: Property path (e.g., "tags.Environment")
   - `currentValue`: What's in code now
   - `desiredValue`: What it should be (from infrastructure)
+
+**Property-level intent** (conveyed by presence/absence of values):
+- `currentValue` + `desiredValue` both present → **update** the property to `desiredValue`
+- `currentValue` absent/null, `desiredValue` present → **add** the property to code
+- `currentValue` present, `desiredValue` absent/null → **remove** the property from code
 
 ### add_to_code response
 
@@ -206,10 +211,22 @@ newline. Write the appropriate escape for your language:
 | Go         | `` `...\n...` `` (raw) or `"...\\n..."`                  |
 | C#         | `@"...\n..."` (verbatim) or `"...\\n..."`               |
 
+### Truncated Values
+
+String values longer than 200 characters are replaced with `<string: N chars>` placeholders (e.g., `<string: 1452 chars>`). These are NOT literal values — do not use them in code. When you encounter one:
+- For **`currentValue`**: read the actual value from the source code file
+- For **`desiredValue`** or **`inputProperties`**: retrieve the full value via `pulumi stack export --show-secrets` and look up the resource by URN
+
+### Secret Values
+
+`[secret]` may appear as a property value:
+- **`desiredValue: "[secret]"`**: The tool attempted to supplement from state export but couldn't resolve it. Retrieve manually via `pulumi stack export --show-secrets`, find the resource by URN, and use the plaintext value.
+- **`currentValue: "[secret]"`**: Expected — the tool does not supplement currentValue. Read the actual value from the source code file directly.
+
 ### Cross-Resource References
 
-When a property depends on another resource's output, `inputProperties` includes
-`dependsOn` metadata instead of the literal value:
+**Applies to `add_to_code` only.** When a property in `inputProperties` depends on another
+resource's output, the value is replaced with `dependsOn` metadata:
 
 ```json
 {
@@ -254,7 +271,7 @@ Properties without `dependsOn` are plain values — use them as-is.
 
 The task is NOT complete until ALL of the following are true:
 
-1. **drift-adopter CLI returns `status: "clean"` or `status: "stop_with_skipped"`** — no remaining actionable drift (the tool runs preview internally, so a separate `pulumi preview` is not needed)
+1. **drift-adopter CLI returns `status: "clean"`, or `status: "stop_with_skipped"` where all skipped resources have reason `"excluded"`** — no remaining actionable drift (the tool runs preview internally, so a separate `pulumi preview` is not needed)
 2. **PR created with code changes** - all modifications committed and submitted for review
 
 ## Stack Config vs Hardcoding
@@ -284,8 +301,9 @@ Then: `pulumi config set bucketVersioning true`
 ## Important Notes
 
 - **Edit files in place**: DO NOT copy or move project files
-- **Batch processing**: Use `--max-resources` to limit batch size if needed - expect multiple iterations for large drift
+- **Reuse dependency map**: Pass `--dep-map-file` on subsequent calls to skip state export
 - **Reading output**: Always read `outputFile` from the summary to get full resource details — stdout only contains the summary
+- **Output file contains secrets**: The `outputFile` may contain plaintext secret values (supplemented from state export). Do NOT commit it to version control. Delete it after processing. The `depMapFile` is safe to keep (contains only resource references and schema metadata, no values).
 
 ## Troubleshooting
 
