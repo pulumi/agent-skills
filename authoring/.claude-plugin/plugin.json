@@ -20,7 +20,6 @@
     "configuration",
     "upgrade-provider",
     "upstream-patches",
-    "drift",
-    "operations"
+    "drift"
   ]
 }

@@ -126,36 +126,6 @@ Help me upgrade the Pulumi AWS provider safely without changing real infrastruct
 
 The assistant will use the `provider-upgrade` skill to guide you through a low-risk upgrade workflow.
 
-## Running Tests
-
-The drift adoption integration tests deploy real AWS infrastructure, invoke an AI agent, and verify the results.
-
-### Prerequisites
-
-```bash
-export PULUMI_ACCESS_TOKEN=<your-pulumi-access-token>
-export GITHUB_TOKEN=$(gh auth token)
-export ANTHROPIC_API_KEY=<your-anthropic-api-key>
-pulumi org set-default pulumi
-pulumi login
-```
-
-### Running tests
-
-```bash
-# All drift adoption tests
-just test
-
-# A specific test
-just test-one test_drift_adoption_simple_s3
-```
-
-To log agent messages for debugging, pass `--log-messages` to pytest:
-
-```bash
-uv run -m pytest tests/test_drift_adoption.py -v -k "test_drift_adoption_simple_s3" --log-messages /tmp/agent-logs
-```
-
 ## Contributing
 
 We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on:
