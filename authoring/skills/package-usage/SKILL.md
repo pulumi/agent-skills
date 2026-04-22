@@ -15,7 +15,7 @@ You must include the `orgLogin` parameter with the user's organization name. The
 
 `GET /api/orgs/{orgName}/packages/usage?packageName={package_name}`
 
-Replace `{orgName}` with the organization name from context or the `PULUMI_ORG` environment variable. If the org name cannot be resolved from either source, ask the user to supply it before proceeding.
+Replace `{orgName}` with the org name from context, `PULUMI_ORG`, or ask the user.
 
 Response fields:
 - `packageName`: The queried package
