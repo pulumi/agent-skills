@@ -15,7 +15,7 @@ You must include the `orgLogin` parameter with the user's organization name. The
 
 `GET /api/orgs/{orgName}/packages/usage?packageName={package_name}`
 
-Replace `{orgName}` with the organization name from context or the `PULUMI_ORG` environment variable.
+Replace `{orgName}` with the org name from context, `PULUMI_ORG`, or ask the user.
 
 Response fields:
 - `packageName`: The queried package
@@ -29,6 +29,20 @@ Use when the user wants to know which stacks are using an outdated version of a 
 1. Get the latest version of the package
 2. Get stack usage for the package
 3. Compare each stack's `version` against the latest to identify outdated stacks
+4. Present results using the output format below
+
+## Output Format
+
+Present results as a markdown table followed by a summary line:
+
+```
+| Project | Stack | Current Version | Latest Version | Status |
+|---------|-------|-----------------|----------------|--------|
+| my-app  | dev   | 6.40.0          | 6.52.0         | Outdated |
+| my-app  | prod  | 6.52.0          | 6.52.0         | Up-to-date |
+
+2 of 2 stacks checked. 1 outdated.
+```
 
 ## Out of scope: upgrading a specific stack
 
