@@ -59,6 +59,14 @@ Write quality Pulumi programs, components, automation, and secrets management:
 /plugin install pulumi-authoring     # Install authoring skills
 ```
 
+### OpenAI Codex
+
+```bash
+codex plugin marketplace add pulumi/agent-skills
+```
+
+Once the marketplace is registered, install plugins from the Codex TUI: run `codex`, open the plugin marketplace, and pick `pulumi-migration` or `pulumi-authoring`.
+
 ### Universal (all agents)
 
 Install all skills:

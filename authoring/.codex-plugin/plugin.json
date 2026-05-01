@@ -1,0 +1,37 @@
+{
+  "name": "pulumi-authoring",
+  "version": "1.0.0",
+  "description": "Write quality Pulumi programs, components, automation, secrets management with ESC, and provider upgrades",
+  "skills": "./skills/",
+  "author": {
+    "name": "Pulumi",
+    "url": "https://github.com/pulumi"
+  },
+  "homepage": "https://www.pulumi.com/docs/",
+  "repository": "https://github.com/pulumi/agent-skills",
+  "license": "Apache-2.0",
+  "keywords": [
+    "pulumi",
+    "best-practices",
+    "component",
+    "automation-api",
+    "provider-upgrade",
+    "esc",
+    "secrets",
+    "configuration",
+    "upgrade-provider",
+    "upstream-patches"
+  ],
+  "interface": {
+    "displayName": "Pulumi Authoring",
+    "shortDescription": "Best practices and patterns for authoring Pulumi programs",
+    "developerName": "Pulumi",
+    "category": "Coding",
+    "websiteURL": "https://www.pulumi.com/docs/",
+    "defaultPrompt": [
+      "Use $pulumi-best-practices to review this Pulumi code",
+      "Use $pulumi-component to build a reusable Pulumi component",
+      "Use $pulumi-esc to manage configuration and secrets"
+    ]
+  }
+}
