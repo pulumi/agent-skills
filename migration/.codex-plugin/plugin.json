@@ -1,0 +1,34 @@
+{
+  "name": "pulumi-migration",
+  "version": "1.0.0",
+  "description": "Convert and import infrastructure from Terraform, CDK, ARM, and CloudFormation to Pulumi",
+  "skills": "./skills/",
+  "author": {
+    "name": "Pulumi",
+    "url": "https://github.com/pulumi"
+  },
+  "homepage": "https://www.pulumi.com/docs/",
+  "repository": "https://github.com/pulumi/agent-skills",
+  "license": "Apache-2.0",
+  "keywords": [
+    "pulumi",
+    "terraform",
+    "cdk",
+    "arm",
+    "cloudformation",
+    "migration",
+    "import"
+  ],
+  "interface": {
+    "displayName": "Pulumi Migration",
+    "shortDescription": "Migrate Terraform, CDK, ARM, and CloudFormation to Pulumi",
+    "developerName": "Pulumi",
+    "category": "Coding",
+    "websiteURL": "https://www.pulumi.com/docs/",
+    "defaultPrompt": [
+      "Use $pulumi-terraform-to-pulumi to convert this Terraform module",
+      "Use $pulumi-cdk-to-pulumi to migrate this CDK app",
+      "Use $cloudformation-to-pulumi to migrate this CloudFormation stack"
+    ]
+  }
+}

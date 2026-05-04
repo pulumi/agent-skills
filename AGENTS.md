@@ -37,6 +37,14 @@ Skills for writing quality Pulumi programs, components, automation, and secrets 
 /plugin install pulumi-authoring
 ```
 
+### OpenAI Codex
+
+```bash
+codex plugin marketplace add pulumi/agent-skills
+```
+
+After the marketplace registers, install plugins from the Codex TUI: run `codex`, open the plugin marketplace, and pick `pulumi-migration` or `pulumi-authoring`.
+
 ### Universal (all agents)
 
 Install all skills:
@@ -96,7 +104,11 @@ Example:
 
 ## Testing
 
-The `tests/` directory contains two pytest-based test suites. Both require `ANTHROPIC_API_KEY` and run automatically on every pull request via `.github/workflows/tests.yml`.
+The `tests/` directory contains three pytest-based test suites that run automatically on every pull request via `.github/workflows/tests.yml`. Two require `ANTHROPIC_API_KEY`; the manifest test runs offline.
+
+### Manifest validation (`test_manifests.py`)
+
+Validates that each plugin manifest (`<plugin>/.claude-plugin/plugin.json` and `<plugin>/.codex-plugin/plugin.json`) parses, has the required fields, and that the marketplace catalogs reference plugin directories that actually exist. Runs offline and gates PRs from forks before the LLM-driven jobs.
 
 ### Skill routing accuracy (`test_skill_selection_accuracy.py`)
 
@@ -152,15 +164,19 @@ The skill will automatically be included in its plugin group. No manifest update
 
 ## Creating a New Plugin Group
 
+Each plugin group ships a manifest for both Claude Code and OpenAI Codex. The skill content is shared; only the per-ecosystem manifest files differ.
+
 1. Create the plugin directory structure:
    ```
    <plugin-name>/
    ├── .claude-plugin/
    │   └── plugin.json
+   ├── .codex-plugin/
+   │   └── plugin.json
    └── skills/
    ```
 
-2. Create `plugin.json`:
+2. Create the Claude manifest at `<plugin-name>/.claude-plugin/plugin.json`:
    ```json
    {
      "name": "pulumi-<plugin-name>",
@@ -174,7 +190,28 @@ The skill will automatically be included in its plugin group. No manifest update
    }
    ```
 
-3. Add an entry to [.claude-plugin/marketplace.json](.claude-plugin/marketplace.json):
+3. Create the Codex manifest at `<plugin-name>/.codex-plugin/plugin.json`. The fields mirror the Claude manifest with two additions: `skills` points at the skills directory, and `interface` holds TUI presentation metadata.
+   ```json
+   {
+     "name": "pulumi-<plugin-name>",
+     "version": "1.0.0",
+     "description": "Plugin description",
+     "skills": "./skills/",
+     "author": { "name": "Pulumi", "url": "https://github.com/pulumi" },
+     "homepage": "https://www.pulumi.com/docs/",
+     "repository": "https://github.com/pulumi/agent-skills",
+     "license": "Apache-2.0",
+     "keywords": ["pulumi", "..."],
+     "interface": {
+       "displayName": "Display Name",
+       "shortDescription": "One-line summary",
+       "developerName": "Pulumi",
+       "category": "Coding"
+     }
+   }
+   ```
+
+4. Add an entry to [.claude-plugin/marketplace.json](.claude-plugin/marketplace.json):
    ```json
    {
      "name": "pulumi-<plugin-name>",
@@ -184,9 +221,19 @@ The skill will automatically be included in its plugin group. No manifest update
    }
    ```
 
-4. Add skills to `<plugin-name>/skills/`
-5. Update this AGENTS.md and README.md
-6. Submit a pull request
+5. Add an entry to [.agents/plugins/marketplace.json](.agents/plugins/marketplace.json) (the Codex marketplace catalog):
+   ```json
+   {
+     "name": "pulumi-<plugin-name>",
+     "source": { "source": "local", "path": "./<plugin-name>" },
+     "policy": { "installation": "AVAILABLE" },
+     "category": "Coding"
+   }
+   ```
+
+6. Add skills to `<plugin-name>/skills/`
+7. Update this AGENTS.md and README.md
+8. Submit a pull request
 
 ## Contributing
 

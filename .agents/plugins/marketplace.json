@@ -1,0 +1,31 @@
+{
+  "name": "pulumi-agent-skills",
+  "interface": {
+    "displayName": "Pulumi Agent Skills",
+    "shortDescription": "Official Pulumi agent skills for infrastructure as code workflows"
+  },
+  "plugins": [
+    {
+      "name": "pulumi-migration",
+      "source": {
+        "source": "local",
+        "path": "./migration"
+      },
+      "policy": {
+        "installation": "AVAILABLE"
+      },
+      "category": "Coding"
+    },
+    {
+      "name": "pulumi-authoring",
+      "source": {
+        "source": "local",
+        "path": "./authoring"
+      },
+      "policy": {
+        "installation": "AVAILABLE"
+      },
+      "category": "Coding"
+    }
+  ]
+}
