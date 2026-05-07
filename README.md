@@ -19,7 +19,7 @@ Skills are organized into two plugin groups:
 ```
 pulumi-agent-skills/
 ├── migration/          # Convert and import from other tools
-└── authoring/          # Write quality Pulumi programs
+└── authoring/          # Write quality Pulumi programs and manage infrastructure
 ```
 
 ## Available Skills
@@ -48,6 +48,7 @@ Write quality Pulumi programs, components, automation, and secrets management:
 | [provider-upgrade](authoring/skills/provider-upgrade) | Safe workflows for upgrading Pulumi providers without unintended infrastructure changes |
 | [pulumi-upgrade-provider](authoring/skills/pulumi-upgrade-provider) | Automate Pulumi provider repo upgrades |
 | [upstream-patches](authoring/skills/upstream-patches) | Manage upstream Terraform patch stacks in provider repos |
+| [pulumi-adopt-drift](authoring/skills/pulumi-adopt-drift) | Adopt infrastructure drift into Pulumi code using the drift-adopter CLI tool |
 
 ## Installation
 
@@ -79,7 +80,7 @@ Or install individual plugin groups:
 
 ```bash
 npx skills add pulumi/agent-skills/migration --skill '*'     # 4 migration skills
-npx skills add pulumi/agent-skills/authoring --skill '*'     # 5 authoring skills
+npx skills add pulumi/agent-skills/authoring --skill '*'     # 6 authoring skills
 ```
 
 This works with Claude Code, Cursor, Copilot, Codex, and other agent tools.

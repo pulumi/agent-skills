@@ -26,6 +26,7 @@ Skills for writing quality Pulumi programs, components, automation, and secrets 
 - **provider-upgrade**: Safe workflows for upgrading Pulumi providers without unintended infrastructure changes
 - **pulumi-upgrade-provider**: Automate Pulumi provider repo upgrades with the upgrade-provider tool
 - **upstream-patches**: Create, amend, remove, and rebase patches for Terraform provider submodules
+- **pulumi-adopt-drift**: Adopt infrastructure drift into Pulumi code using the drift-adopter CLI tool
 
 ## Installation
 

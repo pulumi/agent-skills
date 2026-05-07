@@ -1,0 +1,349 @@
+---
+name: pulumi-adopt-drift
+description: >
+  Adopt infrastructure drift into Pulumi code using the drift-adopter CLI tool.
+  Use when: (1) User mentions drift adoption,
+  (2) User wants code updated to match infrastructure state.
+  Do NOT use if user wants to revert drift - that requires pulumi up.
+---
+
+# Adopt Drift Skill
+
+Adopt infrastructure drift back into Pulumi code using the `drift-adopter` CLI tool. The tool analyzes engine events from previews and tells you exactly what code changes to make.
+
+## When to Use This Skill
+
+**Use this skill ONLY when the user wants to adopt drift** - update Pulumi code to match deployed infrastructure.
+
+**DO NOT use this skill if:**
+- User wants to overwrite drift (update infrastructure to match code) - use `pulumi up`
+- User wants to revert infrastructure changes - use `pulumi up`
+
+**Decision guide:**
+- "Adopt the drift" / "Update code to match infrastructure" → Use this skill ✓
+- "Fix the drift" / "Overwrite the drift" / "Revert the changes" → Use `pulumi up` ✗
+
+## Prerequisites
+
+Install the CLI tool:
+
+```bash
+pulumi plugin install tool drift-adopter --server github://api.github.com/pulumi-labs
+```
+
+## Scale Strategy
+
+**For all drift (any scale) — read before you write:**
+
+1. Read the **complete** `outputFile` before writing any code. The outputFile is a single
+   non-paginated file containing all resources. For large files, use multiple Read tool
+   calls with increasing `offset` values until you reach the end.
+2. While reading, build a mental inventory: note each resource's `type`, `name`, and
+   `dependencyLevel` (absent means 0).
+3. Write code in dependency order: write `dependencyLevel: 0` resources first, then
+   `dependencyLevel: 1`, and so on. Each referenced variable will already be declared.
+4. If any property values contain bare `dependsOn` (no `outputProperty`), see
+   the "Bare dependsOn" section below for how to resolve them.
+
+**For large-scale drift (20+ resources):**
+5. If resources share the same type, properties, and sequential naming → write loops
+
+**Editing strategy:**
+- For **update_code** changes to an existing file: if more than ~10 resources need changes,
+  rewrite the entire file with the Write tool rather than making individual Edit calls.
+  A single Write is faster and less error-prone than many sequential Edits.
+- For **add_to_code** to an existing file with unchanged resources: use Edit to append
+  new resources, or Write if the file needs significant restructuring.
+- For **full adoption** (empty/minimal starting code): always use Write.
+
+## Workflow
+
+### Step 1: Run drift-adopter CLI
+
+```bash
+pulumi plugin run drift-adopter -- next --stack <stack>
+```
+
+**Available flags:**
+
+| Flag | Description |
+|------|-------------|
+| `--stack` | Pulumi stack name (default: current stack) |
+| `--exclude-urns` | Comma-separated URNs to exclude from results |
+| `--skip-refresh` | Omit `--refresh` from pulumi preview (use on subsequent calls) |
+| `--dep-map-file` | Path to metadata file from a previous run (skips state export and schema fetch) |
+| `--events-file` | Read preview events from file instead of running pulumi preview |
+| `--output-file` | Path for full output file (default: auto-generated temp file) |
+| `--project` | Project directory (default: current directory) |
+
+**Two-phase output:** The CLI prints a compact summary to stdout and writes full resource details to a file.
+
+**Stdout** returns a `NextSummaryOutput`:
+```json
+{
+  "status": "changes_needed",
+  "summary": { "total": 250, "byAction": {...}, "byType": {...}, "byTypeAction": {...} },
+  "outputFile": "/tmp/drift-adopter-output-123.json",
+  "depMapFile": "/tmp/drift-adopter-depmap-456.json",
+  "skippedCount": 3,
+  "parseErrors": 0
+}
+```
+
+**`parseErrors`**: Count of preview steps that failed to parse. When > 0, some drift may be invisible in the results. If parseErrors is significant relative to total resources, re-run with `--events-file` using a fresh `pulumi preview --json` output to rule out transient issues.
+
+**To get resource details:** Use the Read tool on the `outputFile` path. The file contains the full `NextOutput` with `resources[]`, `skipped[]`, and all property data.
+
+On subsequent calls, pass both flags to skip redundant work:
+```bash
+pulumi plugin run drift-adopter -- next --stack <stack> --skip-refresh --dep-map-file <depMapFile>
+```
+
+### Step 2: Process output and make changes
+
+The CLI stdout JSON has one of these statuses:
+
+| Status | Meaning | Action |
+|--------|---------|--------|
+| `"clean"` | All drift adopted | Create PR and finish |
+| `"error"` | Code error in preview | Read the `error` field from stdout JSON, fix the issue, repeat from Step 1 |
+| `"changes_needed"` | Resources need updates | Make changes per instructions |
+| `"stop_with_skipped"` | No actionable resources remain, but some were skipped | Review `skipped` array, create PR or address skipped resources |
+
+**`stop_with_skipped` details:** Resources are skipped for different reasons with different implications:
+- **`"excluded"`**: Explicitly excluded via `--exclude-urns` — acceptable, no action needed
+- **`"missing_properties"`**: Resource had drift but no actionable properties remained after filtering (schema filtering removed computed-only outputs, or all values were unknown sentinels). Review the `skipped` array in the output file, note the resource type and URN, then manually examine via `pulumi stack export --show-secrets` and provider documentation to determine what properties need updating.
+
+Only treat `stop_with_skipped` as complete if ALL skipped resources have reason `"excluded"`.
+
+For `"changes_needed"`, read the `outputFile` and process each resource in the `resources` array:
+
+- **`update_code`**: Update properties from `currentValue` to `desiredValue`
+- **`delete_from_code`**: Remove the resource definition from code. Check whether other resources reference this one — if so, update or remove those references too. Note: this means the resource exists in code but NOT in infrastructure; confirm it isn't an intentionally new resource awaiting its first deployment
+- **`add_to_code`**: Add the resource back to code using the `properties` array (each entry has a `path` and `desiredValue`)
+
+**Pattern recognition:** When the summary shows many resources of the same type:
+- Examine 2-3 resources to identify shared property patterns
+- If names are sequential (e.g., `bucket-0` through `bucket-99`) and properties are uniform, write a loop:
+
+  ```typescript
+  for (let i = 0; i < 100; i++) {
+      new aws.s3.Bucket(`bucket-${i}`, { tags: { Env: "prod" } });
+  }
+  ```
+
+- Only write individual declarations when resources have unique properties
+
+If the user specifies only certain resources or properties should have their drift adopted, only address those resources or properties.
+
+### Step 3: Verify and iterate
+
+Re-run `drift-adopter next` to check for remaining drift. Do not commit changes until verification passes — committing before verification wastes an iteration. If status is `"clean"`, create PR. If `"stop_with_skipped"`, check whether ALL skipped resources have reason `"excluded"`. If yes, create PR. If any have reason `"missing_properties"`, investigate those resources before finishing (see stop_with_skipped details above). Otherwise repeat from Step 2.
+
+## CLI Output Reference
+
+### Resource format (all actions)
+
+All action types (`update_code`, `add_to_code`, `delete_from_code`) use the same resource structure with a `properties` array of leaf-level `PropertyChange` objects:
+
+```json
+{
+  "action": "update_code",
+  "urn": "urn:pulumi:dev::app::aws:s3/bucket:Bucket::my-bucket",
+  "type": "aws:s3/bucket:Bucket",
+  "name": "my-bucket",
+  "properties": [
+    {
+      "path": "tags.Environment",
+      "currentValue": "dev",
+      "desiredValue": "production"
+    }
+  ]
+}
+```
+
+**Key fields:**
+- `action`: What to do (update_code, delete_from_code, add_to_code)
+- `name`: Resource name to find in code
+- `type`: Resource type (e.g., "aws:s3/bucket:Bucket")
+- `properties`: Array of leaf-level property changes
+  - `path`: Property path using dot notation for nested keys and bracket notation for arrays (e.g., "tags.Environment", "ingress[0].fromPort")
+  - `currentValue`: What's in code now
+  - `desiredValue`: What it should be (from infrastructure)
+  - `dependsOn`: Cross-resource reference (see below)
+
+**Property-level intent** (conveyed by presence/absence of values):
+- `currentValue` + `desiredValue` both present → **update** the property to `desiredValue`
+- `currentValue` absent/null, `desiredValue` present → **add** the property to code
+- `currentValue` present, `desiredValue` absent/null → **remove** the property from code
+
+### add_to_code example
+
+`add_to_code` uses the same `properties` array with flattened leaf-level paths — NOT a flat map:
+
+```json
+{
+  "action": "add_to_code",
+  "urn": "urn:pulumi:dev::app::aws:s3/bucket:Bucket::missing-bucket",
+  "type": "aws:s3/bucket:Bucket",
+  "name": "missing-bucket",
+  "properties": [
+    { "path": "bucket", "desiredValue": "missing-bucket" },
+    { "path": "tags.Environment", "desiredValue": "production" }
+  ]
+}
+```
+
+Reconstruct nested objects from the dotted paths when writing code:
+- `"tags.Environment": "production"` + `"tags.Team": "platform"` → `tags: { Environment: "production", Team: "platform" }`
+- `"ingress[0].fromPort": 80` + `"ingress[0].toPort": 80` → `ingress: [{ fromPort: 80, toPort: 80 }]`
+
+**`dependencyLevel`**: When present, this resource references other resources in the batch.
+Write level-0 resources (field absent) first, then level 1, etc.
+
+### Runtime Values
+
+`currentValue` and `desiredValue` are **runtime values** — the actual string/number/object
+that exists in infrastructure or that code evaluates to. Your code must be an expression
+that evaluates to this exact value at runtime.
+
+For strings containing backslash sequences: a JSON `\\n` in the tool output means the
+runtime string contains a literal backslash followed by `n` (two characters), not a
+newline. Write the appropriate escape for your language:
+
+| Language   | Literal `\n` in code                                    |
+|------------|--------------------------------------------------------|
+| TypeScript | `'...\\n...'` or `` `...\\n...` `` (NOT `` `...\n...` ``) |
+| Python     | `r'...\n...'` or `'...\\n...'`                          |
+| Go         | `` `...\n...` `` (raw) or `"...\\n..."`                  |
+| C#         | `@"...\n..."` (verbatim) or `"...\\n..."`               |
+
+### Truncated Values
+
+String values longer than 200 characters are replaced with `<string: N chars>` placeholders (e.g., `<string: 1452 chars>`). These are NOT literal values — do not use them in code. When you encounter one:
+- For **`currentValue`**: read the actual value from the source code file
+- For **`desiredValue`** or **`add_to_code` properties**: retrieve the full value via `pulumi stack export --show-secrets` and look up the resource by URN
+
+### Secret Values and configRef
+
+When the tool detects `"[secret]"` as a `desiredValue`, it automatically resolves the real
+value from the state export and writes it as an encrypted config value to the Pulumi stack
+config. The `desiredValue` is replaced with a `configRef` object:
+
+```json
+{
+  "path": "masterPassword",
+  "desiredValue": { "configRef": "aws-rds-cluster-Cluster.my-db.masterPassword" }
+}
+```
+
+The config key format is `sanitizedType.resourceName.propertyPath` (colons and slashes in
+the type are replaced with hyphens). The value is already written to `Pulumi.<stack>.yaml`
+as an encrypted secret — use config accessors to reference it:
+
+```typescript
+const config = new pulumi.Config();
+// configRef key: "aws-rds-cluster-Cluster.my-db.masterPassword"
+const password = config.requireSecret("aws-rds-cluster-Cluster.my-db.masterPassword");
+```
+
+**When `configRef` is NOT available:**
+- **No `--stack` flag**: A warning is emitted and the config keys are not written. You must
+  manually run `pulumi config set --secret <key> <value>` after retrieving the value via
+  `pulumi stack export --show-secrets`.
+- **Reusing `--dep-map-file`**: State export is not fetched, so `[secret]` values remain
+  unsupplemented. Retrieve manually via `pulumi stack export --show-secrets`.
+
+**`currentValue: "[secret]"`**: Expected — the tool does not supplement currentValue. Read
+the actual value from the source code file directly.
+
+### Cross-Resource References
+
+When a property depends on another resource's output, the value is replaced with `dependsOn`
+metadata. This applies to **both `update_code` and `add_to_code`** resources:
+
+```json
+{
+  "path": "privateKeyPem",
+  "dependsOn": {
+    "resourceName": "ca-key",
+    "resourceType": "tls:index/privateKey:PrivateKey",
+    "outputProperty": "privateKeyPem"
+  }
+}
+```
+
+**When you see `dependsOn`:** ALWAYS use a resource reference — there is no literal value provided.
+Write `caKey.privateKeyPem` (not a literal value). The `resourceName` tells you which
+resource variable to reference, and `outputProperty` tells you which output.
+
+#### Bare dependsOn (no outputProperty)
+
+When the tool cannot determine the exact output property, `outputProperty` is omitted:
+
+```json
+{
+  "path": "triggers",
+  "dependsOn": {
+    "resourceName": "api-pass-5",
+    "resourceType": "random:index/randomPassword:RandomPassword"
+  }
+}
+```
+
+**When you see bare `dependsOn`:** The tool knows the dependency but could not match the
+value to a specific output — commonly because the value is encrypted or the property is
+an array or map whose values are resource outputs. The referenced resource's type is in
+your inventory. Use it to infer the correct output for the property you are setting.
+
+For example, `RandomPassword` → `result`, so write `triggers: [apiPass5.result]`;
+a map property `keepers: {"ref": {"dependsOn": ...}}` → `keepers: { ref: someRes.id }`.
+
+Properties without `dependsOn` are plain values — use them as-is.
+
+## CRITICAL SUCCESS REQUIREMENTS
+
+The task is NOT complete until ALL of the following are true:
+
+1. **drift-adopter CLI returns `status: "clean"`, or `status: "stop_with_skipped"` where all skipped resources have reason `"excluded"`** — no remaining actionable drift (the tool runs preview internally, so a separate `pulumi preview` is not needed)
+2. **PR created with code changes** - all modifications committed and submitted for review
+
+## Stack Config vs Hardcoding
+
+Before hardcoding values, evaluate if the property should use stack config instead.
+
+**Use config for:** Environment-specific values, feature flags, thresholds/limits, deployment-specific settings
+
+**Decision Logic:**
+- Is value already from stack config? → Update the config value, NOT the code
+- Is it environment-specific? → Use config
+- Is it structural? (resource name/type/relationships) → Update code
+
+**Example (TypeScript):**
+```typescript
+const config = new pulumi.Config();
+
+// Before (hardcoded)
+versioning: { enabled: false }
+
+// After (config with default)
+versioning: { enabled: config.getBoolean("bucketVersioning") ?? false }
+```
+
+Then: `pulumi config set bucketVersioning true`
+
+## Important Notes
+
+- **Edit files in place**: DO NOT copy or move project files
+- **Reuse metadata**: Pass `--dep-map-file` on subsequent calls to skip state export and schema fetch
+- **Reading output**: Always read `outputFile` from the summary to get full resource details — stdout only contains the summary
+- **Output file contains secrets**: The `outputFile` may contain plaintext secret values (supplemented from state export). Do NOT commit it to version control. Delete it after processing. The `depMapFile` is safe to keep (contains only resource references and schema metadata, no values).
+
+## Troubleshooting
+
+| Issue | Solution |
+|-------|----------|
+| CLI returns `status: "error"` | Read error message, fix code error, repeat from Step 1 |
+| Can't find resource in code | Search for resource name or type (e.g., "s3.Bucket") |
+| Same resource appears again | Verify you committed/pushed, used `desiredValue`, updated correct property |
+| Multiple iterations needed | Expected - CLI batches changes, continue until `status: "clean"` |

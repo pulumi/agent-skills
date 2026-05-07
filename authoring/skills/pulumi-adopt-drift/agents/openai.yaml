@@ -1,0 +1,4 @@
+interface:
+  display_name: "Pulumi Adopt Drift"
+  short_description: "Adopt infrastructure drift into Pulumi code"
+  default_prompt: "Use $pulumi-adopt-drift to adopt infrastructure drift back into Pulumi code using the drift-adopter CLI tool."
