@@ -42,7 +42,7 @@ pulumi plugin install tool drift-adopter --server github://api.github.com/pulumi
    `dependencyLevel` (absent means 0).
 3. Write code in dependency order: write `dependencyLevel: 0` resources first, then
    `dependencyLevel: 1`, and so on. Each referenced variable will already be declared.
-4. If any `inputProperties` values contain bare `dependsOn` (no `outputProperty`), see
+4. If any property values contain bare `dependsOn` (no `outputProperty`), see
    the "Bare dependsOn" section below for how to resolve them.
 
 **For large-scale drift (20+ resources):**
@@ -71,7 +71,7 @@ pulumi plugin run drift-adopter -- next --stack <stack>
 | `--stack` | Pulumi stack name (default: current stack) |
 | `--exclude-urns` | Comma-separated URNs to exclude from results |
 | `--skip-refresh` | Omit `--refresh` from pulumi preview (use on subsequent calls) |
-| `--dep-map-file` | Path to dependency map JSON file (reuse across runs to skip state export) |
+| `--dep-map-file` | Path to metadata file from a previous run (skips state export and schema fetch) |
 | `--events-file` | Read preview events from file instead of running pulumi preview |
 | `--output-file` | Path for full output file (default: auto-generated temp file) |
 | `--project` | Project directory (default: current directory) |
@@ -112,7 +112,7 @@ The CLI stdout JSON has one of these statuses:
 
 **`stop_with_skipped` details:** Resources are skipped for different reasons with different implications:
 - **`"excluded"`**: Explicitly excluded via `--exclude-urns` — acceptable, no action needed
-- **`"missing_properties"`**: Resource has drift but the CLI couldn't extract property details — this is a **partial failure**. Investigate: read the `skipped` array in the output file, note the resource type and URN, then manually examine via `pulumi stack export --show-secrets` and provider documentation to determine what properties need updating.
+- **`"missing_properties"`**: Resource had drift but no actionable properties remained after filtering (schema filtering removed computed-only outputs, or all values were unknown sentinels). Review the `skipped` array in the output file, note the resource type and URN, then manually examine via `pulumi stack export --show-secrets` and provider documentation to determine what properties need updating.
 
 Only treat `stop_with_skipped` as complete if ALL skipped resources have reason `"excluded"`.
 
@@ -120,7 +120,7 @@ For `"changes_needed"`, read the `outputFile` and process each resource in the `
 
 - **`update_code`**: Update properties from `currentValue` to `desiredValue`
 - **`delete_from_code`**: Remove the resource definition from code. Check whether other resources reference this one — if so, update or remove those references too. Note: this means the resource exists in code but NOT in infrastructure; confirm it isn't an intentionally new resource awaiting its first deployment
-- **`add_to_code`**: Add the resource back to code
+- **`add_to_code`**: Add the resource back to code using the `properties` array (each entry has a `path` and `desiredValue`)
 
 **Pattern recognition:** When the summary shows many resources of the same type:
 - Examine 2-3 resources to identify shared property patterns
@@ -142,7 +142,9 @@ Re-run `drift-adopter next` to check for remaining drift. Do not commit changes 
 
 ## CLI Output Reference
 
-### update_code response
+### Resource format (all actions)
+
+All action types (`update_code`, `add_to_code`, `delete_from_code`) use the same resource structure with a `properties` array of leaf-level `PropertyChange` objects:
 
 ```json
 {
@@ -164,17 +166,20 @@ Re-run `drift-adopter next` to check for remaining drift. Do not commit changes 
 - `action`: What to do (update_code, delete_from_code, add_to_code)
 - `name`: Resource name to find in code
 - `type`: Resource type (e.g., "aws:s3/bucket:Bucket")
-- `properties`: Array of property changes
-  - `path`: Property path (e.g., "tags.Environment")
+- `properties`: Array of leaf-level property changes
+  - `path`: Property path using dot notation for nested keys and bracket notation for arrays (e.g., "tags.Environment", "ingress[0].fromPort")
   - `currentValue`: What's in code now
   - `desiredValue`: What it should be (from infrastructure)
+  - `dependsOn`: Cross-resource reference (see below)
 
 **Property-level intent** (conveyed by presence/absence of values):
 - `currentValue` + `desiredValue` both present → **update** the property to `desiredValue`
 - `currentValue` absent/null, `desiredValue` present → **add** the property to code
 - `currentValue` present, `desiredValue` absent/null → **remove** the property from code
 
-### add_to_code response
+### add_to_code example
+
+`add_to_code` uses the same `properties` array with flattened leaf-level paths — NOT a flat map:
 
 ```json
 {
@@ -182,23 +187,25 @@ Re-run `drift-adopter next` to check for remaining drift. Do not commit changes 
   "urn": "urn:pulumi:dev::app::aws:s3/bucket:Bucket::missing-bucket",
   "type": "aws:s3/bucket:Bucket",
   "name": "missing-bucket",
-  "inputProperties": {
-    "bucket": "missing-bucket",
-    "tags": {"Environment": "production"}
-  }
+  "properties": [
+    { "path": "bucket", "desiredValue": "missing-bucket" },
+    { "path": "tags.Environment", "desiredValue": "production" }
+  ]
 }
 ```
 
-`inputProperties` is a flat map of property names to values — use these directly when writing the resource declaration.
+Reconstruct nested objects from the dotted paths when writing code:
+- `"tags.Environment": "production"` + `"tags.Team": "platform"` → `tags: { Environment: "production", Team: "platform" }`
+- `"ingress[0].fromPort": 80` + `"ingress[0].toPort": 80` → `ingress: [{ fromPort: 80, toPort: 80 }]`
 
 **`dependencyLevel`**: When present, this resource references other resources in the batch.
 Write level-0 resources (field absent) first, then level 1, etc.
 
 ### Runtime Values
 
-`inputProperties` values, `currentValue`, and `desiredValue` are all **runtime values** —
-the actual string/number/object that exists in infrastructure or that code evaluates to.
-Your code must be an expression that evaluates to this exact value at runtime.
+`currentValue` and `desiredValue` are **runtime values** — the actual string/number/object
+that exists in infrastructure or that code evaluates to. Your code must be an expression
+that evaluates to this exact value at runtime.
 
 For strings containing backslash sequences: a JSON `\\n` in the tool output means the
 runtime string contains a literal backslash followed by `n` (two characters), not a
@@ -215,27 +222,53 @@ newline. Write the appropriate escape for your language:
 
 String values longer than 200 characters are replaced with `<string: N chars>` placeholders (e.g., `<string: 1452 chars>`). These are NOT literal values — do not use them in code. When you encounter one:
 - For **`currentValue`**: read the actual value from the source code file
-- For **`desiredValue`** or **`inputProperties`**: retrieve the full value via `pulumi stack export --show-secrets` and look up the resource by URN
+- For **`desiredValue`** or **`add_to_code` properties**: retrieve the full value via `pulumi stack export --show-secrets` and look up the resource by URN
 
-### Secret Values
+### Secret Values and configRef
 
-`[secret]` may appear as a property value:
-- **`desiredValue: "[secret]"`**: The tool attempted to supplement from state export but couldn't resolve it. Retrieve manually via `pulumi stack export --show-secrets`, find the resource by URN, and use the plaintext value.
-- **`currentValue: "[secret]"`**: Expected — the tool does not supplement currentValue. Read the actual value from the source code file directly.
-
-### Cross-Resource References
-
-**Applies to `add_to_code` only.** When a property in `inputProperties` depends on another
-resource's output, the value is replaced with `dependsOn` metadata:
+When the tool detects `"[secret]"` as a `desiredValue`, it automatically resolves the real
+value from the state export and writes it as an encrypted config value to the Pulumi stack
+config. The `desiredValue` is replaced with a `configRef` object:
 
 ```json
 {
-  "privateKeyPem": {
-    "dependsOn": {
-      "resourceName": "ca-key",
-      "resourceType": "tls:index/privateKey:PrivateKey",
-      "outputProperty": "privateKeyPem"
-    }
+  "path": "masterPassword",
+  "desiredValue": { "configRef": "aws-rds-cluster-Cluster.my-db.masterPassword" }
+}
+```
+
+The config key format is `sanitizedType.resourceName.propertyPath` (colons and slashes in
+the type are replaced with hyphens). The value is already written to `Pulumi.<stack>.yaml`
+as an encrypted secret — use config accessors to reference it:
+
+```typescript
+const config = new pulumi.Config();
+// configRef key: "aws-rds-cluster-Cluster.my-db.masterPassword"
+const password = config.requireSecret("aws-rds-cluster-Cluster.my-db.masterPassword");
+```
+
+**When `configRef` is NOT available:**
+- **No `--stack` flag**: A warning is emitted and the config keys are not written. You must
+  manually run `pulumi config set --secret <key> <value>` after retrieving the value via
+  `pulumi stack export --show-secrets`.
+- **Reusing `--dep-map-file`**: State export is not fetched, so `[secret]` values remain
+  unsupplemented. Retrieve manually via `pulumi stack export --show-secrets`.
+
+**`currentValue: "[secret]"`**: Expected — the tool does not supplement currentValue. Read
+the actual value from the source code file directly.
+
+### Cross-Resource References
+
+When a property depends on another resource's output, the value is replaced with `dependsOn`
+metadata. This applies to **both `update_code` and `add_to_code`** resources:
+
+```json
+{
+  "path": "privateKeyPem",
+  "dependsOn": {
+    "resourceName": "ca-key",
+    "resourceType": "tls:index/privateKey:PrivateKey",
+    "outputProperty": "privateKeyPem"
   }
 }
 ```
@@ -249,7 +282,8 @@ resource variable to reference, and `outputProperty` tells you which output.
 When the tool cannot determine the exact output property, `outputProperty` is omitted:
 
 ```json
-"triggers": {
+{
+  "path": "triggers",
   "dependsOn": {
     "resourceName": "api-pass-5",
     "resourceType": "random:index/randomPassword:RandomPassword"
@@ -262,7 +296,7 @@ value to a specific output — commonly because the value is encrypted or the pr
 an array or map whose values are resource outputs. The referenced resource's type is in
 your inventory. Use it to infer the correct output for the property you are setting.
 
-For example, `RandomPassword` → `result`, so `triggers: [apiPass5.result]`;
+For example, `RandomPassword` → `result`, so write `triggers: [apiPass5.result]`;
 a map property `keepers: {"ref": {"dependsOn": ...}}` → `keepers: { ref: someRes.id }`.
 
 Properties without `dependsOn` are plain values — use them as-is.
@@ -301,7 +335,7 @@ Then: `pulumi config set bucketVersioning true`
 ## Important Notes
 
 - **Edit files in place**: DO NOT copy or move project files
-- **Reuse dependency map**: Pass `--dep-map-file` on subsequent calls to skip state export
+- **Reuse metadata**: Pass `--dep-map-file` on subsequent calls to skip state export and schema fetch
 - **Reading output**: Always read `outputFile` from the summary to get full resource details — stdout only contains the summary
 - **Output file contains secrets**: The `outputFile` may contain plaintext secret values (supplemented from state export). Do NOT commit it to version control. Delete it after processing. The `depMapFile` is safe to keep (contains only resource references and schema metadata, no values).
 
