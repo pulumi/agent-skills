@@ -1,0 +1,18 @@
+{
+  "_comment_TODO": "Replace placeholders. Then delete this _comment field.",
+  "_comment_PROVIDER_NAME": "Substitute <PROVIDER_NAME> with your provider's name (must match main.go's const Name).",
+  "_comment_SDK_NAMESPACE": "<SDK_NAMESPACE>/<PROVIDER_NAME> is whatever the generated SDK's package.json says under 'name'. Run `cat ../../sdk/nodejs/package.json` to check.",
+
+  "name": "<CONSUMER_PROJECT_NAME>",
+  "version": "0.1.0",
+  "private": true,
+  "main": "index.ts",
+  "dependencies": {
+    "@pulumi/pulumi": "^3.142.0",
+    "<SDK_NAMESPACE>/<PROVIDER_NAME>": "file:../../sdk/nodejs"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  }
+}

@@ -48,6 +48,7 @@ Write quality Pulumi programs, components, automation, and secrets management:
 | [provider-upgrade](authoring/skills/provider-upgrade) | Safe workflows for upgrading Pulumi providers without unintended infrastructure changes |
 | [pulumi-upgrade-provider](authoring/skills/pulumi-upgrade-provider) | Automate Pulumi provider repo upgrades |
 | [upstream-patches](authoring/skills/upstream-patches) | Manage upstream Terraform patch stacks in provider repos |
+| [pulumi-dynamic-to-go-provider](authoring/skills/pulumi-dynamic-to-go-provider) | Port a TypeScript dynamic provider to a pulumi-go-provider-based Go provider |
 
 ## Installation
 

@@ -1,0 +1,25 @@
+# Queries that should activate the pulumi-dynamic-to-go-provider skill
+queries:
+  # Direct port / convert requests
+  - "Convert this TypeScript dynamic provider to a Go provider"
+  - "Port my pulumi.dynamic.ResourceProvider implementation to pulumi-go-provider"
+  - "Migrate from pulumi.dynamic.Resource to infer.Provider"
+  - "Turn this TS dynamic provider into a Go provider with a generated SDK"
+  - "I want to rewrite my dynamic provider in Go using pulumi-go-provider"
+
+  # Distribution / SDK questions implying the port
+  - "How do I make my dynamic provider into a real distributable provider?"
+  - "How do I generate multi-language SDKs from a dynamic provider?"
+  - "My dynamic provider works in TS but I need to publish it for other languages"
+  - "Convert my pulumi.dynamic provider so it can be consumed from Python and Go"
+
+  # Specific subtasks of the port
+  - "How do I translate a TypeScript dynamic provider's check/diff/create/read/update/delete to Go?"
+  - "What's the equivalent of pulumi.dynamic.ResourceProvider in pulumi-go-provider?"
+  - "How do I port a fetchWithRetry helper from a TS dynamic provider to Go?"
+  - "Why does pulumi package get-schema say `id` is a reserved field name in my Go provider?"
+  - "How should I structure the partial PATCH body when porting a dynamic provider's update method to Go?"
+
+  # Workflow / process
+  - "Walk me through migrating a TypeScript pulumi.dynamic provider to a Go infer-based provider"
+  - "What's the safe sequence for porting a dynamic provider to pulumi-go-provider end-to-end?"
