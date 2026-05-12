@@ -27,6 +27,12 @@ Skills for writing quality Pulumi programs, components, automation, and secrets 
 - **pulumi-upgrade-provider**: Automate Pulumi provider repo upgrades with the upgrade-provider tool
 - **upstream-patches**: Create, amend, remove, and rebase patches for Terraform provider submodules
 
+### Delegation Plugin (`delegation/`)
+
+Skills for handing off in-progress work from coding agents to Pulumi Neo for delegated execution:
+
+- **pulumi-neo-handoff**: Transfer the current work to a new Pulumi Neo task with goal, repository pointers, and a compacted conversation summary
+
 ## Installation
 
 ### Claude Code Plugin System
@@ -35,6 +41,7 @@ Skills for writing quality Pulumi programs, components, automation, and secrets 
 /plugin marketplace add pulumi/agent-skills
 /plugin install pulumi-migration
 /plugin install pulumi-authoring
+/plugin install pulumi-delegation
 ```
 
 ### OpenAI Codex
@@ -43,7 +50,7 @@ Skills for writing quality Pulumi programs, components, automation, and secrets 
 codex plugin marketplace add pulumi/agent-skills
 ```
 
-After the marketplace registers, install plugins from the Codex TUI: run `codex`, open the plugin marketplace, and pick `pulumi-migration` or `pulumi-authoring`.
+After the marketplace registers, install plugins from the Codex TUI: run `codex`, open the plugin marketplace, and pick `pulumi-migration`, `pulumi-authoring`, or `pulumi-delegation`.
 
 ### Universal (all agents)
 
@@ -57,7 +64,8 @@ Or install individual plugin groups:
 
 ```bash
 npx skills add pulumi/agent-skills/migration --skill '*'     # 4 migration skills
-npx skills add pulumi/agent-skills/authoring --skill '*'     # 5 authoring skills
+npx skills add pulumi/agent-skills/authoring --skill '*'     # 7 authoring skills
+npx skills add pulumi/agent-skills/delegation --skill '*'    # 1 delegation skill
 ```
 
 This works with Claude Code, Cursor, Copilot, Codex, and other agent tools.
@@ -146,7 +154,7 @@ uv run pytest tests/ -v
 
 ## Adding a New Skill
 
-1. Determine which plugin group the skill belongs to (migration or authoring)
+1. Determine which plugin group the skill belongs to (migration, authoring, or delegation)
 2. Create the skill directory: `<plugin>/skills/<skill-name>/`
 3. Write the `SKILL.md` file with proper frontmatter:
    ```yaml

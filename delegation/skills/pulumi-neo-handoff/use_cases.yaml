@@ -1,0 +1,32 @@
+# Queries that should activate the pulumi-neo-handoff skill
+queries:
+  # Explicit handoff requests
+  - "Hand this off to Neo"
+  - "Hand off this Pulumi work to Neo"
+  - "Send this to Pulumi Neo"
+  - "Send the current task to Neo"
+  - "Transfer this work to Pulumi Neo"
+  - "Continue this in Neo"
+  - "Let's hand this off to Neo and continue there"
+  - "Let Neo take this from here"
+  - "Neo can take it from here"
+  - "I want to switch to Neo for the rest of this"
+  - "I'm done here, Neo can take it"
+  - "Take this to Neo"
+  - "Kick this over to Neo"
+
+  # Context-aware phrasings
+  - "Open a Neo task with this context"
+  - "Create a Neo task to continue what we're working on"
+  - "Pulumi Neo can take over from here, package up the context"
+  - "Pass this conversation context to Neo and let it run"
+  - "Ship this context to a Neo task"
+
+  # Product/role-based phrasings
+  - "Send to our Pulumi infra agent"
+  - "Let the Pulumi agent finish this"
+
+  # Slash/command phrasings
+  - "Neo handoff"
+  - "/neo-handoff"
+  - "Run the neo-handoff command on this"
