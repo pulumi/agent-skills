@@ -119,6 +119,8 @@ Invoke the CLI:
 pulumi neo "$(cat "$PROMPT_FILE")"
 ```
 
+`pulumi neo` accepts the prompt as a single positional argument; it has no `--file` flag, and stdin redirection launches the TUI instead of consuming the prompt. The `"$(cat ...)"` form captures the file's bytes as data (the shell does not re-evaluate `$`, backticks, or `\` inside command substitution) and passes them as one argument. Do not "fix" this to `pulumi neo --file ...` or `pulumi neo < ...` — both forms are broken against the current CLI.
+
 If the CLI exits non-zero, surface its stderr verbatim and leave the prompt file in place so the user can retry. Do not pretend the handoff succeeded.
 
 ### 6. Surface the task URL
