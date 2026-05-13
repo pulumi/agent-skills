@@ -19,6 +19,12 @@
       "source": "./authoring",
       "description": "Write quality Pulumi programs, components, and automation",
       "category": "development"
+    },
+    {
+      "name": "pulumi-delegation",
+      "source": "./delegation",
+      "description": "Hand off in-progress work from coding agents to Pulumi Neo",
+      "category": "integration"
     }
   ]
 }

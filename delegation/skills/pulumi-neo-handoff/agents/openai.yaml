@@ -1,0 +1,4 @@
+interface:
+  display_name: "Pulumi Neo Handoff"
+  short_description: "Hand off the current thread to a new Pulumi Neo task"
+  default_prompt: "Use $pulumi-neo-handoff to package the current conversation and launch a Pulumi Neo task; ask the user for the goal if it is not obvious from context."

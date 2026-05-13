@@ -1,0 +1,20 @@
+{
+  "name": "pulumi-delegation",
+  "version": "1.0.0",
+  "description": "Hand off in-progress work from coding agents to Pulumi Neo for delegated execution",
+  "author": {
+    "name": "Pulumi",
+    "url": "https://github.com/pulumi"
+  },
+  "homepage": "https://www.pulumi.com/docs/",
+  "repository": "https://github.com/pulumi/agent-skills",
+  "license": "Apache-2.0",
+  "keywords": [
+    "pulumi",
+    "neo",
+    "agent",
+    "handoff",
+    "delegation",
+    "task-transfer"
+  ]
+}

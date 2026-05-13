@@ -19,7 +19,8 @@ Skills are organized into two plugin groups:
 ```
 pulumi-agent-skills/
 ├── migration/          # Convert and import from other tools
-└── authoring/          # Write quality Pulumi programs
+├── authoring/          # Write quality Pulumi programs
+└── delegation/         # Hand off work to Pulumi Neo
 ```
 
 ## Available Skills
@@ -49,6 +50,14 @@ Write quality Pulumi programs, components, automation, and secrets management:
 | [pulumi-upgrade-provider](authoring/skills/pulumi-upgrade-provider) | Automate Pulumi provider repo upgrades |
 | [upstream-patches](authoring/skills/upstream-patches) | Manage upstream Terraform patch stacks in provider repos |
 
+### Delegation Skills
+
+Hand off in-progress work from coding agents to Pulumi Neo:
+
+| Skill | Description |
+|-------|-------------|
+| [pulumi-neo-handoff](delegation/skills/pulumi-neo-handoff) | Transfer the current work to a Pulumi Neo task with goal, repository pointers, and a compacted conversation summary |
+
 ## Installation
 
 ### Claude Code Plugin System
@@ -57,6 +66,7 @@ Write quality Pulumi programs, components, automation, and secrets management:
 /plugin marketplace add pulumi/agent-skills
 /plugin install pulumi-migration     # Install migration skills
 /plugin install pulumi-authoring     # Install authoring skills
+/plugin install pulumi-delegation    # Install delegation skills (Neo handoff)
 ```
 
 ### OpenAI Codex
@@ -65,7 +75,7 @@ Write quality Pulumi programs, components, automation, and secrets management:
 codex plugin marketplace add pulumi/agent-skills
 ```
 
-Once the marketplace is registered, install plugins from the Codex TUI: run `codex`, open the plugin marketplace, and pick `pulumi-migration` or `pulumi-authoring`.
+Once the marketplace is registered, install plugins from the Codex TUI: run `codex`, open the plugin marketplace, and pick `pulumi-migration`, `pulumi-authoring`, or `pulumi-delegation`.
 
 ### Universal (all agents)
 
@@ -79,7 +89,8 @@ Or install individual plugin groups:
 
 ```bash
 npx skills add pulumi/agent-skills/migration --skill '*'     # 4 migration skills
-npx skills add pulumi/agent-skills/authoring --skill '*'     # 5 authoring skills
+npx skills add pulumi/agent-skills/authoring --skill '*'     # 7 authoring skills
+npx skills add pulumi/agent-skills/delegation --skill '*'    # 1 delegation skill
 ```
 
 This works with Claude Code, Cursor, Copilot, Codex, and other agent tools.
@@ -132,6 +143,16 @@ Help me upgrade the Pulumi AWS provider safely without changing real infrastruct
 ```
 
 The assistant will use the `provider-upgrade` skill to guide you through a low-risk upgrade workflow.
+
+### Handing Off Work to Pulumi Neo
+
+Ask your AI assistant:
+
+```text
+Hand this off to Neo to apply the staging migration in production
+```
+
+The assistant will use the `pulumi-neo-handoff` skill to package the goal, repository state, and conversation summary into a new Pulumi Neo task and return a task URL.
 
 ## Contributing
 

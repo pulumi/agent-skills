@@ -26,6 +26,17 @@
         "installation": "AVAILABLE"
       },
       "category": "Coding"
+    },
+    {
+      "name": "pulumi-delegation",
+      "source": {
+        "source": "local",
+        "path": "./delegation"
+      },
+      "policy": {
+        "installation": "AVAILABLE"
+      },
+      "category": "Coding"
     }
   ]
 }
