@@ -1,0 +1,25 @@
+# Consumer-side Pulumi.yaml for a TypeScript program that exercises the
+# generated SDK against the locally-built Go provider.
+#
+# The plugins:providers block tells Pulumi where to find the binary
+# instead of looking it up in the registry. The relative path is from
+# this file's directory.
+#
+# TODO: replace the placeholders below.
+
+# TODO: Project name (any string, doesn't have to match the provider name).
+name: <CONSUMER_PROJECT_NAME>
+description: Stage 2 consumer — exercises the Go provider via generated SDK.
+runtime:
+  name: nodejs
+  options:
+    typescript: true
+    packagemanager: npm
+plugins:
+  providers:
+    # <PROVIDER_NAME> must match the const Name in main.go and the
+    # binary name `pulumi-resource-<PROVIDER_NAME>`.
+    # path: relative to this Pulumi.yaml; points at the directory
+    # containing the `pulumi-resource-<PROVIDER_NAME>` binary.
+    - name: <PROVIDER_NAME>
+      path: ../..

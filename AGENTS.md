@@ -26,6 +26,7 @@ Skills for writing quality Pulumi programs, components, automation, and secrets 
 - **provider-upgrade**: Safe workflows for upgrading Pulumi providers without unintended infrastructure changes
 - **pulumi-upgrade-provider**: Automate Pulumi provider repo upgrades with the upgrade-provider tool
 - **upstream-patches**: Create, amend, remove, and rebase patches for Terraform provider submodules
+- **pulumi-dynamic-to-go-provider**: Port a TypeScript Pulumi dynamic provider to a pulumi-go-provider-based Go provider using the `infer` package
 
 ### Delegation Plugin (`delegation/`)
 
