@@ -1,0 +1,20 @@
+{
+  "name": "pulumi-agent-context",
+  "version": "0.1.0",
+  "description": "Context for AI coding agents working with Pulumi across CLI, project, and Pulumi Cloud surfaces",
+  "author": {
+    "name": "Pulumi",
+    "url": "https://github.com/pulumi"
+  },
+  "homepage": "https://www.pulumi.com/docs/",
+  "repository": "https://github.com/pulumi/agent-skills",
+  "license": "Apache-2.0",
+  "keywords": [
+    "pulumi",
+    "agent",
+    "context",
+    "router",
+    "infrastructure",
+    "cloud"
+  ]
+}

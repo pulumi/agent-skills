@@ -25,6 +25,12 @@
       "source": "./delegation",
       "description": "Hand off in-progress work from coding agents to Pulumi Neo",
       "category": "integration"
+    },
+    {
+      "name": "pulumi-agent-context",
+      "source": "./agent-context",
+      "description": "Context for AI coding agents working with Pulumi across CLI, project, and Pulumi Cloud surfaces",
+      "category": "development"
     }
   ]
 }
