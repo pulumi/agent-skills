@@ -153,10 +153,11 @@ pulumi config  # Verify environment values are accessible
 
 ### Updating approval-gated environments
 
-If `pulumi env edit <env>` or `PATCH /api/esc/environments/...` fails with a
-409 about a change request, the environment requires every update to be
-approved. Use the CLI's `--draft` flag — it bundles create-draft with
-submit-change-request:
+Some environments are **approval-gated** — every update must go through a
+change request before it takes effect. A plain `pulumi env edit <env>` (or
+`PATCH /api/esc/environments/...`) against one fails with an error saying the
+update requires a change request. Use the CLI's `--draft` flag instead — it
+bundles create-draft with submit-change-request:
 
 ```bash
 pulumi env set  --draft <org>/<project>/<env> <key> <value>          # single key
