@@ -151,6 +151,54 @@ pulumi config env add my-project/dev-config
 pulumi config  # Verify environment values are accessible
 ```
 
+### Updating approval-gated environments
+
+Some environments require every update to be approved via a **change request**
+before it takes effect. Two signals indicate an environment is approval-gated:
+
+- `PATCH /api/esc/environments/{org}/{project}/{env}` returns **409** with the
+  message *"This environment requires updates to be approved via change
+  request. Please use the draft endpoint instead."*
+- `pulumi env edit <env>` (without `--draft`) fails for the same reason.
+
+**Always use the CLI's `--draft` flag for these environments.** The CLI wraps
+draft-create + change-request-submit into a single atomic call and prints
+`Change request submitted`:
+
+```bash
+# Single-key update — recommended for small edits
+pulumi env set --draft <org>/<project>/<env> <key> <value>
+pulumi env set --draft <org>/<project>/<env> <key> <value> --secret
+
+# Full-file replace — recommended when changing structure or many keys
+pulumi env edit --draft --file /tmp/new-env.yaml <org>/<project>/<env>
+```
+
+After the command returns, the change request is visible in the approver's
+queue and the environment is unlocked once the request is closed or applied.
+
+#### What NOT to do
+
+Do **not** call `pulumi cloud api CreateEnvironmentDraft` /
+`UpdateEnvironmentDraft` directly (via `pulumi cloud api` or any raw HTTP
+client). Those endpoints create a draft but **do not** submit a change request,
+leaving an **orphan draft** that is invisible to approvers and that blocks any
+further `--draft` operations on the same environment until it is closed. The
+CLI's `--draft` wrappers above already handle the submit step; use them
+instead.
+
+If you discover an orphan draft (a `GET
+/api/change-requests/{org}/{changeRequestID}` returns status `"draft"` that you
+did not intend to leave open), find and close it:
+
+```bash
+# List open change requests for the env to find the orphan
+pulumi cloud api -X GET "/api/change-requests/<org>?entityType=environment&entityId=<env>"
+
+# Close it (no CLI wrapper exists for this today)
+pulumi cloud api -X POST "/api/change-requests/<org>/<changeRequestID>/close" -d '{}'
+```
+
 ### API Access (Rare)
 
 **Always prefer CLI commands.** Only use the API when absolutely necessary (e.g., bulk operations, automation).

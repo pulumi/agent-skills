@@ -21,6 +21,11 @@ queries:
   - "Link an ESC environment to my Pulumi stack"
   - "pulumi env init - help me create a new environment"
 
+  # Approval-gated environments / change requests
+  - "How do I update an ESC environment that requires approval?"
+  - "pulumi env edit fails saying the update requires a change request"
+  - "I created an orphan draft on an ESC environment, how do I clean it up?"
+
   # Dynamic / rotating credentials
   - "Generate temporary AWS credentials for my CI/CD pipeline"
   - "I need dynamic credentials that rotate automatically"
