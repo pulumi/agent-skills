@@ -48,7 +48,7 @@ Provider credentials are separate from Pulumi Cloud credentials. `pulumi do` rea
 Here is a complete invocation, creating an S3 bucket:
 
 ```bash
-npx pulumi do aws s3 BucketV2 create my_bucket --bucket my-data --tags.Environment dev
+npx pulumi do aws s3 Bucket create my_bucket --bucket my-data --tags.Environment dev
 ```
 
 The shape is:
