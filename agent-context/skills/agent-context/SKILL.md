@@ -111,7 +111,7 @@ npx pulumi do aws ec2 Subnet create app_subnet \
 Outputs from one provider flow into inputs to another, so an S3 bucket and a Cloudflare DNS record can be connected in one session.
 
 ```bash
-npx pulumi do aws s3 BucketV2 create assets --bucket my-app-assets
+npx pulumi do aws s3 Bucket create assets --bucket my-app-assets
 
 npx pulumi do cloudflare Record create assets_dns \
   --zone-id <your-zone-id> \
