@@ -89,7 +89,7 @@ options:
 EOF
 
 # Mixed: YAML body plus a flag overlay
-npx pulumi do aws s3 BucketV2 create my_bucket -f base.yaml --tags.Environment prod
+npx pulumi do aws s3 Bucket create my_bucket -f base.yaml --tags.Environment prod
 ```
 
 Resource options live under `options:` in YAML or as `--option-name` flags.
