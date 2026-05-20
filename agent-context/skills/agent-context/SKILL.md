@@ -79,7 +79,7 @@ Properties come from per-property flags, a YAML body, or both at once; the CLI m
 
 ```bash
 # YAML body form (same resource as the opening example)
-cat <<'EOF' | npx pulumi do aws s3 BucketV2 create my_bucket -f -
+cat <<'EOF' | npx pulumi do aws s3 Bucket create my_bucket -f -
 properties:
   bucket: my-data
   tags:
