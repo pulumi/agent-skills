@@ -128,9 +128,9 @@ By default, `pulumi do` writes one structured JSON record to stdout for the affe
 
 ```json
 {
-  "urn":     "urn:pulumi:dev::do-default::aws:s3/bucketV2:BucketV2::my_bucket",
+  "urn":     "urn:pulumi:dev::do-default::aws:s3/bucket:Bucket::my_bucket",
   "id":      "my-data",
-  "type":    "aws:s3/bucketV2:BucketV2",
+  "type":    "aws:s3/bucket:Bucket",
   "name":    "my_bucket",
   "outputs": { "arn": "arn:aws:s3:::my-data", "...": "..." }
 }
