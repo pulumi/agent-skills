@@ -1,29 +1,23 @@
 # Queries that should activate the pulumi-overview skill.
 #
-# This skill is a router across the three Pulumi surfaces:
-#   L1 - `pulumi do` for ad-hoc CRUD with no project
+# This skill is the entry-point router across the three Pulumi surfaces:
+#   L1 - ad-hoc, single-resource operations from the CLI (no project)
 #   L2 - Pulumi projects in a language
 #   L3 - Pulumi Cloud (ESC, policy, deployments, drift, schedules)
 #
-# Queries below lean on the signals the routing judge actually picks up
-# for this skill: explicit `pulumi do` verb-noun phrasings, multi-provider
-# bootstrapping, tear-down / drift workflows, and "agent onboarding" intent.
-#
-# Deliberately omitted (and worth flagging in skill description tuning):
-#   - generic "how do I X with Pulumi" — routes to pulumi-best-practices
-#   - "schedule" / "run in Pulumi Cloud" — routes to pulumi-automation-api
-#   - policy enforcement — routes to pulumi-best-practices
-#   - single-resource creation w/o provider specificity ("create an S3 bucket")
-#     — judge treats as generic infra, fires no skill
+# L1 queries below are mostly plain infrastructure requests, the way a user
+# (or non-Pulumi-aware agent) would naturally phrase them. Two L1 queries
+# explicitly mention `pulumi do` to confirm that phrasing also routes here.
 queries:
-  # L1 - pulumi do, ad-hoc, no project files
+  # L1 - ad-hoc single-resource infrastructure
   - "Use pulumi do to create a Cloudflare DNS record"
-  - "I just need a one-off Auth0 application provisioned, no project files"
-  - "Run a quick pulumi do command to register a Vercel deployment's domain in Cloudflare"
-  - "Use Pulumi to create a Datadog monitor without scaffolding a full program"
-  - "Delete the resource I created earlier with pulumi do"
-  - "Provision an Azure virtual machine with pulumi do"
-  - "Use pulumi do to create a Kubernetes namespace"
+  - "Provision a one-off Auth0 application"
+  - "Register a Vercel deployment's domain in Cloudflare"
+  - "Set up a Datadog monitor"
+  - "Delete the S3 bucket I created earlier with pulumi do"
+  - "Provision an Azure virtual machine"
+  - "Create a Kubernetes namespace"
+  - "Spin up a single S3 bucket"
 
   # L1 - multi-provider bootstrapping in one place
   - "I need to provision an S3 bucket and point a Cloudflare DNS record at it"
@@ -39,47 +33,18 @@ queries:
 
   # L2 - graduating from L1 ad-hoc work
   - "Move resources from a default stack into a named Pulumi project"
+  - "I've been creating resources with pulumi do, now I want to move them into a real Pulumi project"
 
-  # L3 - drift, lifecycle
+  # L3 - drift, policy, hosted runs
   - "Set up nightly drift detection on my Pulumi production stack"
+  - "Add policy enforcement to our Pulumi previews"
+  - "Run my Pulumi updates in Pulumi Cloud instead of on a CI runner"
 
   # Lifecycle - tear-down
   - "Tear down our staging environment in Pulumi"
   - "Destroy the dev stack and all the resources it created"
 
-  # Onboarding / first contact for AI coding agents
+  # Onboarding / first contact
   - "I'm an agent that needs to use Pulumi -- where do I start?"
   - "I'm an AI coding agent setting up Pulumi for the first time, what do I need to know?"
-
-# ---------------------------------------------------------------------------
-# Parked queries
-# ---------------------------------------------------------------------------
-# These should arguably route to pulumi-overview but the routing judge sends
-# them elsewhere today. Worth revisiting once the skill description is tuned
-# (e.g. mentions `pulumi do` explicitly, calls out drift / policy / hosted
-# runs as pulumi-overview territory, distinguishes from pulumi-automation-api).
-# Each line notes the skill(s) the judge picked instead, or "no skill" when
-# the judge declined to route at all.
-#
-# Generic L1 phrasings — judge treats as plain infra, fires no skill:
-#   - "Spin up a single S3 bucket with Pulumi without setting up a project"  # no skill
-#
-# `pulumi do` verbs without strong provider/action signal — best-practices wins:
-#   - "How do I patch a resource I created earlier with pulumi do?"          # pulumi-best-practices
-#
-# "How do I structure / new to Pulumi" — best-practices wins:
-#   - "I'm new to Pulumi -- how do I structure a project for dev, staging, and prod stacks?"  # pulumi-best-practices
-#
-# L1 -> L2 graduation phrasing — automation-api + best-practices win:
-#   - "I've been creating resources with pulumi do, now I want to move them into a real Pulumi project"  # pulumi-automation-api, pulumi-best-practices
-#
-# L3 schedule / hosted-run phrasings — judge confuses Deployments with Automation API:
-#   - "Schedule a daily pulumi refresh in preview mode"                       # pulumi-automation-api
-#   - "Run my Pulumi updates in Pulumi Cloud instead of on a CI runner"       # pulumi-automation-api, pulumi-best-practices
-#
-# L3 policy — best-practices wins:
-#   - "Add policy enforcement to our Pulumi previews"                         # pulumi-best-practices
-#
-# Vague "right way / help me figure out" — automation-api + best-practices win:
-#   - "What's the right way to use Pulumi from a coding agent?"               # pulumi-automation-api, pulumi-best-practices
-#   - "Help me figure out whether to use pulumi do or a full Pulumi project for this task"  # pulumi-automation-api, pulumi-best-practices
+  - "I'm new to Pulumi -- how do I structure a project for dev, staging, and prod stacks?"
