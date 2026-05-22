@@ -16,7 +16,7 @@ pulumi-agent-skills/
 │   └── skills/
 │       └── skill-name/
 │           └── SKILL.md
-└── authoring/          # Write quality Pulumi programs
+└── pulumi/             # Entry-point and specialized Pulumi skills
     └── skills/
         └── skill-name/
             └── SKILL.md
@@ -195,7 +195,7 @@ Before submitting a skill, verify:
 
 ### New Skills
 
-1. Determine which plugin group the skill belongs to (migration or authoring)
+1. Determine which plugin group the skill belongs to (migration or pulumi)
 2. Create a new directory under `<plugin>/skills/` with the skill name
 3. Add a `SKILL.md` file following the format above
 4. Update [AGENTS.md](AGENTS.md) to list the new skill in the appropriate plugin section

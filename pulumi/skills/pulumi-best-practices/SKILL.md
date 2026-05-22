@@ -495,7 +495,7 @@ When reviewing Pulumi code, verify:
 
 ## Related Skills
 
-- **pulumi**: Entry-point skill that orients an agent across the three Pulumi surfaces (`pulumi do` CLI, IaC projects, and Pulumi Cloud) and routes to specialized skills. Load it first when the task begins with general infrastructure phrasing or spans multiple Pulumi surfaces. Use skill `pulumi`.
+- **pulumi-overview**: Entry-point skill that orients an agent across the three Pulumi surfaces (`pulumi do` CLI, IaC projects, and Pulumi Cloud) and routes to specialized skills. Load it first when the task begins with general infrastructure phrasing or spans multiple Pulumi surfaces. Use skill `pulumi-overview`.
 - **pulumi-component**: Deep guide to authoring ComponentResource classes, designing args interfaces, multi-language support, testing, and distribution. Use skill `pulumi-component`.
 - **pulumi-automation-api**: Programmatic orchestration of multiple stacks. Use skill `pulumi-automation-api`.
 - **pulumi-esc**: Centralized secrets and configuration management. Use skill `pulumi-esc`.

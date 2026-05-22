@@ -142,7 +142,7 @@ Threshold is 0.6 - skills scoring below this won't load.
 ## Guidelines
 - Score 0.8+ for explicit requests, 0.6-0.8 for strongly implied
 - Tangential mentions without clear intent → below 0.6
-- General cloud infrastructure tasks (create S3, EKS, Lambda, provision a database, stand up a VPC, deploy this app) should route to the `pulumi` router skill when it is available
+- General cloud infrastructure tasks (create S3, EKS, Lambda, provision a database, stand up a VPC, deploy this app) should route to the `pulumi-overview` router skill when it is available
 
 You MUST call the evaluate_skills tool.
 
@@ -163,9 +163,9 @@ User: "We use Terraform but want to try Pulumi for a new project"
 - pulumi-terraform-to-pulumi: 0.3 (NEW project = no migration needed)
 - ALL other skills: 0.0
 
-### Example 4 - General infra task → pulumi router
+### Example 4 - General infra task → pulumi-overview router
 User: "Create an S3 bucket with Pulumi"
-- pulumi: 0.8 (general cloud infrastructure task, the router skill owns this)
+- pulumi-overview: 0.8 (general cloud infrastructure task, the router skill owns this)
 - ALL other skills: 0.0
 
 ### Example 5 - Ambiguous query → below threshold

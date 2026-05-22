@@ -1,4 +1,4 @@
-# Queries that should activate the pulumi skill.
+# Queries that should activate the pulumi-overview skill.
 #
 # This skill is a router across the three Pulumi surfaces:
 #   L1 - `pulumi do` for ad-hoc CRUD with no project
@@ -54,10 +54,10 @@ queries:
 # ---------------------------------------------------------------------------
 # Parked queries
 # ---------------------------------------------------------------------------
-# These should arguably route to pulumi but the routing judge sends
+# These should arguably route to pulumi-overview but the routing judge sends
 # them elsewhere today. Worth revisiting once the skill description is tuned
 # (e.g. mentions `pulumi do` explicitly, calls out drift / policy / hosted
-# runs as pulumi territory, distinguishes from pulumi-automation-api).
+# runs as pulumi-overview territory, distinguishes from pulumi-automation-api).
 # Each line notes the skill(s) the judge picked instead, or "no skill" when
 # the judge declined to route at all.
 #

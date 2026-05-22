@@ -4,7 +4,7 @@ This repository contains official Pulumi agent skills for infrastructure as code
 
 ## Repository Structure
 
-Skills are organized into two plugin groups:
+Skills are organized into three plugin groups:
 
 ### Migration Plugin (`migration/`)
 
@@ -15,10 +15,11 @@ Skills for converting and importing infrastructure from other tools to Pulumi:
 - **cloudformation-to-pulumi**: Migrate AWS CloudFormation stacks/templates to Pulumi
 - **pulumi-arm-to-pulumi**: Migrate Azure ARM templates and Bicep to Pulumi
 
-### Authoring Plugin (`authoring/`)
+### Pulumi Plugin (`pulumi/`)
 
-Skills for writing quality Pulumi programs, components, automation, and secrets management:
+Entry-point and specialized skills for writing and operating Pulumi infrastructure:
 
+- **pulumi-overview**: Entry-point skill across `pulumi do`, IaC projects, and Pulumi Cloud; routes to specialized skills
 - **pulumi-best-practices**: Best practices for writing reliable Pulumi programs
 - **pulumi-component**: Guide for authoring ComponentResource classes
 - **pulumi-automation-api**: Best practices for using Pulumi Automation API
@@ -40,7 +41,7 @@ Skills for handing off in-progress work from coding agents to Pulumi Neo for del
 ```bash
 /plugin marketplace add pulumi/agent-skills
 /plugin install pulumi-migration
-/plugin install pulumi-authoring
+/plugin install pulumi
 /plugin install pulumi-delegation
 ```
 
@@ -50,7 +51,7 @@ Skills for handing off in-progress work from coding agents to Pulumi Neo for del
 codex plugin marketplace add pulumi/agent-skills
 ```
 
-After the marketplace registers, install plugins from the Codex TUI: run `codex`, open the plugin marketplace, and pick `pulumi-migration`, `pulumi-authoring`, or `pulumi-delegation`.
+After the marketplace registers, install plugins from the Codex TUI: run `codex`, open the plugin marketplace, and pick `pulumi-migration`, `pulumi`, or `pulumi-delegation`.
 
 ### Universal (all agents)
 
@@ -64,7 +65,7 @@ Or install individual plugin groups:
 
 ```bash
 npx skills add pulumi/agent-skills/migration --skill '*'     # 4 migration skills
-npx skills add pulumi/agent-skills/authoring --skill '*'     # 7 authoring skills
+npx skills add pulumi/agent-skills/pulumi --skill '*'        # 9 pulumi skills (overview + specialized)
 npx skills add pulumi/agent-skills/delegation --skill '*'    # 1 delegation skill
 ```
 
@@ -74,7 +75,7 @@ This works with Claude Code, Cursor, Copilot, Codex, and other agent tools.
 
 ### Skill Name Format
 
-Skill names follow the pattern: `pulumi-<feature>`.
+Skill names follow the pattern: `pulumi-<feature>`. The entry-point router is **`pulumi-overview`** (install via the `pulumi` plugin).
 
 ### Trigger Phrases
 
@@ -154,7 +155,7 @@ uv run pytest tests/ -v
 
 ## Adding a New Skill
 
-1. Determine which plugin group the skill belongs to (migration, authoring, or delegation)
+1. Determine which plugin group the skill belongs to (migration, pulumi, or delegation)
 2. Create the skill directory: `<plugin>/skills/<skill-name>/`
 3. Write the `SKILL.md` file with proper frontmatter:
    ```yaml

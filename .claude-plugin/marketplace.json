@@ -15,9 +15,9 @@
       "category": "integration"
     },
     {
-      "name": "pulumi-authoring",
-      "source": "./authoring",
-      "description": "Write quality Pulumi programs, components, and automation",
+      "name": "pulumi",
+      "source": "./pulumi",
+      "description": "Entry-point and specialized skills for writing and operating Pulumi infrastructure",
       "category": "development"
     },
     {
@@ -25,12 +25,6 @@
       "source": "./delegation",
       "description": "Hand off in-progress work from coding agents to Pulumi Neo",
       "category": "integration"
-    },
-    {
-      "name": "pulumi-overview",
-      "source": "./overview",
-      "description": "Entry-point skill for AI coding agents working with Pulumi across CLI, project, and Pulumi Cloud surfaces",
-      "category": "development"
     }
   ]
 }

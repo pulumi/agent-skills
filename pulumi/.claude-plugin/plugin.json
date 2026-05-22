@@ -1,7 +1,7 @@
 {
-  "name": "pulumi-authoring",
+  "name": "pulumi",
   "version": "1.0.0",
-  "description": "Write quality Pulumi programs, components, automation, secrets management with ESC, and provider upgrades",
+  "description": "Entry-point and specialized skills for writing and operating Pulumi infrastructure across CLI, projects, and Pulumi Cloud",
   "author": {
     "name": "Pulumi",
     "url": "https://github.com/pulumi"
@@ -11,6 +11,8 @@
   "license": "Apache-2.0",
   "keywords": [
     "pulumi",
+    "overview",
+    "router",
     "best-practices",
     "component",
     "automation-api",
