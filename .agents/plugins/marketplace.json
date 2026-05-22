@@ -39,10 +39,10 @@
       "category": "Coding"
     },
     {
-      "name": "pulumi-agent-context",
+      "name": "pulumi-overview",
       "source": {
         "source": "local",
-        "path": "./agent-context"
+        "path": "./overview"
       },
       "policy": {
         "installation": "AVAILABLE"

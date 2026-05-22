@@ -1,7 +1,7 @@
 {
-  "name": "pulumi-agent-context",
+  "name": "pulumi-overview",
   "version": "0.1.0",
-  "description": "Context for AI coding agents working with Pulumi across CLI, project, and Pulumi Cloud surfaces",
+  "description": "Entry-point skill for AI coding agents working with Pulumi across CLI, project, and Pulumi Cloud surfaces",
   "author": {
     "name": "Pulumi",
     "url": "https://github.com/pulumi"

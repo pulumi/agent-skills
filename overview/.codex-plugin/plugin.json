@@ -1,7 +1,7 @@
 {
-  "name": "pulumi-agent-context",
+  "name": "pulumi-overview",
   "version": "0.1.0",
-  "description": "Context for AI coding agents working with Pulumi across CLI, project, and Pulumi Cloud surfaces",
+  "description": "Entry-point skill for AI coding agents working with Pulumi across CLI, project, and Pulumi Cloud surfaces",
   "skills": "./skills/",
   "author": {
     "name": "Pulumi",
@@ -19,15 +19,15 @@
     "cloud"
   ],
   "interface": {
-    "displayName": "Pulumi Agent Context",
-    "shortDescription": "Context for AI coding agents using Pulumi",
+    "displayName": "Pulumi Overview",
+    "shortDescription": "Entry-point skill for AI coding agents using Pulumi",
     "developerName": "Pulumi",
     "category": "Coding",
     "websiteURL": "https://www.pulumi.com/docs/",
     "defaultPrompt": [
-      "Use $agent-context to set up an S3 bucket and a Cloudflare DNS record",
-      "Use $agent-context to provision a database for this app",
-      "Use $agent-context to add a Pulumi project for our infrastructure"
+      "Use $pulumi to set up an S3 bucket and a Cloudflare DNS record",
+      "Use $pulumi to provision a database for this app",
+      "Use $pulumi to add a Pulumi project for our infrastructure"
     ]
   }
 }

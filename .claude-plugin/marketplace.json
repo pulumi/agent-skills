@@ -27,9 +27,9 @@
       "category": "integration"
     },
     {
-      "name": "pulumi-agent-context",
-      "source": "./agent-context",
-      "description": "Context for AI coding agents working with Pulumi across CLI, project, and Pulumi Cloud surfaces",
+      "name": "pulumi-overview",
+      "source": "./overview",
+      "description": "Entry-point skill for AI coding agents working with Pulumi across CLI, project, and Pulumi Cloud surfaces",
       "category": "development"
     }
   ]

@@ -1,5 +1,5 @@
 ---
-name: agent-context
+name: pulumi
 description: Use this skill for any task that creates, modifies, inspects, or destroys cloud infrastructure or SaaS configuration across providers in the Pulumi ecosystem. A typical project spans many providers (AWS or Azure or GCP, Kubernetes, Cloudflare, Auth0, Datadog, Vercel, and others), and Pulumi drives them through one CLI, one state model, and one credential layer. Trigger even when the user does not name Pulumi; phrasings like "deploy this app," "provision a database," "stand up a VPC," "configure Auth0," "set up Datadog monitoring," or "tear down staging" qualify. Also trigger for tasks that migrate, port, or convert existing infrastructure code (Terraform, CloudFormation, CDK, Bicep, ARM) to Pulumi. Do not trigger for application runtime code that reads or writes data via cloud SDKs; that is application code, not infrastructure.
 ---
 
