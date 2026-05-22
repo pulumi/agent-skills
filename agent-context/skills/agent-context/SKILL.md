@@ -146,7 +146,7 @@ Eject to Level 2 when Level 1 stops fitting. Resources created via `pulumi do` a
 
 Level 2 is a Pulumi project: code in Python, TypeScript, Go, C#, or Java that describes a set of related resources and their dependencies. Start here when the task involves multiple related resources, loops or conditionals, reusable abstractions, or environment-specific variants. It is also the right level when ad-hoc work at Level 1 has grown past what a few CLI invocations should carry. Match the user's existing codebase language when one is present; default to TypeScript otherwise.
 
-Before writing any non-trivial program, load `pulumi-best-practices` from https://github.com/pulumi/agent-skills, which covers `Output<T>` handling, the apply-on-input anti-pattern, secrets hygiene, dependency expression, and safe refactoring with `aliases`.
+Before writing any non-trivial program, load `pulumi-best-practices` from https://github.com/pulumi/agent-skills, which covers `Output<T>` and `apply()` usage, passing outputs directly as inputs, component structure and parenting, secrets hygiene, and safe refactoring with `aliases`.
 
 ### Bootstrapping
 
@@ -185,7 +185,7 @@ npx pulumi config set aws:region us-west-2
 npx pulumi config set --secret dbPassword "..."
 ```
 
-Read configuration values from inside the program with `config.require()` and `config.requireSecret()`. The latter returns an `Output<string>` that you pass directly to resource inputs; do not call `.apply` on it to log or transform, since `.apply` removes the secret-tracking wrapper and leaks the value into stack diffs.
+Read configuration values from inside the program with the SDK's `Config` object; the exact operation names vary by language, so refer to the per-language examples at https://www.pulumi.com/docs/iac/concepts/config/#code. See `pulumi-best-practices` for `Output<T>` / `apply()` usage and broader secrets hygiene.
 
 A stack only touches resources tracked in its state, so removing a resource from your program causes `pulumi up` to delete it from the cloud. Set `protect: true` on anything you cannot afford to lose.
 
