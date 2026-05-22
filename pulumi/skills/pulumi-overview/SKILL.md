@@ -68,14 +68,14 @@ pulumi do <pkg> [<mod>] <type> <verb> <name> [args]
 
 - `create` provisions the resource and fails if a resource with the same logical name already exists in the stack; use `patch` to modify an existing one.
 - `read` has two forms. `read <name>` refreshes the named resource's outputs from the provider and updates them in the snapshot. `read --id <cloud-id>` is a contextless lookup against any cloud-side ID, returns the resource as JSON, and writes nothing to state.
-- `patch` updates the resource using JSON Merge Patch semantics, where supplied properties overlay existing values, unspecified properties are preserved, and `null` deletes a property. In non-interactive contexts pass `--yes` to confirm.
+- `patch` updates a resource already in stack state. The CLI merges flags and `-f` body via JSON Merge Patch (`null` deletes a property from the input); the provider may still require a replace or a prior `read <name>` to get current values. Pass `--yes` in non-interactive contexts.
 - `delete` removes the resource from both state and the cloud. This is irreversible. Get explicit user confirmation for the specific resource before invoking; use `--yes` only after that confirmation, not as a default for non-interactive runs.
 
 `pulumi do` also supports two non-CRUD operations. `pulumi do <pkg> [<mod>] <type> list [args]` enumerates existing instances of a resource type from the cloud. `pulumi do <pkg> [<mod>] <function> [args]` invokes a stateless function the provider exposes alongside its resources.
 
 ### Property input
 
-Properties come from per-property flags, a YAML body, or both at once; the CLI merges them via JSON Merge Patch, with flags overlaying the body. When the YAML body contains `${...}` interpolations, use a quoted heredoc so the shell does not expand them.
+Properties come from per-property flags, a YAML body, or both; flags overlay the body via JSON Merge Patch. When the YAML body contains `${...}` interpolations, use a quoted heredoc so the shell does not expand them.
 
 ```bash
 # YAML body form (same resource as the opening example)
