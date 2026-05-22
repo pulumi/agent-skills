@@ -1,6 +1,6 @@
 ---
 name: pulumi-overview
-description: Use this skill for any task that creates, modifies, inspects, or destroys cloud infrastructure or SaaS configuration across providers in the Pulumi ecosystem. A typical project spans many providers (AWS or Azure or GCP, Kubernetes, Cloudflare, Auth0, Datadog, Vercel, and others), and Pulumi drives them through one CLI, one state model, and one credential layer. Trigger even when the user does not name Pulumi; phrasings like "deploy this app," "provision a database," "stand up a VPC," "configure Auth0," "set up Datadog monitoring," or "tear down staging" qualify. Also trigger for tasks that migrate, port, or convert existing infrastructure code (Terraform, CloudFormation, CDK, Bicep, ARM) to Pulumi. Do not trigger for application runtime code that reads or writes data via cloud SDKs; that is application code, not infrastructure.
+description: Use this skill for any task that creates, modifies, inspects, or destroys cloud infrastructure or SaaS configuration — from one-off CLI operations to full multi-resource projects — across providers in the Pulumi ecosystem. A typical project spans many providers (AWS or Azure or GCP, Kubernetes, Cloudflare, Auth0, Datadog, Vercel, and others), and Pulumi drives them through one CLI, one state model, and one credential layer. Trigger even when the user does not name Pulumi; phrasings like "deploy this app," "provision a database," "stand up a VPC," "configure Auth0," "set up Datadog monitoring," or "tear down staging" qualify. Also trigger for tasks that migrate, port, or convert existing infrastructure code (Terraform, CloudFormation, CDK, Bicep, ARM) to Pulumi. Do not trigger for application runtime code that reads or writes data via cloud SDKs; that is application code, not infrastructure.
 ---
 
 # Pulumi
@@ -146,7 +146,7 @@ Eject to Level 2 when Level 1 stops fitting. Resources created via `pulumi do` a
 
 Level 2 is a Pulumi project: code in Python, TypeScript, Go, C#, or Java that describes a set of related resources and their dependencies. Start here when the task involves multiple related resources, loops or conditionals, reusable abstractions, or environment-specific variants. It is also the right level when ad-hoc work at Level 1 has grown past what a few CLI invocations should carry. Match the user's existing codebase language when one is present; default to TypeScript otherwise.
 
-Before writing any non-trivial program, load `pulumi-best-practices` from https://github.com/pulumi/agent-skills, which covers `Output<T>` and `apply()` usage, passing outputs directly as inputs, component structure and parenting, secrets hygiene, and safe refactoring with `aliases`.
+Before writing any non-trivial program, load the `pulumi-best-practices` skill, which covers `Output<T>` and `apply()` usage, passing outputs directly as inputs, component structure and parenting, secrets hygiene, and safe refactoring with `aliases`.
 
 ### Bootstrapping
 
@@ -257,7 +257,7 @@ When you are uncertain about a CLI flag, command shape, or resource property, lo
 
 ## Routing to specialized skills
 
-When the work moves into territory another skill covers in depth, hand off to that skill rather than reinvent its content. The Pulumi skills below live at https://github.com/pulumi/agent-skills.
+When the work moves into territory another skill covers in depth, hand off to that skill rather than reinvent its content.
 
 | Skill | Load when |
 |---|---|
