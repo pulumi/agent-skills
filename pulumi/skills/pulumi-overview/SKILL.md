@@ -58,7 +58,7 @@ pulumi do <pkg:mod:type> <verb> [args] [flags]
 ```
 
 - `<pkg>` is the provider package (`aws`, `azure-native`, `gcp`, `cloudflare`, `kubernetes`, etc.).
-- `<mod>` is the module within the package (`compute`, `storage`, `dns`); optional when the type has no module segment, or when the module is `index`. For example, `cloudflare:index/record:Record` invokes as `cloudflare Record`.
+- `<mod>` is the module within the package (`compute`, `storage`, `dns`); optional when the module is `index`. For example, `cloudflare:index/record:Record` invokes as `cloudflare:Record`.
 - `<type>` is the resource type (`VirtualMachine`, `Bucket`, `Record`).
 - `<verb>` is `create`, `read`, `patch`, or `delete`.
 - `<name>` is the Pulumi logical name for the resource within the stack. Use an identifier with alphanumeric characters and underscores (`my_bucket`, not `my-bucket`).
