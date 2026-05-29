@@ -48,13 +48,13 @@ Provider credentials are separate from Pulumi Cloud credentials. `pulumi do` rea
 Here is a complete invocation, creating an S3 bucket:
 
 ```bash
-npx pulumi do aws s3 Bucket create my_bucket --bucket my-data --tags.Environment dev
+npx pulumi do aws:s3:Bucket create my_bucket --bucket my-data
 ```
 
 The shape is:
 
 ```text
-pulumi do <pkg:mod:type> <verb> [args] [flags]
+pulumi do <pkg:mod:type> <verb> <name> [args] [flags]
 ```
 
 - `<pkg>` is the provider package (`aws`, `azure-native`, `gcp`, `cloudflare`, `kubernetes`, etc.).
@@ -62,24 +62,24 @@ pulumi do <pkg:mod:type> <verb> [args] [flags]
 - `<type>` is the resource type (`VirtualMachine`, `Bucket`, `Record`).
 - `<verb>` is `create`, `read`, `patch`, or `delete`.
 - `<name>` is the Pulumi logical name for the resource within the stack. Use an identifier with alphanumeric characters and underscores (`my_bucket`, not `my-bucket`).
-- `[args]` are per-property flags synthesized from the provider schema, or a PCL or YAML body via `-input-file <file>`.
+- `[args]` are per-property flags synthesized from the provider schema, or a PCL or YAML body via `--input-file <file>`. Flags set top-level scalar properties only; nested or structured values (like `tags`) must come from the body file.
 
 ### Verbs
 
 - `create` provisions the resource and fails if a resource with the same logical name already exists in the stack; use `patch` to modify an existing one.
 - `read` has two forms. `read <name>` refreshes the named resource's outputs from the provider and updates them in the snapshot. `read --id <cloud-id>` is a contextless lookup against any cloud-side ID, returns the resource as JSON, and writes nothing to state.
-- `patch` updates a resource already in stack state. The CLI merges flags and `-f` body via JSON Merge Patch (`null` deletes a property from the input); the provider may still require a replace or a prior `read <name>` to get current values. Pass `--yes` in non-interactive contexts.
+- `patch` updates a resource already in stack state. The CLI merges flags and `--input-file` body via JSON Merge Patch (`null` deletes a property from the input); the provider may still require a replace or a prior `read <name>` to get current values. Pass `--yes` in non-interactive contexts.
 - `delete` removes the resource from both state and the cloud. This is irreversible. Get explicit user confirmation for the specific resource before invoking; use `--yes` only after that confirmation, not as a default for non-interactive runs.
 
 `pulumi do` also supports two non-CRUD operations. `pulumi do <pkg:mod:type> list [flags]` enumerates existing instances of a resource type from the cloud. `pulumi do <pkg:mod:function> [flags]` invokes a stateless function the provider exposes alongside its resources.
 
 ### Property input
 
-Properties come from per-property flags, a PCL or YAML body, or both; flags overlay the body via JSON Merge Patch. When the YAML body contains `${...}` interpolations, use a quoted heredoc so the shell does not expand them.
+Properties come from per-property flags, a PCL or YAML body, or both; flags overlay the body via JSON Merge Patch. Flags set top-level scalar properties only, so nested or structured values (`tags`, nested blocks) must come from the body file. When the YAML body contains `${...}` interpolations, write it with a quoted heredoc so the shell does not expand them.
 
 ```bash
 # YAML body form (same resource as the opening example)
-cat <<'EOF' | npx pulumi do aws s3 Bucket create my_bucket -f -
+cat > bucket.yaml <<'EOF'
 properties:
   bucket: my-data
   tags:
@@ -87,9 +87,10 @@ properties:
 options:
   protect: true
 EOF
+npx pulumi do aws:s3:Bucket create my_bucket --input-file bucket.yaml
 
-# Mixed: YAML body plus a flag overlay
-npx pulumi do aws s3 Bucket create my_bucket -f base.yaml --tags.Environment prod
+# Mixed: YAML body plus a top-level scalar flag overlay
+npx pulumi do aws:s3:Bucket create my_bucket --input-file base.yaml --force-destroy true
 ```
 
 Resource options live under `options:` in YAML or as `--option-name` flags.
@@ -101,9 +102,9 @@ Before authoring properties for a provider package new to this session, run `npx
 Reference outputs of resources already in the stack as `${name.output}`. In shell, single-quote the interpolation or use a quoted heredoc with `<<'EOF'` so bash does not expand `$`. In a YAML body the value is already a string and the CLI parses the interpolation; no quoting is needed.
 
 ```bash
-npx pulumi do aws ec2 Vpc create main_vpc --cidr-block 10.0.0.0/16
+npx pulumi do aws:ec2:Vpc create main_vpc --cidr-block 10.0.0.0/16
 
-npx pulumi do aws ec2 Subnet create app_subnet \
+npx pulumi do aws:ec2:Subnet create app_subnet \
   --vpc-id '${main_vpc.id}' \
   --cidr-block 10.0.1.0/24
 ```
@@ -111,9 +112,9 @@ npx pulumi do aws ec2 Subnet create app_subnet \
 Outputs from one provider flow into inputs to another, so an S3 bucket and a Cloudflare DNS record can be connected in one session.
 
 ```bash
-npx pulumi do aws s3 Bucket create assets --bucket my-app-assets
+npx pulumi do aws:s3:Bucket create assets --bucket my-app-assets
 
-npx pulumi do cloudflare Record create assets_dns \
+npx pulumi do cloudflare:Record create assets_dns \
   --zone-id <your-zone-id> \
   --name assets \
   --type CNAME \
@@ -128,13 +129,14 @@ By default, `pulumi do` writes one structured JSON record to stdout for the affe
 
 ```json
 {
-  "urn":     "urn:pulumi:dev::do-default::aws:s3/bucket:Bucket::my_bucket",
-  "id":      "my-data",
-  "type":    "aws:s3/bucket:Bucket",
-  "name":    "my_bucket",
-  "outputs": { "arn": "arn:aws:s3:::my-data", "...": "..." }
+  "urn":    "urn:pulumi:dev::do-default::aws:s3/bucket:Bucket::my_bucket",
+  "id":     "my-data",
+  "bucket": "my-data",
+  "arn":    "arn:aws:s3:::my-data"
 }
 ```
+
+Resource properties are top-level alongside `id` and `urn`; there is no nested `outputs` object, and the `type` and `name` you passed in are not echoed back.
 
 ### Graduating to Level 2
 
