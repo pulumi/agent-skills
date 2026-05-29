@@ -54,7 +54,7 @@ npx pulumi do aws s3 Bucket create my_bucket --bucket my-data --tags.Environment
 The shape is:
 
 ```text
-pulumi do <pkg> [<mod>] <type> <verb> <name> [args]
+pulumi do <pkg:mod:type> <verb> [args] [flags]
 ```
 
 - `<pkg>` is the provider package (`aws`, `azure-native`, `gcp`, `cloudflare`, `kubernetes`, etc.).
