@@ -71,7 +71,7 @@ pulumi do <pkg:mod:type> <verb> [args] [flags]
 - `patch` updates a resource already in stack state. The CLI merges flags and `-f` body via JSON Merge Patch (`null` deletes a property from the input); the provider may still require a replace or a prior `read <name>` to get current values. Pass `--yes` in non-interactive contexts.
 - `delete` removes the resource from both state and the cloud. This is irreversible. Get explicit user confirmation for the specific resource before invoking; use `--yes` only after that confirmation, not as a default for non-interactive runs.
 
-`pulumi do` also supports two non-CRUD operations. `pulumi do <pkg> [<mod>] <type> list [args]` enumerates existing instances of a resource type from the cloud. `pulumi do <pkg> [<mod>] <function> [args]` invokes a stateless function the provider exposes alongside its resources.
+`pulumi do` also supports two non-CRUD operations. `pulumi do <pkg:mod:type> list [flags]` enumerates existing instances of a resource type from the cloud. `pulumi do <pkg:mod:function> [flags]` invokes a stateless function the provider exposes alongside its resources.
 
 ### Property input
 
