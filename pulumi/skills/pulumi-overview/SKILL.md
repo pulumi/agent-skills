@@ -75,7 +75,7 @@ pulumi do <pkg> [<mod>] <type> <verb> <name> [args]
 
 ### Property input
 
-Properties come from per-property flags, a YAML body, or both; flags overlay the body via JSON Merge Patch. When the YAML body contains `${...}` interpolations, use a quoted heredoc so the shell does not expand them.
+Properties come from per-property flags, a PCL or YAML body, or both; flags overlay the body via JSON Merge Patch. When the YAML body contains `${...}` interpolations, use a quoted heredoc so the shell does not expand them.
 
 ```bash
 # YAML body form (same resource as the opening example)
