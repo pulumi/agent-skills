@@ -62,7 +62,7 @@ pulumi do <pkg:mod:type> <verb> [args] [flags]
 - `<type>` is the resource type (`VirtualMachine`, `Bucket`, `Record`).
 - `<verb>` is `create`, `read`, `patch`, or `delete`.
 - `<name>` is the Pulumi logical name for the resource within the stack. Use an identifier with alphanumeric characters and underscores (`my_bucket`, not `my-bucket`).
-- `[args]` are per-property flags synthesized from the provider schema, or a YAML body via `-f <file>` or stdin.
+- `[args]` are per-property flags synthesized from the provider schema, or a PCL or YAML body via `-input-file <file>`.
 
 ### Verbs
 
