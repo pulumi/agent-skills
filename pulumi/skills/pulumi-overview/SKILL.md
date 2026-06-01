@@ -35,9 +35,9 @@ When a Pulumi project (`Pulumi.yaml`) already exists in the directory, do not us
 
 ### First invocation and signup
 
-The canonical invocation is `npx pulumi <command>`. It works on any machine with Node.js installed and requires no prior Pulumi setup. If `pulumi` is on PATH, the `npx` shim defers to it; otherwise the command runs from the npm registry. To confirm the CLI is available before any command that would trigger signup, run `npx pulumi version`; it does not touch Pulumi Cloud. The `npx` prefix is a convenience that applies at every level; where later prose writes bare `pulumi`, it means the same command.
+The canonical invocation is `npx pulumi <command>`. It works on any machine with Node.js installed and requires no prior Pulumi setup. If `pulumi` is on PATH, the `npx` shim defers to it; otherwise the command runs from the npm registry. To confirm the CLI is available before any command that would trigger signup, run `npx pulumi version`; it does not touch Pulumi Cloud.
 
-The first command that touches Pulumi Cloud silently provisions an ephemeral agent account there. This happens any time a command would otherwise prompt a human to log in: `pulumi stack init`, `pulumi up`, anything in that family. `pulumi do` writes no Pulumi state, but it resolves provider packages through the registry, and in an agent context without saved credentials that resolution can reach the same signup path. So a first `pulumi do` may also provision the account and print the claim banner.
+`pulumi do` writes no Pulumi state, but it resolves provider packages through the Pulumi registry, which can reach Pulumi Cloud. In an agent context without saved credentials, that means a first `pulumi do` may silently provision an ephemeral agent account and print a claim banner.
 
 The CLI prints one line to stderr noting the new account and a claim URL. Surface that claim URL to the user immediately and again in the final response, since it is the only way the user takes ownership of the account; a session that ends without it leaves resources stranded in the cloud. The access token expires in 3 days and the claim URL stays valid for 30 days; Pulumi Cloud sets both, so surface whatever validity the banner reports.
 
