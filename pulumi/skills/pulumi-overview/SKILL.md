@@ -137,7 +137,14 @@ The resource's properties are top-level, alongside an `id` field holding the clo
 
 ### Graduating to Level 2
 
-Eject to Level 2 when one-shot commands stop fitting. Because `pulumi do` leaves no Pulumi state behind, the resources it created are ordinary cloud resources; bring them under a project by importing them with `pulumi import` and their cloud ids, then continue in code. Use `read <id>` to recover current properties first if you no longer have the ids.
+Eject to Level 2 when one-shot commands stop fitting. Because `pulumi do` leaves no Pulumi state behind, the resources it created are ordinary cloud resources, so you adopt them into a project with `pulumi import`. From inside a Pulumi project, run `pulumi import` with each resource's full type token, a logical name, and the cloud `id` that `create` returned. Import records the resource in the stack's state and, by default, generates its program code.
+
+```bash
+# the import type token is the full pkg:mod/type:Type form, not pulumi do's short aws:s3:Bucket
+npx pulumi import aws:s3/bucket:Bucket assets my-data
+```
+
+Move the generated code into your program, then manage the resource there instead of with `pulumi do`. To adopt several at once, pass them in a bulk `--file`.
 
 ---
 
