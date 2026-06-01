@@ -113,22 +113,24 @@ Before authoring properties for a provider package new to this session, run `npx
 
 ### Connecting resources
 
-`pulumi do` keeps no state and has no resource graph, so there is no `${...}` reference syntax between commands. To feed one resource's output into another, capture the value from the first command's JSON and pass it as a literal flag. Use `jq` to pull a field from the output.
+`pulumi do` keeps no state and has no resource graph, so there is no `${...}` reference syntax between commands. To feed one resource's output into another, read a field from the first command's JSON output and pass it as a literal flag to the next.
 
 ```bash
-VPC_ID=$(npx pulumi do aws:ec2:Vpc create --yes --cidr-block 10.0.0.0/16 | jq -r '.id')
+# create prints JSON containing "id": "vpc-0abc123"
+npx pulumi do aws:ec2:Vpc create --yes --cidr-block 10.0.0.0/16
 
-npx pulumi do aws:ec2:Subnet create --yes \
-  --vpc-id "$VPC_ID" \
-  --cidr-block 10.0.1.0/24
+# pass that id to the subnet
+npx pulumi do aws:ec2:Subnet create --yes --vpc-id vpc-0abc123 --cidr-block 10.0.1.0/24
 ```
 
 The same pattern connects resources across providers. Here a value from the `random` provider feeds an AWS resource name, a common way to get globally-unique names.
 
 ```bash
-PET=$(npx pulumi do random:RandomPet create --yes | jq -r '.id')
+# RandomPet prints JSON containing "id": "artistic-bull"
+npx pulumi do random:RandomPet create --yes
 
-npx pulumi do aws:s3:Bucket create --yes --bucket "assets-$PET"
+# use it in the bucket name
+npx pulumi do aws:s3:Bucket create --yes --bucket assets-artistic-bull
 ```
 
 When a command needs a value the chain does not produce, like an existing resource id or an API zone id, get it from a provider function, a `list` where the provider supports it, or the user. Do not invent it.
