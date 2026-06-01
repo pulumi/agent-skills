@@ -95,10 +95,9 @@ tags = {
 }
 EOF
 npx pulumi do aws:s3:Bucket create --yes --input-file bucket.pcl
-
-# Body plus a scalar flag overlay
-npx pulumi do aws:s3:Bucket create --yes --input-file base.pcl --force-destroy
 ```
+
+Per-property flags can sit alongside `--input-file` to overlay individual scalar values on top of the body.
 
 To supply the body as YAML instead, pass `--input yaml`. This requires the YAML converter plugin to be installed; PCL is the dependency-free default, so prefer it unless the input is already YAML.
 
@@ -106,7 +105,7 @@ To supply the body as YAML instead, pass `--input yaml`. This requires the YAML 
 npx pulumi do aws:s3:Bucket create --yes --input yaml --input-file bucket.yaml
 ```
 
-Set boolean flags by presence (`--force-destroy`) or with an equals sign (`--force-destroy=true`). A space-separated `--force-destroy true` is read as the flag plus a stray argument and fails.
+Set a boolean flag by presence (`--<flag>`) or with an equals sign (`--<flag>=true`). A space-separated `--<flag> true` is read as the flag plus a stray argument and fails.
 
 `pulumi do` does not support resource options such as `protect` (which guards a resource from deletion); those belong to a Level 2 program.
 
