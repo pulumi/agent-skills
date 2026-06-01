@@ -79,7 +79,7 @@ There is no Pulumi logical name to choose. The CLI derives an internal name from
 - `patch <id>` reads the resource's current inputs, overlays the top-level properties you pass as flags or in `--input-file`, and updates the resource in place. The overlay is shallow: properties you do not mention are left as they are. `patch` only updates; it cannot replace a resource, so a change that would require replacement fails rather than recreating it. The command makes you confirm by typing the resource id; pass `--yes` to skip that prompt in non-interactive contexts.
 - `delete <id>` removes the resource from the cloud. This is irreversible. Get explicit user confirmation for the specific resource before invoking; use `--yes` only after that confirmation, not as a default for non-interactive runs.
 
-`pulumi do` also supports two non-CRUD operations. `pulumi do <pkg:mod:type> list [flags]` enumerates existing instances of a resource type from the cloud, for types that support listing. `pulumi do <pkg:mod:function> [flags]` invokes a stateless function the provider exposes alongside its resources.
+`pulumi do` also supports two non-CRUD operations. `pulumi do <pkg:mod:type> list [flags]` enumerates existing instances of a resource type, but only on providers that implement listing. The Terraform-bridged providers, including `aws`, `azure`, and `gcp`, generally do not, so `list` is mostly a native-provider feature; a type that lacks it rejects the verb. `pulumi do <pkg:mod:function> [flags]` invokes a stateless function the provider exposes alongside its resources.
 
 ### Property input
 
@@ -123,19 +123,15 @@ npx pulumi do aws:ec2:Subnet create --yes \
   --cidr-block 10.0.1.0/24
 ```
 
-The same pattern connects resources across providers. Here an AWS Elastic IP's address becomes the target of a Cloudflare DNS A record.
+The same pattern connects resources across providers. Here a value from the `random` provider feeds an AWS resource name, a common way to get globally-unique names.
 
 ```bash
-EIP_ADDRESS=$(npx pulumi do aws:ec2:Eip create --yes --domain vpc | jq -r '.publicIp')
+PET=$(npx pulumi do random:RandomPet create --yes | jq -r '.id')
 
-npx pulumi do cloudflare:Record create --yes \
-  --zone-id "$CLOUDFLARE_ZONE_ID" \
-  --name app \
-  --type A \
-  --content "$EIP_ADDRESS"
+npx pulumi do aws:s3:Bucket create --yes --bucket "assets-$PET"
 ```
 
-A value the chain does not produce, like the Cloudflare zone id above, has to come from somewhere: look it up with a provider function or `list`, or ask the user. Do not invent it.
+When a command needs a value the chain does not produce, like an existing resource id or an API zone id, get it from a provider function, a `list` where the provider supports it, or the user. Do not invent it.
 
 ### Output
 
