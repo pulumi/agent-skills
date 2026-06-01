@@ -43,9 +43,9 @@ The CLI prints one line to stderr noting the new account and a claim URL. Surfac
 
 If the account-creation banner appears more than once in the same session, credentials may not have been cached. Agent credentials are written to `/tmp/.pulumi/credentials.json` and the claim metadata to `/tmp/.pulumi/agent-claim.json`, but the claim URL itself is printed in the banner, not stored in those files. Capture it from each banner and surface the most recent one before doing more work.
 
-When credentials already exist, default to whatever backend they point at; for accounts created via silent signup, that is Pulumi Cloud. If authentication fails, ask the user to run `pulumi login`. Never fall back to `pulumi login --local` or set `PULUMI_CONFIG_PASSPHRASE`; both silently change the user's setup.
+If authentication fails, ask the user to run `pulumi login`. Never fall back to `pulumi login --local` or set `PULUMI_CONFIG_PASSPHRASE`; both silently change the user's setup.
 
-Provider credentials are separate from Pulumi Cloud credentials. `pulumi do` reads them from the same environment variables the provider's native CLI uses (`AWS_PROFILE`, `CLOUDFLARE_API_TOKEN`, `GOOGLE_APPLICATION_CREDENTIALS`). If those aren't set, ask the user before invoking commands that call out to the cloud. ESC (Level 3) is the durable answer once a project exists.
+Provider credentials are separate from Pulumi Cloud credentials. `pulumi do` reads them from the same environment variables the provider's native CLI uses (`AWS_PROFILE`, `CLOUDFLARE_API_TOKEN`, `GOOGLE_APPLICATION_CREDENTIALS`). If they aren't set, ask the user before invoking commands that call out to the cloud. If a command fails with a provider authorization error, look up that provider's required credentials or configuration and have the user supply them rather than guessing at the cause. ESC (Level 3) is the durable place to keep them once a project exists.
 
 ### Command shape
 
@@ -83,9 +83,7 @@ There is no Pulumi logical name to choose. The CLI derives an internal name from
 
 ### Property input
 
-Properties come from per-property flags, a body file, or both; flags overlay the body. Flags set top-level scalar properties only (string, bool, number), so nested or structured values (`tags`, nested blocks) must come from the body file.
-
-The body file defaults to PCL, Pulumi's configuration language. Write properties as flat `name = value` attributes using the resource's camelCase schema names:
+Properties come from per-property flags, a body file, or both; flags overlay the body. Flags set top-level scalar properties only, so nested or structured values (`tags`, nested blocks) must come from the body file. The body defaults to PCL, written as flat `name = value` attributes; pass `--input yaml` (which needs the YAML converter plugin) to use YAML instead.
 
 ```bash
 cat > bucket.pcl <<'EOF'
@@ -97,19 +95,7 @@ EOF
 npx pulumi do aws:s3:Bucket create --yes --input-file bucket.pcl
 ```
 
-Per-property flags can sit alongside `--input-file` to overlay individual scalar values on top of the body.
-
-To supply the body as YAML instead, pass `--input yaml`. This requires the YAML converter plugin to be installed; PCL is the dependency-free default, so prefer it unless the input is already YAML.
-
-```bash
-npx pulumi do aws:s3:Bucket create --yes --input yaml --input-file bucket.yaml
-```
-
-Set a boolean flag by presence (`--<flag>`) or with an equals sign (`--<flag>=true`). A space-separated `--<flag> true` is read as the flag plus a stray argument and fails.
-
-`pulumi do` does not support resource options such as `protect` (which guards a resource from deletion); those belong to a Level 2 program.
-
-Before authoring properties for a provider package new to this session, run `npx pulumi package get-schema <pkg>` once and read the resource's schema. Schema property names are camelCase; use them as-is in a PCL body, and as kebab-case flags on the command line (`cidrBlock` becomes `--cidr-block`). If you don't know the package name, browse the catalog at https://www.pulumi.com/registry/.
+Before authoring properties for a package new to this session, run `npx pulumi package get-schema <pkg>` once and read the resource's schema. Property names are camelCase (flags are the kebab-case form). If you don't know the package name, browse the catalog at https://www.pulumi.com/registry/.
 
 ### Connecting resources
 
@@ -221,7 +207,7 @@ npx pulumi env open my_org/aws/prod
 npx pulumi env run my_org/aws/prod -- aws s3 ls
 ```
 
-**Always vend cloud credentials through OIDC, not as static keys in environment YAML.** OIDC trust policies, IdP registration, and rotation patterns live in `pulumi-esc`; use skill `pulumi-esc` rather than invent ESC YAML by hand.
+**Where the provider supports it, vend cloud credentials through OIDC rather than static keys in environment YAML.** OIDC trust policies, IdP registration, and rotation patterns live in `pulumi-esc`; use skill `pulumi-esc` rather than invent ESC YAML by hand.
 
 `env open` resolves and prints live credentials, so avoid capturing its output into logs or transcripts. Prefer `env run -- <command>`, which injects the credentials into the child process rather than printing them.
 
