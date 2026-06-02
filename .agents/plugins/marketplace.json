@@ -37,6 +37,17 @@
         "installation": "AVAILABLE"
       },
       "category": "Coding"
+    },
+    {
+      "name": "pulumi-package-maintenance",
+      "source": {
+        "source": "local",
+        "path": "./package-maintenance"
+      },
+      "policy": {
+        "installation": "AVAILABLE"
+      },
+      "category": "Coding"
     }
   ]
 }

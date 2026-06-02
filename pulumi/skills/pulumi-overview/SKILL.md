@@ -35,7 +35,7 @@ When a Pulumi project (`Pulumi.yaml`) already exists in the directory, do not us
 
 ### First invocation and signup
 
-The canonical invocation is `npx pulumi <command>`. It works on any machine with Node.js installed and requires no prior Pulumi setup. If `pulumi` is on PATH, the `npx` shim defers to it; otherwise the command runs from the npm registry. To confirm the CLI is available before any command that would trigger signup, run `npx pulumi version`; it does not touch Pulumi Cloud.
+The canonical invocation is `npx pulumi <command>`. It works on any machine with Node.js installed and requires no prior Pulumi setup. If `pulumi` is on PATH, the `npx` shim defers to it; otherwise the command runs from the npm registry. To confirm the CLI is available before any command that would trigger signup, run `npx pulumi version`; it does not touch Pulumi Cloud. The resource verbs (`create`, `read`, `patch`, `delete`, `list`) require CLI v3.243.0 or newer, where `pulumi do` gained resource support. `npx pulumi` fetches a current release, but a `pulumi` already on PATH may be older, so confirm the version is recent.
 
 `pulumi do` writes no Pulumi state, but it resolves provider packages through the Pulumi registry, which can reach Pulumi Cloud. In an agent context without saved credentials, that means a first `pulumi do` may silently provision an ephemeral agent account and print a claim banner.
 
@@ -79,7 +79,7 @@ There is no Pulumi logical name to choose. The CLI derives an internal name from
 - `patch <id>` reads the resource's current inputs, overlays the top-level properties you pass as flags or in `--input-file`, and updates the resource in place. The overlay is shallow: properties you do not mention are left as they are. `patch` only updates; it cannot replace a resource, so a change that would require replacement fails rather than recreating it. The command makes you confirm by typing the resource id; pass `--yes` to skip that prompt in non-interactive contexts.
 - `delete <id>` removes the resource from the cloud. This is irreversible. Get explicit user confirmation for the specific resource before invoking; use `--yes` only after that confirmation, not as a default for non-interactive runs.
 
-`pulumi do` also supports two non-CRUD operations. `pulumi do <pkg:mod:type> list [flags]` enumerates existing instances of a resource type, but only on providers that implement listing. The Terraform-bridged providers, including `aws`, `azure`, and `gcp`, generally do not, so `list` is mostly a native-provider feature; a type that lacks it rejects the verb. `pulumi do <pkg:mod:function> [flags]` invokes a stateless function the provider exposes alongside its resources.
+`pulumi do` also supports two non-CRUD operations. `pulumi do <pkg:mod:type> list [flags]` enumerates existing instances of a resource type, but only for types that implement listing. Native providers support it broadly. The Terraform-bridged providers (`aws`, `azure`, `gcp`) support it too, but coverage varies by resource type, so a type that lacks it rejects the verb. `pulumi do <pkg:mod:function> [flags]` invokes a stateless function the provider exposes alongside its resources.
 
 ### Property input
 
@@ -95,7 +95,7 @@ EOF
 npx pulumi do aws:s3:Bucket create --yes --input-file bucket.pcl
 ```
 
-Before authoring properties for a package new to this session, run `npx pulumi package get-schema <pkg>` once and read the resource's schema. Property names are camelCase (flags are the kebab-case form). If you don't know the package name, browse the catalog at https://www.pulumi.com/registry/.
+Before authoring properties for a resource new to this session, run `npx pulumi package info <pkg> --module <mod> --resource <Type>` to list its inputs and outputs with descriptions, scoped to that one resource. Reach for `npx pulumi package get-schema <pkg>` only when you need the full machine-readable schema with the nested type definitions `info` does not expand; for a large provider it runs to tens of MB, so do not read it whole. Property names are camelCase (flags are the kebab-case form). To discover names, run `npx pulumi package info <pkg>` with no module to list its modules and resources, or browse the catalog at https://www.pulumi.com/registry/.
 
 ### Connecting resources
 
@@ -282,6 +282,8 @@ When the work moves into territory another skill covers in depth, hand off to th
 | `pulumi-component` | Packaging or consuming `ComponentResource` abstractions |
 | `pulumi-esc` | Defining ESC environments, OIDC trust policies, or rotation |
 | `pulumi-automation-api` | Embedding Pulumi inside another program (IDP, custom CI) |
+| `provider-upgrade` | Upgrading a provider package version in a stack without unintended changes |
+| `package-usage` | Auditing which stacks across the org use a package and at what versions |
 | `pulumi-terraform-to-pulumi`, `pulumi-cdk-to-pulumi`, `cloudformation-to-pulumi`, `pulumi-arm-to-pulumi` | Migrating from those tools |
 
-An agent only sees the skills the user installed, so a referenced skill may not be present. `pulumi-best-practices`, `pulumi-component`, `pulumi-esc`, and `pulumi-automation-api` ship in the same `pulumi` plugin as this skill, so they are available whenever this one is. The migration skills install separately through the `pulumi-migration` plugin and may be absent. When a referenced skill is available, load it. When it is not, do not stall or treat the gap as an error: continue with the guidance in this skill and the docs at https://www.pulumi.com/docs, and tell the user which skill or plugin covers the work in depth.
+An agent only sees the skills the user installed, so a referenced skill may not be present. `pulumi-best-practices`, `pulumi-component`, `pulumi-esc`, `pulumi-automation-api`, `provider-upgrade`, and `package-usage` ship in the same `pulumi` plugin as this skill, so they are available whenever this one is. The migration skills install separately through the `pulumi-migration` plugin and may be absent. When a referenced skill is available, load it. When it is not, do not stall or treat the gap as an error: continue with the guidance in this skill and the docs at https://www.pulumi.com/docs, and tell the user which skill or plugin covers the work in depth.

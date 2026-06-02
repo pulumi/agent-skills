@@ -1,0 +1,20 @@
+{
+  "name": "pulumi-package-maintenance",
+  "version": "1.0.0",
+  "description": "Maintain Pulumi provider repositories: run upgrade-provider and manage upstream Terraform patches",
+  "author": {
+    "name": "Pulumi",
+    "url": "https://github.com/pulumi"
+  },
+  "homepage": "https://www.pulumi.com/docs/",
+  "repository": "https://github.com/pulumi/agent-skills",
+  "license": "Apache-2.0",
+  "keywords": [
+    "pulumi",
+    "provider",
+    "upgrade-provider",
+    "upstream-patches",
+    "bridge",
+    "maintenance"
+  ]
+}

@@ -19,7 +19,6 @@
     "esc",
     "secrets",
     "configuration",
-    "upgrade-provider",
-    "upstream-patches"
+    "package-usage"
   ]
 }

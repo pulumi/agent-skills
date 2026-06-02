@@ -4,7 +4,7 @@ This repository contains official Pulumi agent skills for infrastructure as code
 
 ## Repository Structure
 
-Skills are organized into three plugin groups:
+Skills are organized into four plugin groups:
 
 ### Migration Plugin (`migration/`)
 
@@ -25,6 +25,12 @@ Entry-point and specialized skills for writing and operating Pulumi infrastructu
 - **pulumi-automation-api**: Best practices for using Pulumi Automation API
 - **pulumi-esc**: Guidance for working with Pulumi ESC (Environments, Secrets, and Configuration)
 - **provider-upgrade**: Safe workflows for upgrading Pulumi providers without unintended infrastructure changes
+- **package-usage**: Track which stacks across an organization use a package and at what versions
+
+### Package Maintenance Plugin (`package-maintenance/`)
+
+Skills for maintaining Pulumi provider repositories (provider authors and bridge maintainers):
+
 - **pulumi-upgrade-provider**: Automate Pulumi provider repo upgrades with the upgrade-provider tool
 - **upstream-patches**: Create, amend, remove, and rebase patches for Terraform provider submodules
 
@@ -43,6 +49,7 @@ Skills for handing off in-progress work from coding agents to Pulumi Neo for del
 /plugin install pulumi-migration
 /plugin install pulumi
 /plugin install pulumi-delegation
+/plugin install pulumi-package-maintenance
 ```
 
 ### OpenAI Codex
@@ -51,7 +58,7 @@ Skills for handing off in-progress work from coding agents to Pulumi Neo for del
 codex plugin marketplace add pulumi/agent-skills
 ```
 
-After the marketplace registers, install plugins from the Codex TUI: run `codex`, open the plugin marketplace, and pick `pulumi-migration`, `pulumi`, or `pulumi-delegation`.
+After the marketplace registers, install plugins from the Codex TUI: run `codex`, open the plugin marketplace with `/plugins`, and pick `pulumi-migration`, `pulumi`, `pulumi-delegation`, or `pulumi-package-maintenance`.
 
 ### Universal (all agents)
 
@@ -64,9 +71,10 @@ npx skills add pulumi/agent-skills --skill '*'
 Or install individual plugin groups:
 
 ```bash
-npx skills add pulumi/agent-skills/migration --skill '*'     # 4 migration skills
-npx skills add pulumi/agent-skills/pulumi --skill '*'        # 9 pulumi skills (overview + specialized)
-npx skills add pulumi/agent-skills/delegation --skill '*'    # 1 delegation skill
+npx skills add pulumi/agent-skills/migration --skill '*'             # 4 migration skills
+npx skills add pulumi/agent-skills/pulumi --skill '*'                # 7 pulumi skills (overview + specialized)
+npx skills add pulumi/agent-skills/delegation --skill '*'            # 1 delegation skill
+npx skills add pulumi/agent-skills/package-maintenance --skill '*'   # 2 package-maintenance skills
 ```
 
 This works with Claude Code, Cursor, Copilot, Codex, and other agent tools.
@@ -155,7 +163,7 @@ uv run pytest tests/ -v
 
 ## Adding a New Skill
 
-1. Determine which plugin group the skill belongs to (migration, pulumi, or delegation)
+1. Determine which plugin group the skill belongs to (migration, pulumi, delegation, or package-maintenance)
 2. Create the skill directory: `<plugin>/skills/<skill-name>/`
 3. Write the `SKILL.md` file with proper frontmatter:
    ```yaml
