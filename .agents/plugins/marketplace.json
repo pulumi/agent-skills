@@ -17,10 +17,10 @@
       "category": "Coding"
     },
     {
-      "name": "pulumi-authoring",
+      "name": "pulumi",
       "source": {
         "source": "local",
-        "path": "./authoring"
+        "path": "./pulumi"
       },
       "policy": {
         "installation": "AVAILABLE"
@@ -32,6 +32,17 @@
       "source": {
         "source": "local",
         "path": "./delegation"
+      },
+      "policy": {
+        "installation": "AVAILABLE"
+      },
+      "category": "Coding"
+    },
+    {
+      "name": "pulumi-package-maintenance",
+      "source": {
+        "source": "local",
+        "path": "./package-maintenance"
       },
       "policy": {
         "installation": "AVAILABLE"

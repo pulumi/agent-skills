@@ -1,0 +1,50 @@
+# Queries that should activate the pulumi-overview skill.
+#
+# This skill is the entry-point router across the three Pulumi surfaces:
+#   L1 - ad-hoc, single-resource operations from the CLI (no project)
+#   L2 - Pulumi projects in a language
+#   L3 - Pulumi Cloud (ESC, policy, deployments, drift, schedules)
+#
+# L1 queries below are mostly plain infrastructure requests, the way a user
+# (or non-Pulumi-aware agent) would naturally phrase them. Two L1 queries
+# explicitly mention `pulumi do` to confirm that phrasing also routes here.
+queries:
+  # L1 - ad-hoc single-resource infrastructure
+  - "Use pulumi do to create a Cloudflare DNS record"
+  - "Provision a one-off Auth0 application"
+  - "Register a Vercel deployment's domain in Cloudflare"
+  - "Set up a Datadog monitor"
+  - "Delete the S3 bucket I created earlier with pulumi do"
+  - "Provision an Azure virtual machine"
+  - "Create a Kubernetes namespace"
+  - "Spin up a single S3 bucket"
+
+  # L1 - multi-provider bootstrapping in one place
+  - "I need to provision an S3 bucket and point a Cloudflare DNS record at it"
+  - "Stand up a GCP storage bucket and a Datadog monitor for it in one go"
+  - "Bootstrap infrastructure across AWS, Cloudflare, and Auth0 from one CLI"
+  - "Set up infrastructure that spans AWS, GCP, and Cloudflare in one workflow"
+  - "Ad-hoc cloud resource CRUD across multiple providers without writing code"
+
+  # L2 - new project, picking the right level
+  - "Start a new Pulumi project in TypeScript for our AWS infrastructure"
+  - "Bootstrap a Pulumi project that provisions a VPC, subnets, and an EKS cluster"
+  - "Set up a Pulumi program for a multi-region application"
+
+  # L2 - graduating from L1 ad-hoc work
+  - "Move resources from a default stack into a named Pulumi project"
+  - "I've been creating resources with pulumi do, now I want to move them into a real Pulumi project"
+
+  # L3 - drift, policy, hosted runs
+  - "Set up nightly drift detection on my Pulumi production stack"
+  - "Add policy enforcement to our Pulumi previews"
+  - "Run my Pulumi updates in Pulumi Cloud instead of on a CI runner"
+
+  # Lifecycle - tear-down
+  - "Tear down our staging environment in Pulumi"
+  - "Destroy the dev stack and all the resources it created"
+
+  # Onboarding / first contact
+  - "I'm an agent that needs to use Pulumi -- where do I start?"
+  - "I'm an AI coding agent setting up Pulumi for the first time, what do I need to know?"
+  - "I'm new to Pulumi -- how do I structure a project for dev, staging, and prod stacks?"

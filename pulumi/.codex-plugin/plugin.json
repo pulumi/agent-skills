@@ -1,7 +1,7 @@
 {
-  "name": "pulumi-authoring",
+  "name": "pulumi",
   "version": "1.0.0",
-  "description": "Write quality Pulumi programs, components, automation, secrets management with ESC, and provider upgrades",
+  "description": "Entry-point and specialized skills for writing and operating Pulumi infrastructure across CLI, projects, and Pulumi Cloud",
   "skills": "./skills/",
   "author": {
     "name": "Pulumi",
@@ -12,6 +12,7 @@
   "license": "Apache-2.0",
   "keywords": [
     "pulumi",
+    "overview",
     "best-practices",
     "component",
     "automation-api",
@@ -19,16 +20,17 @@
     "esc",
     "secrets",
     "configuration",
-    "upgrade-provider",
-    "upstream-patches"
+    "package-usage"
   ],
   "interface": {
-    "displayName": "Pulumi Authoring",
-    "shortDescription": "Best practices and patterns for authoring Pulumi programs",
+    "displayName": "Pulumi",
+    "shortDescription": "Entry-point and specialized skills for Pulumi infrastructure",
     "developerName": "Pulumi",
     "category": "Coding",
     "websiteURL": "https://www.pulumi.com/docs/",
     "defaultPrompt": [
+      "Use $pulumi-overview to set up an S3 bucket and a Cloudflare DNS record",
+      "Use $pulumi-overview to provision a database for this app",
       "Use $pulumi-best-practices to review this Pulumi code",
       "Use $pulumi-component to build a reusable Pulumi component",
       "Use $pulumi-esc to manage configuration and secrets"
