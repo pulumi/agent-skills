@@ -283,3 +283,5 @@ When the work moves into territory another skill covers in depth, hand off to th
 | `pulumi-esc` | Defining ESC environments, OIDC trust policies, or rotation |
 | `pulumi-automation-api` | Embedding Pulumi inside another program (IDP, custom CI) |
 | `pulumi-terraform-to-pulumi`, `pulumi-cdk-to-pulumi`, `cloudformation-to-pulumi`, `pulumi-arm-to-pulumi` | Migrating from those tools |
+
+An agent only sees the skills the user installed, so a referenced skill may not be present. `pulumi-best-practices`, `pulumi-component`, `pulumi-esc`, and `pulumi-automation-api` ship in the same `pulumi` plugin as this skill, so they are available whenever this one is. The migration skills install separately through the `pulumi-migration` plugin and may be absent. When a referenced skill is available, load it. When it is not, do not stall or treat the gap as an error: continue with the guidance in this skill and the docs at https://www.pulumi.com/docs, and tell the user which skill or plugin covers the work in depth.
