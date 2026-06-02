@@ -88,6 +88,43 @@ values:
     app:dbPassword: ${dbPassword}
 ```
 
+### Reading Another Stack's Outputs
+
+Use the `fn::open::pulumi-stacks` provider to consume another stack's outputs. The
+`stacks` and `network` keys below are arbitrary names you choose. Once the function
+resolves, it *replaces* `stacks.network` with the named stack's outputs — so the
+output names (`vpcId`, `subnetIds`) do not appear in the static YAML; they come from
+whatever the producer stack exports. Two things are easy to get wrong:
+
+- The stack is named by a single project-qualified `stack: <project>/<stackName>`
+  field — **not** separate `projectName`/`stackName` fields.
+- Outputs resolve directly under the stack name — there is **no** `.outputs.` level
+  (use `${stacks.network.vpcId}`, not `${stacks.network.outputs.vpcId}`).
+
+Example — replace the stack name and output names with your own:
+
+```yaml
+values:
+  stacks:
+    fn::open::pulumi-stacks:
+      stacks:
+        network:                 # arbitrary local name for the referenced stack
+          stack: my-project/dev  # producer stack to read outputs from
+  pulumiConfig:
+    # vpcId / subnetIds are whatever the producer stack exports; after the function
+    # resolves they are available directly under `stacks.network` (no `.outputs.`).
+    vpcId: ${stacks.network.vpcId}
+    subnetIds: ${stacks.network.subnetIds}
+```
+
+Full schema: https://www.pulumi.com/docs/esc/providers/pulumi-stacks/
+
+### Viewing an Environment in the Pulumi Cloud Console
+
+The console URL for an environment is
+`https://app.pulumi.com/<org>/esc/<project>/<environment>`. The route segment is
+`esc`, not `environments`.
+
 ## Working with the User
 
 ### For Simple Questions
@@ -105,6 +142,8 @@ When users need more information, use the web-fetch tool to get content from the
   - GCP: https://www.pulumi.com/docs/esc/integrations/dynamic-login-credentials/gcp-login/
   - Short-term credential (OIDC) providers: https://www.pulumi.com/docs/esc/integrations/dynamic-login-credentials/
   - Dynamic secret providers: https://www.pulumi.com/docs/esc/integrations/dynamic-secrets/
+  - Pulumi stack outputs (`fn::open::pulumi-stacks`): https://www.pulumi.com/docs/esc/providers/pulumi-stacks/
+  - All providers (index): https://www.pulumi.com/docs/esc/providers/
 - **Getting started guide** → https://www.pulumi.com/docs/esc/get-started/
 - **CLI reference** → https://www.pulumi.com/docs/esc/cli/commands/
   - Prefer using the `pulumi env` subcommands over `esc` CLI.
