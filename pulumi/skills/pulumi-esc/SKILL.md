@@ -88,6 +88,43 @@ values:
     app:dbPassword: ${dbPassword}
 ```
 
+### Reading Another Stack's Outputs
+
+Use the `fn::open::pulumi-stacks` provider to consume another stack's outputs. The
+`stacks` and `network` keys below are arbitrary names you choose. Once the function
+resolves, it *replaces* `stacks.network` with the named stack's outputs — so the
+output names (`vpcId`, `subnetIds`) do not appear in the static YAML; they come from
+whatever the producer stack exports. Two things are easy to get wrong:
+
+- The stack is named by a single project-qualified `stack: <project>/<stackName>`
+  field — **not** separate `projectName`/`stackName` fields.
+- Outputs resolve directly under the stack name — there is **no** `.outputs.` level
+  (use `${stacks.network.vpcId}`, not `${stacks.network.outputs.vpcId}`).
+
+Example — replace the stack name and output names with your own:
+
+```yaml
+values:
+  stacks:
+    fn::open::pulumi-stacks:
+      stacks:
+        network:                 # arbitrary local name for the referenced stack
+          stack: my-project/dev  # producer stack to read outputs from
+  pulumiConfig:
+    # vpcId / subnetIds are whatever the producer stack exports; after the function
+    # resolves they are available directly under `stacks.network` (no `.outputs.`).
+    vpcId: ${stacks.network.vpcId}
+    subnetIds: ${stacks.network.subnetIds}
+```
+
+Full schema: https://www.pulumi.com/docs/esc/providers/pulumi-stacks/
+
+### Viewing an Environment in the Pulumi Cloud Console
+
+The console URL for an environment is
+`https://app.pulumi.com/<org>/esc/<project>/<environment>`. The route segment is
+`esc`, not `environments`.
+
 ## Working with the User
 
 ### For Simple Questions
@@ -105,6 +142,8 @@ When users need more information, use the web-fetch tool to get content from the
   - GCP: https://www.pulumi.com/docs/esc/integrations/dynamic-login-credentials/gcp-login/
   - Short-term credential (OIDC) providers: https://www.pulumi.com/docs/esc/integrations/dynamic-login-credentials/
   - Dynamic secret providers: https://www.pulumi.com/docs/esc/integrations/dynamic-secrets/
+  - Pulumi stack outputs (`fn::open::pulumi-stacks`): https://www.pulumi.com/docs/esc/providers/pulumi-stacks/
+  - All providers (index): https://www.pulumi.com/docs/esc/providers/
 - **Getting started guide** → https://www.pulumi.com/docs/esc/get-started/
 - **CLI reference** → https://www.pulumi.com/docs/esc/cli/commands/
   - Prefer using the `pulumi env` subcommands over `esc` CLI.
@@ -172,8 +211,67 @@ Use `call_pulumi_cloud_api()` tool to make requests when needed.
 5. Verify that `pulumi config` shows expected values after linking an environment to a stack
 6. Prefer using `pulumi env run` for commands needing environment variables
 7. Only use `pulumi env open` when absolutely necessary, as it reveals secrets
+8. Before using an existing environment, verify its account and role and get the user's confirmation; never select one by name alone. Never link an environment to a stack (`pulumi config env add`) without explicit user confirmation, and never pass `--yes`.
 
-## Quick Troubleshooting
+## Handling Credential Errors and Existing Environments
+
+### Credential errors
+
+Start with the remediation in the error message. An expired or missing login
+usually just needs the user to re-authenticate, and most providers name the fix
+or the command:
+
+- AWS SSO: `Failed to refresh cached SSO credentials. Please refresh SSO login.`
+  → `aws sso login`
+- AWS temporary credentials: `ExpiredToken: The security token included in the
+  request is expired` → refresh the session or keys
+- Azure: re-run `az login`
+- GCP: re-run `gcloud auth application-default login`
+- Pulumi Cloud (401 / unauthorized): `pulumi login`
+
+Relay the fix and have the user retry. If the error does not name a remediation
+(for example a bare `Unable to locate credentials`, or an access-denied that may
+mean the wrong account or profile rather than an expired login), don't guess —
+identify how the project authenticates (provider config, the active profile, any
+linked ESC environment) and address that.
+
+Changing where the project gets its credentials (adding or switching an ESC
+environment, editing provider config) is a deliberate change, not a reflexive
+fix for an expired session. Do it only if the user wants it, and follow the
+rules below.
+
+### Never select an existing environment by name
+
+Do not pick an environment because its name looks relevant (`*-aws-oidc`,
+`*-creds`, `*-workshop`, etc.). A matching name does not mean it is the right
+one or that it belongs to this user's work.
+
+Before proposing any existing environment:
+
+1. Inspect it with `pulumi env get <org>/<project>/<env>`.
+2. Confirm the target it authenticates to matches where the user's resources
+   actually live. An OIDC `roleArn` names a specific AWS account — if it points
+   at a different account (a shared workshop, an instructor role, another team),
+   it is the wrong environment and will run operations against the wrong account
+   or fail.
+3. Show the candidate to the user and confirm it is theirs and correct before
+   using it.
+
+### Linking an environment changes which credentials operations use — confirm first
+
+`pulumi config env add` edits the stack config (`Pulumi.<stack>.yaml`) and
+changes the credentials Pulumi operations run under. Never run it without
+explicit user confirmation, and never pass `--yes` to skip that confirmation.
+Tell the user what will change and let them decide.
+
+### Verify before claiming it worked
+
+After linking, resolved credential values often show as `[unknown]` until the
+environment is opened or run. Do not claim the error is fixed or that the next
+operation will succeed until you have verified it — check `pulumi config`, and
+confirm the credentials resolve to the expected account before declaring success.
+
+### Quick troubleshooting
 
 - **"Environment not found"**: Check permissions with `pulumi env ls -o <org>`
 - **"Secret decryption failed"**: Use `pulumi env open` not `pulumi env get`
