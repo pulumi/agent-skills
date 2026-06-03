@@ -15,9 +15,9 @@
       "category": "integration"
     },
     {
-      "name": "pulumi-authoring",
-      "source": "./authoring",
-      "description": "Write quality Pulumi programs, components, and automation",
+      "name": "pulumi",
+      "source": "./pulumi",
+      "description": "Entry-point and specialized skills for writing and operating Pulumi infrastructure",
       "category": "development"
     },
     {
@@ -25,6 +25,12 @@
       "source": "./delegation",
       "description": "Hand off in-progress work from coding agents to Pulumi Neo",
       "category": "integration"
+    },
+    {
+      "name": "pulumi-package-maintenance",
+      "source": "./package-maintenance",
+      "description": "Maintain Pulumi provider repositories: upgrade-provider runs and upstream Terraform patches",
+      "category": "development"
     }
   ]
 }
