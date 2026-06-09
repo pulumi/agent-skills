@@ -20,7 +20,8 @@
     "esc",
     "secrets",
     "configuration",
-    "package-usage"
+    "package-usage",
+    "debugging"
   ],
   "interface": {
     "displayName": "Pulumi",

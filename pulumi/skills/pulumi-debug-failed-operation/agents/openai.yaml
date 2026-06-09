@@ -1,0 +1,4 @@
+interface:
+  display_name: "Debug a Failed Pulumi Operation"
+  short_description: "Diagnose and fix a failed Pulumi update or preview"
+  default_prompt: "Use $pulumi-debug-failed-operation to investigate and fix a failed Pulumi update or preview."
