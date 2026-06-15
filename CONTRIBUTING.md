@@ -195,25 +195,27 @@ Before submitting a skill, verify:
 
 ### New Skills
 
-1. Determine which plugin group the skill belongs to (migration or pulumi)
+1. Determine which plugin group the skill belongs to (migration, pulumi, delegation, or package-maintenance)
 2. Create a new directory under `<plugin>/skills/` with the skill name
 3. Add a `SKILL.md` file following the format above
 4. Update [AGENTS.md](AGENTS.md) to list the new skill in the appropriate plugin section
 5. Update [README.md](README.md) to add the skill to the skills table
-6. Test the skill with at least one AI coding assistant
-7. Submit a pull request with:
+6. Bump the containing plugin's patch version in both `<plugin>/.claude-plugin/plugin.json` and `<plugin>/.codex-plugin/plugin.json`
+7. Test the skill with at least one AI coding assistant
+8. Submit a pull request with:
    - Description of what the skill does
    - Example prompts that trigger the skill
    - Testing notes
 
-The skill will automatically be included in its plugin group. No manifest updates are needed.
+The skill will automatically be included in its plugin group, but installed plugin users need a plugin version bump to receive changed plugin contents. Use a patch bump for new skills and non-breaking skill-content updates unless the change is intentionally breaking or feature-sized.
 
 ### Improving Existing Skills
 
 1. Fork the repository
 2. Make your changes
-3. Test the changes with an AI coding assistant
-4. Submit a pull request with:
+3. Bump the containing plugin's patch version in both `<plugin>/.claude-plugin/plugin.json` and `<plugin>/.codex-plugin/plugin.json`
+4. Test the changes with an AI coding assistant
+5. Submit a pull request with:
    - What you changed and why
    - Before/after examples if applicable
 

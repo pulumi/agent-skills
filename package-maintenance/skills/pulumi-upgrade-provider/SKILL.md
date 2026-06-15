@@ -63,7 +63,26 @@ The tool creates a PR on successful upgrade.
 gh pr view --json url --jq .url || gh pr list --head "$(git branch --show-current)" --json url --jq '.[0].url'
 ```
 
-2. MUST append a "Fixes applied to unblock upgrade" section to the existing PR body if any fixes were applied (do not overwrite):
+2. MUST audit generated doc replacements for unresolved placeholders:
+
+```console
+if [ -f provider/replacements.json ]; then
+  rg -n '"new":.*TODO|TODO' provider/replacements.json || true
+fi
+```
+
+If any `TODO` is found in `provider/replacements.json`:
+- Treat it as a post-upgrade blocker; replacement values render into generated docs.
+- Inspect each `old`/`new` pair and replace `TODO` with concrete Pulumi-facing wording, usually `Pulumi`, `this provider`, or `the provider`.
+- Run focused validation if the repo has the test:
+
+```console
+cd provider && go test -v -run TestReplacementDoesNotIncludeTodos .
+```
+
+After the upgrade-provider tool has created the PR, fix these placeholders as normal follow-up work.
+
+3. MUST append a "Fixes applied to unblock upgrade" section to the existing PR body if any fixes were applied (do not overwrite):
 
 ```console
 repo=$(gh repo view --json nameWithOwner --jq .nameWithOwner)
@@ -91,7 +110,8 @@ Use REST (`gh api`) instead of `gh pr edit` to avoid GraphQL project-card errors
 
 ## Guardrails
 
-- Never commit, push, or create branches manually; only run read-only git commands.
+- Never commit, push, or create branches manually during the upgrade-provider run loop; only run read-only git commands.
+- After the tool creates a PR, follow-up commits are permitted for post-run fixes.
 - `./scripts/upstream.sh checkout|rebase|check_in` are allowed because the tool manages git state.
 - Do not stash changes; the tool manages git state.
 
