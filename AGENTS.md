@@ -175,9 +175,16 @@ uv run pytest tests/ -v
 4. Add `use_cases.yaml` with representative trigger queries (see [Testing](#testing) above)
 5. Update this AGENTS.md file to list the new skill in the appropriate plugin section
 6. Update [README.md](README.md) to add the skill to the skills table
-7. Submit a pull request
+7. Bump the containing plugin's patch version in both `<plugin>/.claude-plugin/plugin.json` and `<plugin>/.codex-plugin/plugin.json`
+8. Submit a pull request
 
-The skill will automatically be included in its plugin group. No manifest updates are needed.
+The skill will automatically be included in its plugin group, but installed plugin users need a plugin version bump to receive changed plugin contents. Any change under an existing plugin directory that affects shipped skills, references, agents, hooks, MCP config, or install-surface metadata must bump that plugin's version in both ecosystem manifests. Use a patch bump for skill-content and routing changes unless the change is intentionally breaking or feature-sized.
+
+Examples:
+
+- Editing `package-maintenance/skills/pulumi-upgrade-provider/SKILL.md` requires bumping both `package-maintenance/.claude-plugin/plugin.json` and `package-maintenance/.codex-plugin/plugin.json`.
+- Adding `pulumi/skills/new-skill/` requires bumping both `pulumi/.claude-plugin/plugin.json` and `pulumi/.codex-plugin/plugin.json`.
+- Creating a brand-new plugin group starts with its initial manifest version; no additional bump is needed in the same PR.
 
 ## Creating a New Plugin Group
 

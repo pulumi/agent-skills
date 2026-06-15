@@ -7,3 +7,4 @@ queries:
   - "upgrade-provider failed with unknown revision v0.0.0 from an upstream replace directive"
   - "make tfgen is failing after an upgrade-provider run because a new resource is missing module mapping"
   - "make generate_sdks failed with a duplicate .NET file during a Pulumi provider upgrade"
+  - "A provider upgrade PR review says provider/replacements.json contains TODO placeholders"
