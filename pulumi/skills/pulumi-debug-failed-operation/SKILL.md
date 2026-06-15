@@ -11,43 +11,37 @@ description: |
 
 # Debug a failed Pulumi operation
 
-A Pulumi operation has failed. Find what caused it and fix it. Start by working out
-which operation to debug, and confirm it with the user before doing anything else.
-Pulumi recorded the error when the operation failed, so once you know which
-operation it is you can read the error from that record without running anything
-again.
+A Pulumi operation has failed. Find what caused it and fix it. The user usually
+points you at it, so start by working out which operation to debug, and confirm it
+with the user before doing anything else. Pulumi recorded the error when the
+operation failed, so once you know which operation it is you can read the error from
+that record without running anything again.
 
 The commands below reach Pulumi Cloud with `pulumi api`, a subcommand of the Pulumi
-CLI that you run in your shell. They target whichever stack is currently selected,
-filling in `{orgName}`, `{projectName}`, and `{stackName}` from that selection.
-Confirm the selected stack is the one you mean to debug, and switch to it with
-`pulumi stack select <name>` if it is not.
+CLI that you run in your shell. Each one targets a stack by the explicit
+`{orgName}/{projectName}/{stackName}` path you pass it, so you do not need that
+stack selected locally to read its record. Selecting the stack matters later, when
+you go to apply a fix.
 
-## Identify the operation
+## Start from the operation the user gave you
 
-If the conversation names a specific operation, an update version number (for
-example, `5`) or a preview id, use that.
+The user usually supplies the operation as a set of fields: the org, project, stack,
+and update version (or preview id) — most often stated in prose, for example "debug
+update 161 of vvm-dev". You need these to address the API: `{orgName}`,
+`{projectName}`, `{stackName}`, and the version or preview id.
 
-Otherwise, debug the user's most recent operation on the stack. The update list
-does not record who ran each update, so find it through the API:
+Fill any missing field from context. Take the org, project, or stack from the
+currently selected stack (`pulumi stack --show-name`, `pulumi stack ls`) or
+`Pulumi.yaml`. A missing version means the most recent update on that stack.
 
-1. Run `pulumi whoami` to get the current user's login.
-2. Read the latest update and who requested it with
-   `pulumi api /api/stacks/{orgName}/{projectName}/{stackName}/updates/latest`, and
-   compare its `requestedBy.githubLogin` to the login from step 1.
-3. If they match, that update is the one to debug. If they do not, walk back one
-   version at a time with
-   `pulumi api /api/stacks/{orgName}/{projectName}/{stackName}/updates/<n>` until
-   `requestedBy.githubLogin` matches the user.
-
-Tell the user which operation you landed on, its version, kind, and result, and
-confirm it is the one they mean before going further.
+Briefly confirm which operation you landed on, its version or preview id and the
+stack, before reading further. Keep it lightweight; they already told you.
 
 ## Read what failed
 
 A failed update and a failed preview both record engine events, and the error is in
-the diagnostic messages inside those events. Fetch the events and pull the messages
-out.
+the diagnostic messages inside those events. Using the fields you settled on above,
+fetch the events and pull the messages out.
 
 For a failed update, use the `update` path with the version number:
 
@@ -101,3 +95,21 @@ keeps you from editing code that was never the problem.
 Make the smallest change that addresses the root cause. How you confirm the fix,
 and how you deliver it, whether as a local edit or as a pull request, follow your
 mode's workflow, not this skill.
+
+## If the user didn't say which operation
+
+When the user gives you nothing to go on, debug their most recent operation on the
+stack. The update list does not record who ran each update, so find it through the
+API:
+
+1. Run `pulumi whoami` to get the current user's login.
+2. Read the latest update and who requested it with
+   `pulumi api /api/stacks/{orgName}/{projectName}/{stackName}/updates/latest`, and
+   compare its `requestedBy.githubLogin` to the login from step 1.
+3. If they match, that update is the one to debug. If they do not, walk back one
+   version at a time with
+   `pulumi api /api/stacks/{orgName}/{projectName}/{stackName}/updates/<n>` until
+   `requestedBy.githubLogin` matches the user.
+
+Tell the user which operation you landed on, its version, kind, and result, and
+confirm it is the one they mean before going further.
