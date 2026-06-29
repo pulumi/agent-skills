@@ -80,6 +80,28 @@ Hand off in-progress work from coding agents to Pulumi Neo:
 /plugin install pulumi-package-maintenance    # Install provider-repo maintenance skills
 ```
 
+#### Declarative install via `settings.json`
+
+To register the marketplace and enable plugins automatically (for a team or CI), add this to `.claude/settings.json`. The marketplace key **must** be `pulumi-agent-skills` — it has to match the `name` field in this repo's [`.claude-plugin/marketplace.json`](.claude-plugin/marketplace.json), and the same name is used as the `@<marketplace>` suffix in `enabledPlugins`:
+
+```json
+{
+  "extraKnownMarketplaces": {
+    "pulumi-agent-skills": {
+      "source": { "source": "github", "repo": "pulumi/agent-skills" }
+    }
+  },
+  "enabledPlugins": {
+    "pulumi-migration@pulumi-agent-skills": true,
+    "pulumi@pulumi-agent-skills": true,
+    "pulumi-delegation@pulumi-agent-skills": true,
+    "pulumi-package-maintenance@pulumi-agent-skills": true
+  }
+}
+```
+
+If you name the marketplace anything else (e.g. `pulumi-skills`), the plugins fail to resolve with `Plugin '…' not found in marketplace '…'`.
+
 ### OpenAI Codex
 
 ```bash
