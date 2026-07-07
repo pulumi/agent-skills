@@ -1,0 +1,11 @@
+# Queries that should activate the pulumi-debug-failed-operation skill
+queries:
+  - "My pulumi up just failed with an error, find the root cause and fix it"
+  - "Debug my most recent Pulumi operation on this stack and fix it"
+  - "Debug the failed update 5 of this stack and fix it"
+  - "pulumi preview is erroring out on this project, help me figure out why and resolve it"
+  - "This deployment failed, diagnose what went wrong and fix the issue"
+  - "Investigate why my Pulumi update failed and correct it"
+  - "Why did update 161 of the vvm-dev stack fail? Fix it"
+  - "Debug update 42 on org myorg, project web, stack prod — find the cause"
+  - "Update 7 of my staging stack errored, diagnose and fix it"
