@@ -11,14 +11,14 @@ Run `upgrade-provider --no-submit`, fix known failures, and rerun until success.
 
 ## Preflight
 
-1. Inspect existing changes, especially untracked files:
+1. Record existing changes as the pre-upgrade baseline:
 
 ```bash
-git status --short --untracked-files=all
-git ls-files --others --exclude-standard
+baseline_file="${TMPDIR:-/tmp}/upgrade-provider-$(basename "$PWD")-baseline.txt"
+git status --short --untracked-files=all | tee "$baseline_file"
 ```
 
-The tool still stages broadly, so do not proceed until every existing path is intentional upgrade input. Move or remove unrelated files, or add local-only artifacts to `.git/info/exclude`. Do not add a repository `.gitignore` rule unless the path should be ignored for all contributors, and do not stash changes.
+Existing changes do not block the upgrade, but the tool stages broadly and may include them in generated commits. If practical, isolate clearly unrelated work in another branch or worktree, move local-only files, or add untracked local artifacts to `.git/info/exclude`. Otherwise proceed and carry this baseline into the final review. Do not add a repository `.gitignore` rule unless the path should be ignored for all contributors.
 
 2. Keep the run log outside the repository so the tool cannot stage it.
 
@@ -94,7 +94,14 @@ git diff --name-only "$base_ref"...HEAD | awk -F/ '{print $1}' | sort | uniq -c
 
 Provider upgrades can change thousands of generated SDK files. Do not print the full branch diff by default. Use path-limited `git diff "$base_ref"...HEAD -- <paths>` commands to inspect source, configuration, patch, schema, and unexpected directories. For generated SDKs, inspect summaries or targeted files unless a full diff is necessary.
 
-If unrelated or sensitive files entered a local commit, do not push; remove them from the unpublished branch history first. Revoke any exposed credential even if the history is rewritten.
+Cross-check the final branch against the pre-upgrade baseline:
+
+```bash
+baseline_file="${TMPDIR:-/tmp}/upgrade-provider-$(basename "$PWD")-baseline.txt"
+[ ! -f "$baseline_file" ] || cat "$baseline_file"
+```
+
+For every pre-existing path included in the branch, decide whether it belongs in the upgrade PR. Keep intentional paths; move unrelated work to another branch/worktree or remove it from the unpublished upgrade history before pushing. A separate commit on the same branch isolates history but does not remove the path from the PR, and unstaging alone is insufficient after the tool has committed it. Revoke any exposed credential even if the history is rewritten.
 
 2. MUST audit generated doc replacements for unresolved placeholders before publication:
 
