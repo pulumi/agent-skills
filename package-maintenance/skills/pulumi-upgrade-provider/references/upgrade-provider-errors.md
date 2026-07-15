@@ -71,6 +71,25 @@ Avoid:
 
 - Docs-related patches usually replace or remove Terraform references. Preserve those changes when resolving conflicts.
 
+## Upstream migrated from SDKv2 to Plugin Framework
+
+Treat an upstream Terraform Plugin SDKv2-to-Plugin-Framework migration as a known migration path, not by itself as an architectural blocker. Common signals include:
+
+- Compiler errors such as `undefined: <package>.Provider` or code that still expects `*schema.Provider`.
+- Upstream `go.mod` dropping or making `terraform-plugin-sdk/v2` indirect while adding `terraform-plugin-framework`.
+- Upstream release notes or commits that announce a Plugin Framework migration or SDKv2 removal.
+
+Read the current bridge guide before editing provider entry points or imports:
+
+- Complete migration: [Upgrade a bridged provider from SDKv2 to Plugin Framework](https://github.com/pulumi/pulumi-terraform-bridge/blob/main/docs/guides/upgrade-sdk-to-pf.md).
+- Provider retaining both SDKv2 and Plugin Framework resources: [Upgrade an SDKv2 provider using mux](https://github.com/pulumi/pulumi-terraform-bridge/blob/main/docs/guides/upgrade-sdk-to-mux.md) ([rendered documentation](https://pulumi-developer-docs.readthedocs.io/projects/pulumi-terraform-bridge/en/latest/docs/guides/upgrade-sdk-to-mux.html)).
+
+Do not rely on remembered import paths or API signatures. The guides describe the current bridge release; verify the packages and APIs against the `pulumi-terraform-bridge` version selected by `provider/go.mod` before applying the migration.
+
+First look for a public upstream package that constructs the Plugin Framework provider. If upstream exposes the constructor only from an unimportable `internal/` package, use skill `upstream-patches` to add the smallest non-internal shim that returns the upstream provider. This is a legitimate new-patch case; keep the patch limited to exposing the constructor and document when it can be removed.
+
+After applying the appropriate guide and any required patch, run focused provider builds or tests, then rerun `upgrade-provider` with `--no-submit`.
+
 ## Upstream provider relies on ignored replace directives
 
 When `upgrade-provider` fails during `Update TF Provider` with an upstream module resolution error like:

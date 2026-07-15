@@ -52,7 +52,7 @@ awk '/^Upgrade completed locally;/{found=1} found' "$log_file"
 
 This includes the proposed PR body and metadata, review commands, and every skipped submission action.
 
-5. If failed, fix using this skill's `references/upgrade-provider-errors.md` (from the skill folder, not the repo), then rerun with `--no-submit`. For upstream `go get` failures involving ignored `replace` directives or `unknown revision v0.0.0`, rerun with `--target-version` after applying the documented `provider/go.mod` replacements; preserve the original major/non-major intent and add `--major` only for actual major version upgrades.
+5. If failed, fix using this skill's `references/upgrade-provider-errors.md` (from the skill folder, not the repo), then rerun with `--no-submit`. If upstream migrated from Terraform Plugin SDKv2 to Plugin Framework, use the migration-guide routing in that reference instead of treating the framework change alone as an architectural blocker. For upstream `go get` failures involving ignored `replace` directives or `unknown revision v0.0.0`, rerun with `--target-version` after applying the documented `provider/go.mod` replacements; preserve the original major/non-major intent and add `--major` only for actual major version upgrades.
 6. If a fix requires creating/amending/removing/rebasing patches, use the `upstream-patches` skill for the patch workflow. Interrupted patch workflows must be checked in before rerunning.
 7. If you fixed a conflict, report exact edits (file paths + concrete changes or preserved intent).
 8. Repeat until the tool prints the local-completion report and proposed PR plan. This run must not push or mutate GitHub; a branch or PR from an earlier run may already exist.
@@ -65,11 +65,7 @@ Stop iterating and report failure if any of these conditions are met:
 2. **Same error 3 times**: You've attempted to fix the same error 3 times without success.
 3. **Unknown error pattern**: The error is not covered in `references/upgrade-provider-errors.md` and you cannot determine a safe fix.
 4. **Ambiguous patch state**: You cannot prove that every patch was applied and the target rebase completed.
-5. **Requires human judgment**: The fix needs user input, such as:
-   - Choosing between multiple valid approaches
-   - Breaking changes that affect public API
-   - Deprecation strategies
-   - Architectural decisions about module organization
+5. **Requires human judgment**: The fix needs user input, such as choosing between multiple valid implementation approaches or making an architectural decision about module organization. Upstream breaking changes, deprecations, or framework migrations do not by themselves require stopping; stop only when implementing the upgrade presents an unresolved choice.
 
 When stopping, report:
 1. The error(s) encountered.
@@ -142,7 +138,7 @@ List commit SHAs/titles, summarize each intent, and call out behavioral changes 
 
 The local-completion report lists the proposed PR metadata and every skipped action. MUST reproduce all applicable actions, not only PR creation:
 
-1. Preserve the proposed title, body, release label, reviewers, and assignee.
+1. Preserve the proposed title, body, release label, reviewers, and assignee. Never decide, infer, or change the release label: provider upgrades follow the upstream version transition, so the label represents that version delta rather than the agent's assessment of whether individual changes are breaking. For example, upstream `v0.9.0` to `v0.10.0` remains a minor upgrade even when it contains breaking behavioral changes. Use exactly the label emitted by `upgrade-provider`, report any concern to reviewers without changing the metadata, and never add `--major` unless the upstream target crosses the current upstream major version.
 2. If fixes unblocked the upgrade, append this section to the proposed body before submission when practical:
 
 ```markdown
@@ -205,4 +201,4 @@ Use REST (`gh api`) instead of `gh pr edit` to avoid GraphQL project-card errors
 
 ## References
 
-- Use this skill's `references/upgrade-provider-errors.md` (from the skill folder, not the repo) for interrupted patch state, patch conflict, ignored upstream replacement, vendored upstream dependency, .NET duplicate file, and new module mapping fixes.
+- Use this skill's `references/upgrade-provider-errors.md` (from the skill folder, not the repo) for interrupted patch state, patch conflict, SDKv2-to-Plugin-Framework migration, ignored upstream replacement, vendored upstream dependency, .NET duplicate file, and new module mapping fixes.
