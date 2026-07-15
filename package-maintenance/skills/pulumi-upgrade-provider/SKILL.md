@@ -44,7 +44,17 @@ else
 fi
 ```
 
-4. On success, extract and read the complete local-completion report from the captured stdout:
+4. On a successful exit, first check whether the tool found that no upgrade was required:
+
+```bash
+if grep -Fq 'No actions needed' "$log_file"; then
+  echo 'No actions needed'
+fi
+```
+
+If present, report that the provider is already current or the requested target is not an upgrade, then stop successfully. There is no local upgrade to review or submit.
+
+5. Otherwise, extract and read the complete local-completion report from the captured stdout:
 
 ```bash
 awk '/^Upgrade completed locally;/{found=1} found' "$log_file"
@@ -52,10 +62,10 @@ awk '/^Upgrade completed locally;/{found=1} found' "$log_file"
 
 This includes the proposed PR body and metadata, review commands, and every skipped submission action.
 
-5. If failed, fix using this skill's `references/upgrade-provider-errors.md` (from the skill folder, not the repo), then rerun with `--no-submit`. If upstream migrated from Terraform Plugin SDKv2 to Plugin Framework, use the migration-guide routing in that reference instead of treating the framework change alone as an architectural blocker. For upstream `go get` failures involving ignored `replace` directives or `unknown revision v0.0.0`, rerun with `--target-version` after applying the documented `provider/go.mod` replacements; preserve the original major/non-major intent and add `--major` only for actual major version upgrades.
-6. If a fix requires creating/amending/removing/rebasing patches, use the `upstream-patches` skill for the patch workflow. Interrupted patch workflows must be checked in before rerunning.
-7. If you fixed a conflict, report exact edits (file paths + concrete changes or preserved intent).
-8. Repeat until the tool prints the local-completion report and proposed PR plan. This run must not push or mutate GitHub; a branch or PR from an earlier run may already exist.
+6. If failed, fix using this skill's `references/upgrade-provider-errors.md` (from the skill folder, not the repo), then rerun with `--no-submit`. If upstream migrated from Terraform Plugin SDKv2 to Plugin Framework, use the migration-guide routing in that reference instead of treating the framework change alone as an architectural blocker. For upstream `go get` failures involving ignored `replace` directives or `unknown revision v0.0.0`, rerun with `--target-version` after applying the documented `provider/go.mod` replacements; preserve the original major/non-major intent and add `--major` only for actual major version upgrades.
+7. If a fix requires creating/amending/removing/rebasing patches, use the `upstream-patches` skill for the patch workflow. Interrupted patch workflows must be checked in before rerunning.
+8. If you fixed a conflict, report exact edits (file paths + concrete changes or preserved intent).
+9. Repeat until the tool prints `No actions needed` or the local-completion report and proposed PR plan. This run must not push or mutate GitHub; a branch or PR from an earlier run may already exist.
 
 ## When to Stop and Report Failure
 

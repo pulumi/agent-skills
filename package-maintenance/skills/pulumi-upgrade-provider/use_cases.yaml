@@ -10,4 +10,5 @@ queries:
   - "make generate_sdks failed with a duplicate .NET file during a Pulumi provider upgrade"
   - "A provider upgrade PR review says provider/replacements.json contains TODO placeholders"
   - "Run upgrade-provider locally with --no-submit so I can review and fix the generated changes before opening a PR"
+  - "upgrade-provider exited successfully with No actions needed; is the provider already current?"
   - "upgrade-provider says the patched upstream repository is still on pulumi/patch-checkout; help me preserve the work and finish the upgrade"
