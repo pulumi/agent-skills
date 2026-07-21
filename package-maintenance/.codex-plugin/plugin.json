@@ -1,6 +1,6 @@
 {
   "name": "pulumi-package-maintenance",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Maintain Pulumi provider repositories: run upgrade-provider and manage upstream Terraform patches",
   "skills": "./skills/",
   "author": {

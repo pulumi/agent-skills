@@ -70,6 +70,8 @@ Avoid:
 ### Patch intent guidance
 
 - Docs-related patches usually replace or remove Terraform references. Preserve those changes when resolving conflicts.
+- A small, single-purpose docs patch that only **removes** an untranslatable section — for example an `## Import` section written in Terraform-only import syntax — can sometimes be retired entirely and replaced with a targeted docs edit rule in `provider/resources.go` rather than resolving the conflict. Add the rule to `ProviderInfo.DocRules.EditRules` (e.g. a `SkipSectionByHeader`-style rule that drops the section by its header); verify the exact helper against the `pulumi-terraform-bridge` version in `provider/go.mod`. This avoids re-resolving the same conflict on every future upgrade, and when the patch was the repo's only one it can also remove the need for the `upstream` submodule (delete the `.gitmodules` entry).
+- **Do not treat this as a default conflict-resolution tactic.** Wholesale-replacing a docs patch with an edit rule only works when the patch is small and its intent maps cleanly onto a small rule. Patches that span multiple files or perform substantive rewrites should have their conflict resolved in place (per the guidance above), not be converted. Keep docs edit rules small and targeted — if reproducing the patch would require a large or brittle rule, resolve the conflict instead of converting it.
 
 ## Upstream migrated from SDKv2 to Plugin Framework
 
@@ -78,6 +80,7 @@ Treat an upstream Terraform Plugin SDKv2-to-Plugin-Framework migration as a know
 - Compiler errors such as `undefined: <package>.Provider` or code that still expects `*schema.Provider`.
 - Upstream `go.mod` dropping or making `terraform-plugin-sdk/v2` indirect while adding `terraform-plugin-framework`.
 - Upstream release notes or commits that announce a Plugin Framework migration or SDKv2 removal.
+- `make tfgen` or `upgrade-provider` errors that a token mapping in `provider/resources.go` references a resource that is **no longer present in the provider**, and suggests removing that mapping. An unmuxed SDKv2 bridge (`shimv2.NewProvider`) can only see resources registered in the upstream SDKv2 `ResourcesMap`; a resource that upstream moved to the Plugin Framework is absent from the shimmed map, so its existing mapping looks stale. **Do not remove the mapping on the tool's suggestion** — that silently drops a resource users depend on. See "A mapped resource is reported missing" below.
 
 Read the current bridge guide before editing provider entry points or imports:
 
@@ -89,6 +92,29 @@ Do not rely on remembered import paths or API signatures. The guides describe th
 First look for a public upstream package that constructs the Plugin Framework provider. If upstream exposes the constructor only from an unimportable `internal/` package, use skill `upstream-patches` to add the smallest non-internal shim that returns the upstream provider. This is a legitimate new-patch case; keep the patch limited to exposing the constructor and document when it can be removed.
 
 After applying the appropriate guide and any required patch, run focused provider builds or tests, then rerun `upgrade-provider` with `--no-submit`.
+
+### A mapped resource is reported missing (do not remove the mapping)
+
+When tfgen finds a token mapping whose resource is no longer in the shimmed provider, it reports the resource as missing and suggests removing the mapping:
+
+```
+Pulumi token "<pulumi-token>" is mapped to TF provider resource "<tf_resource>", but no such resource found. Remove the mapping and try again
+```
+
+Before removing the mapping, verify the removal was real. The same "missing" error appears whether upstream deleted the resource or moved it to the Plugin Framework — an unmuxed SDKv2 bridge can't see a Framework resource — so confirm which happened:
+
+1. Inspect the upstream provider at the target tag. If the resource is gone from the SDKv2 `ResourcesMap` but a Plugin Framework equivalent now exists (a `resource.Resource` implementation registered in the framework provider's `Resources` method), it was **migrated**, not removed.
+2. Read the upstream CHANGELOG / release notes for the target version. A genuine removal or deprecation is normally announced; a Plugin Framework migration is often described only as an internal refactor.
+3. Confirm the token really left the generated schema by diffing against the default branch:
+
+```bash
+default_branch=$(git remote show origin | sed -n 's/.*HEAD branch: //p')
+schema_path=$(find provider/cmd -path '*/schema.json' -print -quit)
+diff <(git show "origin/${default_branch}:${schema_path}" | jq -r '.resources | keys[]') \
+     <(jq -r '.resources | keys[]' "$schema_path")
+```
+
+Only if it was **intentionally removed** upstream should you drop the token mapping — and then call out the removal in the upgrade PR so reviewers can plan a deprecation. If it was **migrated to the Plugin Framework**, keep the resource by muxing the provider (follow the mux guide linked above) so the bridge serves it again; do not remove the mapping.
 
 ## Upstream provider relies on ignored replace directives
 
