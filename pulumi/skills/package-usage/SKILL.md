@@ -5,17 +5,23 @@ description: Track which stacks across a Pulumi organization use a specific pack
 
 ## API Reference
 
+Query the Pulumi Cloud API with the `pulumi api` CLI subcommand. It authenticates with your existing Pulumi credentials and returns JSON.
+
 ### Get the latest version of a package
 
-`GET /api/registry/packages?name={package_name}&orgLogin={orgName}`
+```
+pulumi api /api/registry/packages -F name={package_name} -F orgLogin={orgName}
+```
 
-You must include the `orgLogin` parameter with the user's organization name. The response contains a `packages` array. Each entry has a `version` field (the latest version), plus `name`, `publisher`, `source`, and `packageStatus`.
+Include `orgLogin` with the user's organization name. Omit `-F name=...` to list all packages visible to the organization (useful when the user has not named a specific package). The response contains a `packages` array. Each entry has a `version` field (the latest version), plus `name`, `publisher`, `source`, and `packageStatus`.
 
 ### Get stack usage for a package
 
-`GET /api/orgs/{orgName}/packages/usage?packageName={package_name}`
+```
+pulumi api /api/orgs/{orgName}/packages/usage -F packageName={package_name}
+```
 
-Replace `{orgName}` with the org name from context, `PULUMI_ORG`, or ask the user.
+Replace `{orgName}` with the org name from context, `PULUMI_ORG`, or ask the user. `packageName` is required; query one package at a time.
 
 Response fields:
 - `packageName`: The queried package
