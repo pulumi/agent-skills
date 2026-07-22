@@ -200,7 +200,7 @@ Available API endpoints include:
 - `GET /api/esc/environments/{orgName}/{projectName}/{envName}` - Read environment definition
 - `GET /api/esc/providers?orgName={orgName}` - List available providers
 
-Use `call_pulumi_cloud_api()` tool to make requests when needed.
+Use the `pulumi api` CLI subcommand to make requests when needed, e.g. `pulumi api /api/esc/providers -F orgName={orgName}`.
 
 ## Best Practices
 
