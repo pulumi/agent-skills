@@ -58,7 +58,7 @@ Maintain Pulumi provider repositories (provider authors and bridge maintainers):
 | Skill | Description |
 |-------|-------------|
 | [pulumi-upgrade-provider](package-maintenance/skills/pulumi-upgrade-provider) | Automate Pulumi provider repo upgrades |
-| [upstream-patches](package-maintenance/skills/upstream-patches) | Manage upstream Terraform patch stacks in provider repos |
+| [upstream-patches](package-maintenance/skills/upstream-patches) | Evaluate patch policy and manage upstream Terraform patch stacks in provider repos |
 
 ### Delegation Skills
 

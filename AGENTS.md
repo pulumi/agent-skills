@@ -32,7 +32,7 @@ Entry-point and specialized skills for writing and operating Pulumi infrastructu
 Skills for maintaining Pulumi provider repositories (provider authors and bridge maintainers):
 
 - **pulumi-upgrade-provider**: Automate Pulumi provider repo upgrades with the upgrade-provider tool
-- **upstream-patches**: Create, amend, remove, and rebase patches for Terraform provider submodules
+- **upstream-patches**: Evaluate, create, amend, remove, and rebase patches for Terraform provider submodules
 
 ### Delegation Plugin (`delegation/`)
 

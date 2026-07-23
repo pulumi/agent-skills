@@ -5,3 +5,5 @@ queries:
   - "Remove one hunk from an existing patches/*.patch file using scripts/upstream.sh"
   - "upgrade-provider left upstream on pulumi/patch-checkout during a conflict; help me preserve and check in the patch work"
   - "Create a new upstream patch for this bridged Pulumi provider"
+  - "Should this provider carry the proposed upstream Terraform PR, and what compatibility risks do we need to assess?"
+  - "Design the tracking issue, regression evidence, and removal conditions for this provider patch"

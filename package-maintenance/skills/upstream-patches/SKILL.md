@@ -1,6 +1,6 @@
 ---
 name: upstream-patches
-description: Create, amend, remove, and rebase patches for Terraform provider submodules using `./scripts/upstream.sh`. Use when `upgrade-provider` or manual patch work needs owning-patch lookup, patch conflict fixes, patch/hunk removal, or upstream rebase.
+description: Evaluate, create, amend, remove, and rebase patches for Terraform provider submodules. Use when deciding whether a bridged Pulumi provider should carry an upstream change, designing or tracking a new patch, or handling owning-patch lookup, patch conflicts, patch/hunk removal, and upstream rebases.
 ---
 
 # Upstream Patches
@@ -9,8 +9,15 @@ description: Create, amend, remove, and rebase patches for Terraform provider su
 
 ## Default Behavior
 
+- Avoid creating a new patch when an upstream release, bridge or provider configuration, or a safe workaround can meet the need.
+- Do not create a new patch until the user or repository policy calls for one and the policy review below is complete.
 - If fixing a regression introduced by an existing patch, amend the owning patch commit.
-- Do not create a new patch unless the user explicitly asks.
+
+## Policy for New or Materially Changed Patches
+
+Before deciding, creating, or materially expanding a patch, read [the carried-patch policy](references/carrying-upstream-patches.md) completely. Also read repository-specific guidance for local tracking, tests, CI selection, and infrastructure safety.
+
+Do not load the policy reference for a purely mechanical rebase, removal, or amendment that does not change behavior, compatibility commitments, required evidence, or removal conditions.
 
 ## Commands Reference
 
@@ -126,7 +133,9 @@ git commit --amend --no-edit
 cd ..
 ```
 
-## Create New Patch (Only If Requested)
+## Create New Patch (After Policy Review)
+
+Before editing, confirm the owning layer, compatibility and state implications, regression evidence, tracking issue, and safe removal conditions required by the carried-patch policy and repository guidance.
 
 ```bash
 ./scripts/upstream.sh checkout
