@@ -1,0 +1,9 @@
+# Queries that should activate the pulumi-migrate-from-discovered-stack skill
+queries:
+  - "I have a discovered CloudFormation stack in Pulumi Cloud and want to migrate it to Pulumi"
+  - "Migrate my discovered ARM stack to a Pulumi project using the discovered-stacks API"
+  - "Help me import resources from a discovered stack into a new Pulumi stack"
+  - "Pulumi Cloud's Discovery feature found a CloudFormation stack in our account, bring it under Pulumi management"
+  - "We have a scanned/discovered stack in Pulumi Cloud Insights, migrate its resources to a real Pulumi stack"
+  - "Continue the discovered-stack migration we started last week and finish importing the remaining resources"
+  - "Use the discovered-stacks API to migrate this ARM deployment to Pulumi"
