@@ -58,12 +58,21 @@ The `resource.inputs` object also carries raw cloud-provider data:
 
 For CDK-synthesized CF stacks, `inputs.cdkPath` is also present — see [`cloudformation.md §5`](cloudformation.md) for how to use it.
 
-**For ARM** — `resource.inputs.arm`:
+**For ARM** — `resource.inputs.arm`. ARM resources are grouped by resource group, not by
+deployment, so a resource with no deployment currently backing it (its deployment history
+aged out of Azure's retention window, or it was created outside any tracked deployment) is
+still returned — just as a placeholder, with `resource.inputs.deploymentName` empty and a
+different `arm` shape:
 
--   `properties.targetResource.id` — the full Azure resource ID
--   `properties.targetResource.resourceType` — the ARM type
--   `properties.targetResource.resourceName` — the ARM resource name
--   `properties.provisioningState` — e.g. `Succeeded`
+-   **Deployment-backed** (`resource.inputs.deploymentName` non-empty) — `arm` is a
+    deployment-operation object: `properties.targetResource.id` / `.resourceType` /
+    `.resourceName`, `properties.provisioningState` (e.g. `Succeeded`).
+-   **Placeholder** (`resource.inputs.deploymentName` empty) — `arm` is the raw Azure
+    generic-resource object instead: top-level `id`, `name`, `type`, `location`, `tags`.
+    No `properties.targetResource` — don't look for it.
+
+Either way, prefer the top-level `resource.inputs.providerId` for the import ID (see
+above) rather than reaching into `arm` — it's already normalized across both shapes.
 
 ### Migration statuses
 
@@ -72,7 +81,7 @@ Statuses are PascalCase. First match wins:
 1. **`Migrated`** — the resource was found in the `compareTo` Pulumi stack. Already under Pulumi management; skip.
 2. **`Ready`** — `providerType` and `providerId` are set and the scanner confirmed the resource exists. Import with `pulumi import <providerType> <name> <providerId> --generate-code --out <file>.ts` (NEVER without `--generate-code --out` — see Phase 4).
 3. **`NotFound`** — `providerType` and `providerId` are set, but the scanner could not confirm the resource's current state. May be deleted, mapping may be imperfect, or scanner hit a gap. Verify before importing.
-4. **`NotApplicable`** — container or wrapper types (`AWS::CloudFormation::Stack`, `Microsoft.Resources/deployments`, `pulumi:providers:*`) are not individually migratable. Skip silently.
+4. **`NotApplicable`** — container or wrapper types (`AWS::CloudFormation::Stack`, `Microsoft.Resources/deployments`, `Microsoft.Resources/resourceGroups`, `pulumi:providers:*`) are not individually migratable. Skip silently.
 5. **`NoMatch`** — `providerType` is `null`. No mapping found. Common examples:
     - CF Custom Resources (e.g. `Custom::VpcRestrictDefaultSG`) — no direct Pulumi equivalent.
     - Inline policies — `AWS::IAM::Policy` modeled as an inline property of `aws:iam/role:Role`. Once the parent Role is migrated, annotate the policy as migrated.

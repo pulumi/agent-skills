@@ -91,7 +91,7 @@ Child resources extend it:
 .../Microsoft.ApiManagement/service/{svc}/apis/{api}/operations/{op}/policies/policy
 ```
 
-Our API returns the full ID at `resource.inputs.arm.properties.targetResource.id` (or `resource.inputs.providerId`). Use that verbatim in the import file; don't reconstruct it by hand.
+Our API returns the full ID at `resource.inputs.providerId` — use that verbatim in the import file; don't reconstruct it by hand. `resource.inputs.arm.properties.targetResource.id` carries the same ID, but only when the resource currently has deployment metadata (`resource.inputs.deploymentName` non-empty); a placeholder resource (deployment history aged out of Azure's retention) has a different `arm` shape with no `properties.targetResource` — see SKILL.md's "For ARM" section. `providerId` works for both, so prefer it.
 
 ### Listing by type
 ```bash
