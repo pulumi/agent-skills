@@ -1,0 +1,4 @@
+interface:
+  display_name: "Discovered Stack to Pulumi Migration"
+  short_description: "Migrate a Pulumi Cloud discovered CloudFormation or ARM stack to Pulumi"
+  default_prompt: "Use $pulumi-migrate-from-discovered-stack to migrate a stack discovered by Pulumi Cloud's Discovery feature into a managed Pulumi stack."

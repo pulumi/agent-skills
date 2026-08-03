@@ -14,6 +14,7 @@ Skills for converting and importing infrastructure from other tools to Pulumi:
 - **pulumi-cdk-to-pulumi**: Migrate AWS CDK applications to Pulumi
 - **cloudformation-to-pulumi**: Migrate AWS CloudFormation stacks/templates to Pulumi
 - **pulumi-arm-to-pulumi**: Migrate Azure ARM templates and Bicep to Pulumi
+- **pulumi-migrate-from-discovered-stack**: Migrate a CloudFormation or ARM stack that Pulumi Cloud's Discovery feature has already found, using the discovered-stacks API
 
 ### Pulumi Plugin (`pulumi/`)
 

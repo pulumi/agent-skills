@@ -36,6 +36,7 @@ Convert and import infrastructure from other tools to Pulumi:
 | [pulumi-cdk-to-pulumi](migration/skills/pulumi-cdk-to-pulumi) | Migrate AWS CDK applications to Pulumi |
 | [cloudformation-to-pulumi](migration/skills/cloudformation-to-pulumi) | Migrate AWS CloudFormation stacks/templates to Pulumi |
 | [pulumi-arm-to-pulumi](migration/skills/pulumi-arm-to-pulumi) | Migrate Azure ARM templates and Bicep to Pulumi |
+| [pulumi-migrate-from-discovered-stack](migration/skills/pulumi-migrate-from-discovered-stack) | Migrate a CloudFormation or ARM stack that Pulumi Cloud's Discovery feature has already found, using the discovered-stacks API |
 
 ### Pulumi Skills
 
@@ -121,7 +122,7 @@ npx skills add pulumi/agent-skills --skill '*'
 Or install individual plugin groups:
 
 ```bash
-npx skills add pulumi/agent-skills/migration --skill '*'             # 4 migration skills
+npx skills add pulumi/agent-skills/migration --skill '*'             # 5 migration skills
 npx skills add pulumi/agent-skills/pulumi --skill '*'                # 7 pulumi skills (overview + specialized)
 npx skills add pulumi/agent-skills/delegation --skill '*'            # 1 delegation skill
 npx skills add pulumi/agent-skills/package-maintenance --skill '*'   # 2 package-maintenance skills
