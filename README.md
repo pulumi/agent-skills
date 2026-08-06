@@ -49,6 +49,7 @@ Entry-point and specialized skills for writing and operating Pulumi infrastructu
 | [pulumi-component](pulumi/skills/pulumi-component) | Guide for authoring ComponentResource classes |
 | [pulumi-automation-api](pulumi/skills/pulumi-automation-api) | Best practices for using Pulumi Automation API |
 | [pulumi-esc](pulumi/skills/pulumi-esc) | Guidance for working with Pulumi ESC (Environments, Secrets, and Configuration) |
+| [pulumi-debug-failed-operation](pulumi/skills/pulumi-debug-failed-operation) | Debug a failed `pulumi up` or `pulumi preview` from the failure Pulumi already recorded |
 | [provider-upgrade](pulumi/skills/provider-upgrade) | Safe workflows for upgrading Pulumi providers without unintended infrastructure changes |
 | [package-usage](pulumi/skills/package-usage) | Track which stacks across an organization use a package and at what versions |
 
@@ -78,7 +79,7 @@ Hand off in-progress work from coding agents to Pulumi Neo:
 /plugin install pulumi                        # All end-user skills: authoring, migration, and Neo handoff
 ```
 
-The `pulumi` plugin bundles the authoring, migration, and delegation skill groups in one install. Prefer a subset? Install granular plugins instead (do not combine them with `pulumi`, which already includes them):
+The `pulumi` plugin bundles the authoring, migration, and delegation skill groups in one install. Prefer a subset? Install `pulumi-migration` or `pulumi-delegation` instead (not alongside `pulumi`, which already includes both). `pulumi-package-maintenance` is separate: it targets provider authors and combines fine with any of the others.
 
 ```bash
 /plugin install pulumi-migration              # Migration skills only
@@ -127,7 +128,7 @@ Or install individual plugin groups:
 
 ```bash
 npx skills add pulumi/agent-skills/migration --skill '*'             # 5 migration skills
-npx skills add pulumi/agent-skills/pulumi --skill '*'                # 7 pulumi skills (overview + specialized)
+npx skills add pulumi/agent-skills/pulumi --skill '*'                # 8 pulumi skills (overview + specialized)
 npx skills add pulumi/agent-skills/delegation --skill '*'            # 1 delegation skill
 npx skills add pulumi/agent-skills/package-maintenance --skill '*'   # 2 package-maintenance skills
 ```

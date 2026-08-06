@@ -25,6 +25,7 @@ Entry-point and specialized skills for writing and operating Pulumi infrastructu
 - **pulumi-component**: Guide for authoring ComponentResource classes
 - **pulumi-automation-api**: Best practices for using Pulumi Automation API
 - **pulumi-esc**: Guidance for working with Pulumi ESC (Environments, Secrets, and Configuration)
+- **pulumi-debug-failed-operation**: Debug a failed `pulumi up` or `pulumi preview` from the failure Pulumi already recorded
 - **provider-upgrade**: Safe workflows for upgrading Pulumi providers without unintended infrastructure changes
 - **package-usage**: Track which stacks across an organization use a package and at what versions
 
@@ -77,8 +78,8 @@ npx skills add pulumi/agent-skills --skill '*'
 Or install individual plugin groups:
 
 ```bash
-npx skills add pulumi/agent-skills/migration --skill '*'             # 4 migration skills
-npx skills add pulumi/agent-skills/pulumi --skill '*'                # 7 pulumi skills (overview + specialized)
+npx skills add pulumi/agent-skills/migration --skill '*'             # 5 migration skills
+npx skills add pulumi/agent-skills/pulumi --skill '*'                # 8 pulumi skills (overview + specialized)
 npx skills add pulumi/agent-skills/delegation --skill '*'            # 1 delegation skill
 npx skills add pulumi/agent-skills/package-maintenance --skill '*'   # 2 package-maintenance skills
 ```
