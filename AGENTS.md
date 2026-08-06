@@ -47,10 +47,15 @@ Skills for handing off in-progress work from coding agents to Pulumi Neo for del
 
 ```bash
 /plugin marketplace add pulumi/agent-skills
-/plugin install pulumi-migration
-/plugin install pulumi
-/plugin install pulumi-delegation
-/plugin install pulumi-package-maintenance
+/plugin install pulumi                        # all end-user skills (authoring + migration + Neo handoff)
+```
+
+The `pulumi` plugin is the combined plugin defined at the repo root: `.claude-plugin/plugin.json` lists `pulumi/skills/`, `migration/skills/`, and `delegation/skills/` in its `skills` field. Granular alternatives (do not combine with `pulumi`, which already includes the first two):
+
+```bash
+/plugin install pulumi-migration              # migration skills only
+/plugin install pulumi-delegation             # Neo handoff skill only
+/plugin install pulumi-package-maintenance    # provider-repo maintenance skills
 ```
 
 ### OpenAI Codex
@@ -145,7 +150,7 @@ The test loads every `use_cases.yaml` across the tree and asserts that each quer
 
 ### Skill quality review (`test_skill_quality.py`)
 
-An LLM judge reads each `SKILL.md` and checks it against a quality rubric (description clarity and trigger precision, lean body, explains WHY not just what, progressive disclosure). The test fails on HIGH-severity findings and prints all issues — including medium and low — for visibility.
+An LLM judge reads each `SKILL.md` and checks it against a quality rubric (description clarity and trigger precision, lean body, explains WHY not just what, progressive disclosure). The test fails on HIGH-severity findings and prints all issues (including medium and low) for visibility.
 
 ### Running locally
 
@@ -190,6 +195,8 @@ Examples:
 ## Creating a New Plugin Group
 
 Each plugin group ships a manifest for both Claude Code and OpenAI Codex. The skill content is shared; only the per-ecosystem manifest files differ.
+
+If the new group is end-user facing (not maintainer tooling), also add its `skills/` directory to the `skills` list in the root combined plugin manifest, [.claude-plugin/plugin.json](.claude-plugin/plugin.json), so `/plugin install pulumi` picks it up.
 
 1. Create the plugin directory structure:
    ```

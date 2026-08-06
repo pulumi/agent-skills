@@ -25,7 +25,9 @@
     "category": "Coding",
     "websiteURL": "https://www.pulumi.com/docs/",
     "defaultPrompt": [
-      "Use $pulumi-neo-handoff to package the current conversation and launch a Pulumi Neo task"
+      "Use $pulumi-neo-handoff to package the current conversation and launch a Pulumi Neo task",
+      "Use $pulumi-neo-handoff to hand off this Pulumi program to Neo to preview and deploy",
+      "Use $pulumi-neo-handoff to continue this infrastructure debugging in Pulumi Neo"
     ]
   }
 }

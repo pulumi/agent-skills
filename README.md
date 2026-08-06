@@ -75,15 +75,20 @@ Hand off in-progress work from coding agents to Pulumi Neo:
 
 ```bash
 /plugin marketplace add pulumi/agent-skills
-/plugin install pulumi-migration              # Install migration skills
-/plugin install pulumi                        # Install Pulumi skills (overview + specialized)
-/plugin install pulumi-delegation             # Install delegation skills (Neo handoff)
-/plugin install pulumi-package-maintenance    # Install provider-repo maintenance skills
+/plugin install pulumi                        # All end-user skills: authoring, migration, and Neo handoff
+```
+
+The `pulumi` plugin bundles the authoring, migration, and delegation skill groups in one install. Prefer a subset? Install granular plugins instead (do not combine them with `pulumi`, which already includes them):
+
+```bash
+/plugin install pulumi-migration              # Migration skills only
+/plugin install pulumi-delegation             # Neo handoff skill only
+/plugin install pulumi-package-maintenance    # Provider-repo maintenance skills (for provider authors)
 ```
 
 #### Declarative install via `settings.json`
 
-To register the marketplace and enable plugins automatically (for a team or CI), add this to `.claude/settings.json`. The marketplace key **must** be `pulumi-agent-skills` — it has to match the `name` field in this repo's [`.claude-plugin/marketplace.json`](.claude-plugin/marketplace.json), and the same name is used as the `@<marketplace>` suffix in `enabledPlugins`:
+To register the marketplace and enable plugins automatically (for a team or CI), add this to `.claude/settings.json`. The marketplace key **must** be `pulumi-agent-skills`: it has to match the `name` field in this repo's [`.claude-plugin/marketplace.json`](.claude-plugin/marketplace.json), and the same name is used as the `@<marketplace>` suffix in `enabledPlugins`:
 
 ```json
 {
@@ -93,13 +98,12 @@ To register the marketplace and enable plugins automatically (for a team or CI),
     }
   },
   "enabledPlugins": {
-    "pulumi-migration@pulumi-agent-skills": true,
-    "pulumi@pulumi-agent-skills": true,
-    "pulumi-delegation@pulumi-agent-skills": true,
-    "pulumi-package-maintenance@pulumi-agent-skills": true
+    "pulumi@pulumi-agent-skills": true
   }
 }
 ```
+
+The `pulumi` plugin covers authoring, migration, and delegation. Swap in `pulumi-migration` or `pulumi-delegation` for a subset, or add `pulumi-package-maintenance` for provider-repo maintenance.
 
 If you name the marketplace anything else (e.g. `pulumi-skills`), the plugins fail to resolve with `Plugin '…' not found in marketplace '…'`.
 

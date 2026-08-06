@@ -1,0 +1,32 @@
+{
+  "name": "pulumi",
+  "version": "1.0.0",
+  "description": "Official Pulumi skills for writing and operating infrastructure, migrating from Terraform, CloudFormation, CDK, and ARM, and delegating work to Pulumi Neo",
+  "author": {
+    "name": "Pulumi",
+    "url": "https://github.com/pulumi"
+  },
+  "homepage": "https://www.pulumi.com/docs/",
+  "repository": "https://github.com/pulumi/agent-skills",
+  "license": "Apache-2.0",
+  "keywords": [
+    "pulumi",
+    "infrastructure",
+    "iac",
+    "terraform",
+    "cloudformation",
+    "cdk",
+    "arm",
+    "bicep",
+    "migration",
+    "esc",
+    "secrets",
+    "automation-api",
+    "neo"
+  ],
+  "skills": [
+    "./pulumi/skills",
+    "./migration/skills",
+    "./delegation/skills"
+  ]
+}

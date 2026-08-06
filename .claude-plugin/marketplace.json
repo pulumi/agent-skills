@@ -16,8 +16,8 @@
     },
     {
       "name": "pulumi",
-      "source": "./pulumi",
-      "description": "Entry-point and specialized skills for writing and operating Pulumi infrastructure",
+      "source": "./",
+      "description": "Official Pulumi skills for writing and operating infrastructure, migrating from Terraform, CloudFormation, CDK, and ARM, and delegating work to Pulumi Neo",
       "category": "development"
     },
     {
