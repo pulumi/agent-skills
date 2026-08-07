@@ -49,6 +49,7 @@ Entry-point and specialized skills for writing and operating Pulumi infrastructu
 | [pulumi-component](pulumi/skills/pulumi-component) | Guide for authoring ComponentResource classes |
 | [pulumi-automation-api](pulumi/skills/pulumi-automation-api) | Best practices for using Pulumi Automation API |
 | [pulumi-esc](pulumi/skills/pulumi-esc) | Guidance for working with Pulumi ESC (Environments, Secrets, and Configuration) |
+| [pulumi-debug-failed-operation](pulumi/skills/pulumi-debug-failed-operation) | Debug a failed `pulumi up` or `pulumi preview` from the failure Pulumi already recorded |
 | [provider-upgrade](pulumi/skills/provider-upgrade) | Safe workflows for upgrading Pulumi providers without unintended infrastructure changes |
 | [package-usage](pulumi/skills/package-usage) | Track which stacks across an organization use a package and at what versions |
 
@@ -75,15 +76,20 @@ Hand off in-progress work from coding agents to Pulumi Neo:
 
 ```bash
 /plugin marketplace add pulumi/agent-skills
-/plugin install pulumi-migration              # Install migration skills
-/plugin install pulumi                        # Install Pulumi skills (overview + specialized)
-/plugin install pulumi-delegation             # Install delegation skills (Neo handoff)
-/plugin install pulumi-package-maintenance    # Install provider-repo maintenance skills
+/plugin install pulumi                        # All end-user skills: authoring, migration, and Neo handoff
+```
+
+The `pulumi` plugin bundles the authoring, migration, and delegation skill groups in one install. Prefer a subset? Install `pulumi-migration` or `pulumi-delegation` instead (not alongside `pulumi`, which already includes both). `pulumi-package-maintenance` is separate: it targets provider authors and combines fine with any of the others.
+
+```bash
+/plugin install pulumi-migration              # Migration skills only
+/plugin install pulumi-delegation             # Neo handoff skill only
+/plugin install pulumi-package-maintenance    # Provider-repo maintenance skills (for provider authors)
 ```
 
 #### Declarative install via `settings.json`
 
-To register the marketplace and enable plugins automatically (for a team or CI), add this to `.claude/settings.json`. The marketplace key **must** be `pulumi-agent-skills` — it has to match the `name` field in this repo's [`.claude-plugin/marketplace.json`](.claude-plugin/marketplace.json), and the same name is used as the `@<marketplace>` suffix in `enabledPlugins`:
+To register the marketplace and enable plugins automatically (for a team or CI), add this to `.claude/settings.json`. The marketplace key **must** be `pulumi-agent-skills`: it has to match the `name` field in this repo's [`.claude-plugin/marketplace.json`](.claude-plugin/marketplace.json), and the same name is used as the `@<marketplace>` suffix in `enabledPlugins`:
 
 ```json
 {
@@ -93,13 +99,12 @@ To register the marketplace and enable plugins automatically (for a team or CI),
     }
   },
   "enabledPlugins": {
-    "pulumi-migration@pulumi-agent-skills": true,
-    "pulumi@pulumi-agent-skills": true,
-    "pulumi-delegation@pulumi-agent-skills": true,
-    "pulumi-package-maintenance@pulumi-agent-skills": true
+    "pulumi@pulumi-agent-skills": true
   }
 }
 ```
+
+The `pulumi` plugin covers authoring, migration, and delegation. Swap in `pulumi-migration` or `pulumi-delegation` for a subset, or add `pulumi-package-maintenance` for provider-repo maintenance.
 
 If you name the marketplace anything else (e.g. `pulumi-skills`), the plugins fail to resolve with `Plugin '…' not found in marketplace '…'`.
 
@@ -109,7 +114,7 @@ If you name the marketplace anything else (e.g. `pulumi-skills`), the plugins fa
 codex plugin marketplace add pulumi/agent-skills
 ```
 
-Once the marketplace is registered, install plugins from the Codex TUI: run `codex`, open the plugin marketplace with `/plugins`, and pick `pulumi-migration`, `pulumi`, `pulumi-delegation`, or `pulumi-package-maintenance`.
+Once the marketplace is registered, install plugins from the Codex TUI: run `codex`, open the plugin marketplace with `/plugins`, and pick `pulumi-migration`, `pulumi`, `pulumi-delegation`, or `pulumi-package-maintenance`. As in Claude Code, `pulumi` is the combined plugin with all end-user skills; do not combine it with `pulumi-migration` or `pulumi-delegation`.
 
 ### Universal (all agents)
 
@@ -123,7 +128,7 @@ Or install individual plugin groups:
 
 ```bash
 npx skills add pulumi/agent-skills/migration --skill '*'             # 5 migration skills
-npx skills add pulumi/agent-skills/pulumi --skill '*'                # 7 pulumi skills (overview + specialized)
+npx skills add pulumi/agent-skills/pulumi --skill '*'                # 8 pulumi skills (overview + specialized)
 npx skills add pulumi/agent-skills/delegation --skill '*'            # 1 delegation skill
 npx skills add pulumi/agent-skills/package-maintenance --skill '*'   # 2 package-maintenance skills
 ```

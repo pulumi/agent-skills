@@ -1,0 +1,46 @@
+{
+  "name": "pulumi",
+  "version": "2.0.0",
+  "description": "Teach your agent Pulumi: infrastructure as code in TypeScript, Python, Go, C#, Java, YAML, or HCL. Skills for writing and operating cloud infrastructure, migrating from Terraform, CloudFormation, CDK, and ARM, and delegating work to Pulumi Neo, Pulumi's AI platform engineer.",
+  "skills": [
+    "./pulumi/skills",
+    "./migration/skills",
+    "./delegation/skills"
+  ],
+  "author": {
+    "name": "Pulumi",
+    "url": "https://github.com/pulumi"
+  },
+  "homepage": "https://www.pulumi.com/docs/",
+  "repository": "https://github.com/pulumi/agent-skills",
+  "license": "Apache-2.0",
+  "keywords": [
+    "pulumi",
+    "infrastructure",
+    "iac",
+    "terraform",
+    "cloudformation",
+    "cdk",
+    "arm",
+    "bicep",
+    "migration",
+    "esc",
+    "secrets",
+    "automation-api",
+    "neo"
+  ],
+  "interface": {
+    "displayName": "Pulumi",
+    "shortDescription": "Write, migrate, and operate Pulumi infrastructure",
+    "developerName": "Pulumi",
+    "category": "Coding",
+    "websiteURL": "https://www.pulumi.com/docs/",
+    "defaultPrompt": [
+      "Use $pulumi-overview to set up an S3 bucket and a Cloudflare DNS record",
+      "Use $pulumi-overview to provision a database for this app",
+      "Use $pulumi-best-practices to review this Pulumi code",
+      "Use $pulumi-terraform-to-pulumi to convert this Terraform module",
+      "Use $pulumi-neo-handoff to hand off this Pulumi program to Neo to preview and deploy"
+    ]
+  }
+}

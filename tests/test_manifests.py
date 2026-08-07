@@ -20,11 +20,15 @@ CLAUDE_REQUIRED_FIELDS = ("name", "version", "description")
 
 
 def _codex_manifests() -> list[Path]:
-    return sorted(REPO_ROOT.glob("*/.codex-plugin/plugin.json"))
+    return sorted(REPO_ROOT.glob(".codex-plugin/plugin.json")) + sorted(
+        REPO_ROOT.glob("*/.codex-plugin/plugin.json")
+    )
 
 
 def _claude_manifests() -> list[Path]:
-    return sorted(REPO_ROOT.glob("*/.claude-plugin/plugin.json"))
+    return sorted(REPO_ROOT.glob(".claude-plugin/plugin.json")) + sorted(
+        REPO_ROOT.glob("*/.claude-plugin/plugin.json")
+    )
 
 
 def _rel(path: Path) -> str:
@@ -36,10 +40,12 @@ def test_codex_plugin_manifest(manifest: Path) -> None:
     data = json.loads(manifest.read_text())
     for field in CODEX_REQUIRED_FIELDS:
         assert field in data, f"{_rel(manifest)}: missing field `{field}`"
-    skills_path = (manifest.parent.parent / data["skills"].lstrip("./")).resolve()
-    assert skills_path.is_dir(), (
-        f"{_rel(manifest)}: skills path `{data['skills']}` does not resolve to a directory"
-    )
+    skills = data["skills"]
+    for skills_entry in skills if isinstance(skills, list) else [skills]:
+        skills_path = (manifest.parent.parent / skills_entry.lstrip("./")).resolve()
+        assert skills_path.is_dir(), (
+            f"{_rel(manifest)}: skills path `{skills_entry}` does not resolve to a directory"
+        )
 
 
 @pytest.mark.parametrize("manifest", _claude_manifests(), ids=_rel)

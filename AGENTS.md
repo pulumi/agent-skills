@@ -25,6 +25,7 @@ Entry-point and specialized skills for writing and operating Pulumi infrastructu
 - **pulumi-component**: Guide for authoring ComponentResource classes
 - **pulumi-automation-api**: Best practices for using Pulumi Automation API
 - **pulumi-esc**: Guidance for working with Pulumi ESC (Environments, Secrets, and Configuration)
+- **pulumi-debug-failed-operation**: Debug a failed `pulumi up` or `pulumi preview` from the failure Pulumi already recorded
 - **provider-upgrade**: Safe workflows for upgrading Pulumi providers without unintended infrastructure changes
 - **package-usage**: Track which stacks across an organization use a package and at what versions
 
@@ -47,10 +48,15 @@ Skills for handing off in-progress work from coding agents to Pulumi Neo for del
 
 ```bash
 /plugin marketplace add pulumi/agent-skills
-/plugin install pulumi-migration
-/plugin install pulumi
-/plugin install pulumi-delegation
-/plugin install pulumi-package-maintenance
+/plugin install pulumi                        # all end-user skills (authoring + migration + Neo handoff)
+```
+
+The `pulumi` plugin is the combined plugin defined at the repo root: `.claude-plugin/plugin.json` and `.codex-plugin/plugin.json` list `pulumi/skills/`, `migration/skills/`, and `delegation/skills/` in their `skills` fields. Granular alternatives (do not combine with `pulumi`, which already includes the first two):
+
+```bash
+/plugin install pulumi-migration              # migration skills only
+/plugin install pulumi-delegation             # Neo handoff skill only
+/plugin install pulumi-package-maintenance    # provider-repo maintenance skills
 ```
 
 ### OpenAI Codex
@@ -59,7 +65,7 @@ Skills for handing off in-progress work from coding agents to Pulumi Neo for del
 codex plugin marketplace add pulumi/agent-skills
 ```
 
-After the marketplace registers, install plugins from the Codex TUI: run `codex`, open the plugin marketplace with `/plugins`, and pick `pulumi-migration`, `pulumi`, `pulumi-delegation`, or `pulumi-package-maintenance`.
+After the marketplace registers, install plugins from the Codex TUI: run `codex`, open the plugin marketplace with `/plugins`, and pick `pulumi-migration`, `pulumi`, `pulumi-delegation`, or `pulumi-package-maintenance`. As in Claude Code, `pulumi` is the combined plugin with all end-user skills; do not combine it with `pulumi-migration` or `pulumi-delegation`.
 
 ### Universal (all agents)
 
@@ -72,8 +78,8 @@ npx skills add pulumi/agent-skills --skill '*'
 Or install individual plugin groups:
 
 ```bash
-npx skills add pulumi/agent-skills/migration --skill '*'             # 4 migration skills
-npx skills add pulumi/agent-skills/pulumi --skill '*'                # 7 pulumi skills (overview + specialized)
+npx skills add pulumi/agent-skills/migration --skill '*'             # 5 migration skills
+npx skills add pulumi/agent-skills/pulumi --skill '*'                # 8 pulumi skills (overview + specialized)
 npx skills add pulumi/agent-skills/delegation --skill '*'            # 1 delegation skill
 npx skills add pulumi/agent-skills/package-maintenance --skill '*'   # 2 package-maintenance skills
 ```
@@ -145,7 +151,7 @@ The test loads every `use_cases.yaml` across the tree and asserts that each quer
 
 ### Skill quality review (`test_skill_quality.py`)
 
-An LLM judge reads each `SKILL.md` and checks it against a quality rubric (description clarity and trigger precision, lean body, explains WHY not just what, progressive disclosure). The test fails on HIGH-severity findings and prints all issues — including medium and low — for visibility.
+An LLM judge reads each `SKILL.md` and checks it against a quality rubric (description clarity and trigger precision, lean body, explains WHY not just what, progressive disclosure). The test fails on HIGH-severity findings and prints all issues (including medium and low) for visibility.
 
 ### Running locally
 
@@ -176,7 +182,7 @@ uv run pytest tests/ -v
 4. Add `use_cases.yaml` with representative trigger queries (see [Testing](#testing) above)
 5. Update this AGENTS.md file to list the new skill in the appropriate plugin section
 6. Update [README.md](README.md) to add the skill to the skills table
-7. Bump the containing plugin's patch version in both `<plugin>/.claude-plugin/plugin.json` and `<plugin>/.codex-plugin/plugin.json`
+7. Bump the containing plugin's patch version in both `<plugin>/.claude-plugin/plugin.json` and `<plugin>/.codex-plugin/plugin.json`. For skills in an end-user group (`pulumi/`, `migration/`, `delegation/`), also bump the root combined manifests `.claude-plugin/plugin.json` and `.codex-plugin/plugin.json`, which ship the same skill
 8. Submit a pull request
 
 The skill will automatically be included in its plugin group, but installed plugin users need a plugin version bump to receive changed plugin contents. Any change under an existing plugin directory that affects shipped skills, references, agents, hooks, MCP config, or install-surface metadata must bump that plugin's version in both ecosystem manifests. Use a patch bump for skill-content and routing changes unless the change is intentionally breaking or feature-sized.
@@ -190,6 +196,8 @@ Examples:
 ## Creating a New Plugin Group
 
 Each plugin group ships a manifest for both Claude Code and OpenAI Codex. The skill content is shared; only the per-ecosystem manifest files differ.
+
+If the new group is end-user facing (not maintainer tooling), also add its `skills/` directory to the `skills` lists in both root combined plugin manifests, [.claude-plugin/plugin.json](.claude-plugin/plugin.json) and [.codex-plugin/plugin.json](.codex-plugin/plugin.json), so installing `pulumi` picks it up in both ecosystems.
 
 1. Create the plugin directory structure:
    ```

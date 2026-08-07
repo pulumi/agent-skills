@@ -20,7 +20,7 @@
       "name": "pulumi",
       "source": {
         "source": "local",
-        "path": "./pulumi"
+        "path": "./"
       },
       "policy": {
         "installation": "AVAILABLE"
