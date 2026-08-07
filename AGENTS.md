@@ -51,7 +51,7 @@ Skills for handing off in-progress work from coding agents to Pulumi Neo for del
 /plugin install pulumi                        # all end-user skills (authoring + migration + Neo handoff)
 ```
 
-The `pulumi` plugin is the combined plugin defined at the repo root: `.claude-plugin/plugin.json` lists `pulumi/skills/`, `migration/skills/`, and `delegation/skills/` in its `skills` field. Granular alternatives (do not combine with `pulumi`, which already includes the first two):
+The `pulumi` plugin is the combined plugin defined at the repo root: `.claude-plugin/plugin.json` and `.codex-plugin/plugin.json` list `pulumi/skills/`, `migration/skills/`, and `delegation/skills/` in their `skills` fields. Granular alternatives (do not combine with `pulumi`, which already includes the first two):
 
 ```bash
 /plugin install pulumi-migration              # migration skills only
@@ -65,7 +65,7 @@ The `pulumi` plugin is the combined plugin defined at the repo root: `.claude-pl
 codex plugin marketplace add pulumi/agent-skills
 ```
 
-After the marketplace registers, install plugins from the Codex TUI: run `codex`, open the plugin marketplace with `/plugins`, and pick `pulumi-migration`, `pulumi`, `pulumi-delegation`, or `pulumi-package-maintenance`.
+After the marketplace registers, install plugins from the Codex TUI: run `codex`, open the plugin marketplace with `/plugins`, and pick `pulumi-migration`, `pulumi`, `pulumi-delegation`, or `pulumi-package-maintenance`. As in Claude Code, `pulumi` is the combined plugin with all end-user skills; do not combine it with `pulumi-migration` or `pulumi-delegation`.
 
 ### Universal (all agents)
 
@@ -182,7 +182,7 @@ uv run pytest tests/ -v
 4. Add `use_cases.yaml` with representative trigger queries (see [Testing](#testing) above)
 5. Update this AGENTS.md file to list the new skill in the appropriate plugin section
 6. Update [README.md](README.md) to add the skill to the skills table
-7. Bump the containing plugin's patch version in both `<plugin>/.claude-plugin/plugin.json` and `<plugin>/.codex-plugin/plugin.json`
+7. Bump the containing plugin's patch version in both `<plugin>/.claude-plugin/plugin.json` and `<plugin>/.codex-plugin/plugin.json`. For skills in an end-user group (`pulumi/`, `migration/`, `delegation/`), also bump the root combined manifests `.claude-plugin/plugin.json` and `.codex-plugin/plugin.json`, which ship the same skill
 8. Submit a pull request
 
 The skill will automatically be included in its plugin group, but installed plugin users need a plugin version bump to receive changed plugin contents. Any change under an existing plugin directory that affects shipped skills, references, agents, hooks, MCP config, or install-surface metadata must bump that plugin's version in both ecosystem manifests. Use a patch bump for skill-content and routing changes unless the change is intentionally breaking or feature-sized.
@@ -197,7 +197,7 @@ Examples:
 
 Each plugin group ships a manifest for both Claude Code and OpenAI Codex. The skill content is shared; only the per-ecosystem manifest files differ.
 
-If the new group is end-user facing (not maintainer tooling), also add its `skills/` directory to the `skills` list in the root combined plugin manifest, [.claude-plugin/plugin.json](.claude-plugin/plugin.json), so `/plugin install pulumi` picks it up.
+If the new group is end-user facing (not maintainer tooling), also add its `skills/` directory to the `skills` lists in both root combined plugin manifests, [.claude-plugin/plugin.json](.claude-plugin/plugin.json) and [.codex-plugin/plugin.json](.codex-plugin/plugin.json), so installing `pulumi` picks it up in both ecosystems.
 
 1. Create the plugin directory structure:
    ```

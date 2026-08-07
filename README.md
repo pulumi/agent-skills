@@ -114,7 +114,7 @@ If you name the marketplace anything else (e.g. `pulumi-skills`), the plugins fa
 codex plugin marketplace add pulumi/agent-skills
 ```
 
-Once the marketplace is registered, install plugins from the Codex TUI: run `codex`, open the plugin marketplace with `/plugins`, and pick `pulumi-migration`, `pulumi`, `pulumi-delegation`, or `pulumi-package-maintenance`.
+Once the marketplace is registered, install plugins from the Codex TUI: run `codex`, open the plugin marketplace with `/plugins`, and pick `pulumi-migration`, `pulumi`, `pulumi-delegation`, or `pulumi-package-maintenance`. As in Claude Code, `pulumi` is the combined plugin with all end-user skills; do not combine it with `pulumi-migration` or `pulumi-delegation`.
 
 ### Universal (all agents)
 
