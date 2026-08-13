@@ -65,18 +65,17 @@ a preview fails, arrives as a stderr diagnostic tagged `info#err`. The trailing
 `sed` strips terminal color codes that Pulumi embeds in the text, which otherwise
 show up as `<{%reset%}>`.
 
-## When the record has no readable error
+## When you can't reach the real error, stop and ask
 
-Sometimes the recorded diagnostic isn't enough to debug from — most often a bare
-`error: exit status 1` with no stderr. That happens when a resource shells out to
-an external builder or CLI (e.g. a `docker-build` `Image` built with `exec: true`,
-whose real build log lives in the external builder, not the update record). When
-the diagnostic carries no actionable error — or when repeated attempts to reach
-the real error keep failing on authentication or not-found (the external build
-logs need a token you don't have, a private CI run you can't fetch) — stop
-inferring and reach the user: say plainly that the update record has no readable
-error, name what you're blocked on and the one thing you need from them ("paste
-the Depot build log", "grant access to the GitHub Actions run").
+Sometimes the recorded diagnostic isn't enough to debug from — for example a bare
+`error: exit status 1` with no stderr, which happens when a resource shells out to
+an external builder or CLI whose real log lives outside the update record. Don't
+spend iteration after iteration inferring the cause by archaeology. When the
+diagnostic carries no actionable error — or when repeated attempts to reach the
+real error keep failing (the log needs a token you don't have, a run you can't
+fetch, a not-found) — stop and reach the user instead of guessing again: say
+plainly that the record has no readable error, and name what you're blocked on and
+the one thing you need from them to get the actual log.
 
 ## Find the cause and where the fix belongs
 
