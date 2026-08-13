@@ -47,7 +47,7 @@ For a failed update, use the `update` path with the version number:
 
 ```
 pulumi api /api/stacks/{orgName}/{projectName}/{stackName}/update/<version>/events \
-  | jq -r '.events[].diagnosticEvent | select(. != null) | "[\(.severity)] \(.message)"' \
+  | jq -r '.events[].diagnosticEvent | select(. != null) | (.severity + " " + .message)' \
   | sed 's/<{%reset%}>//g'
 ```
 
@@ -55,7 +55,7 @@ For a failed preview, use the `preview` path with the preview id:
 
 ```
 pulumi api /api/stacks/{orgName}/{projectName}/{stackName}/preview/<preview-id>/events \
-  | jq -r '.events[].diagnosticEvent | select(. != null) | "[\(.severity)] \(.message)"' \
+  | jq -r '.events[].diagnosticEvent | select(. != null) | (.severity + " " + .message)' \
   | sed 's/<{%reset%}>//g'
 ```
 
@@ -64,6 +64,13 @@ error carries that `error` tag, but a program error, which is the common case wh
 a preview fails, arrives as a stderr diagnostic tagged `info#err`. The trailing
 `sed` strips terminal color codes that Pulumi embeds in the text, which otherwise
 show up as `<{%reset%}>`.
+
+Build the line with `+` concatenation rather than jq string interpolation
+(`"[\(.severity)] \(.message)"`). The interpolation form reads better, but its
+backslashes have to survive being encoded into a JSON tool-call argument, and they
+often do not: the backslash arrives doubled, jq then treats it as an escaped literal,
+and every line of output comes back as the format string itself rather than the
+diagnostic. Concatenation needs no backslashes, so there is nothing to mis-escape.
 
 ## Find the cause and where the fix belongs
 
