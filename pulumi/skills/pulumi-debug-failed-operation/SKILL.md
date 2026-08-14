@@ -65,18 +65,6 @@ a preview fails, arrives as a stderr diagnostic tagged `info#err`. The trailing
 `sed` strips terminal color codes that Pulumi embeds in the text, which otherwise
 show up as `<{%reset%}>`.
 
-## When you can't reach the real error, stop and ask
-
-Sometimes the recorded diagnostic isn't enough to debug from — for example a bare
-`error: exit status 1` with no stderr, which happens when a resource shells out to
-an external builder or CLI whose real log lives outside the update record. Don't
-spend iteration after iteration inferring the cause by archaeology. When the
-diagnostic carries no actionable error — or when repeated attempts to reach the
-real error keep failing (the log needs a token you don't have, a run you can't
-fetch, a not-found) — stop and reach the user instead of guessing again: say
-plainly that the record has no readable error, and name what you're blocked on and
-the one thing you need from them to get the actual log.
-
 ## Find the cause and where the fix belongs
 
 An operation can fail with errors from more than one resource, so read all of the
@@ -101,6 +89,15 @@ keeps you from editing code that was never the problem.
 - **The environment.** The problem is outside Pulumi: credentials, permissions,
   OIDC, or a quota. Fix the role, the ESC environment, or the capacity that the
   provider rejected, rather than the resource code.
+
+Sometimes the recorded diagnostic isn't enough to debug from — for example a bare
+`error: exit status 1` with no stderr, which happens when a resource shells out to
+an external builder or CLI whose real log lives outside the update record. Don't
+spend hundreds of iterations inferring the cause by archaeology. When repeated
+attempts to reach the real error keep failing (the log needs a token you don't
+have, a run you can't fetch, a not-found) — stop and reach the user instead of
+guessing again: say plainly that the record has no readable error, and name what
+you're blocked on and the one thing you need from them to get the actual log.
 
 ## Fix the cause
 
