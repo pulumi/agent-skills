@@ -1,6 +1,6 @@
 ---
 name: pulumi-debug-failed-operation
-version: 1.1.0
+version: 1.1.1
 description: |
     Debug a Pulumi update or preview that failed: read the failure Pulumi already
     recorded, find what caused it, and fix it. Load this skill when the user asks
@@ -90,14 +90,10 @@ keeps you from editing code that was never the problem.
   OIDC, or a quota. Fix the role, the ESC environment, or the capacity that the
   provider rejected, rather than the resource code.
 
-Sometimes the recorded diagnostic isn't enough to debug from — for example a bare
-`error: exit status 1` with no stderr, which happens when a resource shells out to
-an external builder or CLI whose real log lives outside the update record. Don't
-spend hundreds of iterations inferring the cause by archaeology. When repeated
-attempts to reach the real error keep failing (the log needs a token you don't
-have, a run you can't fetch, a not-found) — stop and reach the user instead of
-guessing again: say plainly that the record has no readable error, and name what
-you're blocked on and the one thing you need from them to get the actual log.
+When a diagnostic is empty or too thin to act on, the real error usually isn't in
+the record — it's in the log of whatever the resource shelled out to. Read it
+there. If reaching it needs access you don't have (a token, a run, a not-found),
+stop and tell the user what you're blocked on and the one thing you need from them.
 
 ## Fix the cause
 
