@@ -69,19 +69,21 @@ After the marketplace registers, install plugins from the Codex TUI: run `codex`
 
 ### Universal (all agents)
 
-Install all skills:
+Install all end-user skills by installing each plugin group:
 
 ```bash
-npx skills add pulumi/agent-skills --skill '*'
+npx skills add pulumi/agent-skills/pulumi --skill '*'       # 8 Pulumi skills
+npx skills add pulumi/agent-skills/migration --skill '*'    # 5 migration skills
+npx skills add pulumi/agent-skills/delegation --skill '*'   # 1 Neo handoff skill
 ```
 
-Or install individual plugin groups:
+The universal `skills` CLI discovers these group paths separately. It does not
+read the combined plugin manifest at the repository root.
+
+Provider authors can also install the separate package-maintenance group:
 
 ```bash
-npx skills add pulumi/agent-skills/migration --skill '*'             # 5 migration skills
-npx skills add pulumi/agent-skills/pulumi --skill '*'                # 8 pulumi skills (overview + specialized)
-npx skills add pulumi/agent-skills/delegation --skill '*'            # 1 delegation skill
-npx skills add pulumi/agent-skills/package-maintenance --skill '*'   # 2 package-maintenance skills
+npx skills add pulumi/agent-skills/package-maintenance --skill '*'
 ```
 
 This works with Claude Code, Cursor, Copilot, Codex, and other agent tools.
