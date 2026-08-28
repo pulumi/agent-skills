@@ -1,6 +1,6 @@
 {
   "name": "pulumi",
-  "version": "1.0.2",
+  "version": "1.0.4",
   "description": "Entry-point and specialized skills for writing and operating Pulumi infrastructure across CLI, projects, and Pulumi Cloud",
   "author": {
     "name": "Pulumi",

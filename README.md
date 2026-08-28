@@ -52,6 +52,7 @@ Entry-point and specialized skills for writing and operating Pulumi infrastructu
 | [pulumi-debug-failed-operation](pulumi/skills/pulumi-debug-failed-operation) | Debug a failed `pulumi up` or `pulumi preview` from the failure Pulumi already recorded |
 | [provider-upgrade](pulumi/skills/provider-upgrade) | Safe workflows for upgrading Pulumi providers without unintended infrastructure changes |
 | [package-usage](pulumi/skills/package-usage) | Track which stacks across an organization use a package and at what versions |
+| [pulumi-context-api](pulumi/skills/pulumi-context-api) | Query the Pulumi Context API graph for relationship and impact-analysis questions across an organization's infrastructure |
 
 ### Package Maintenance Skills
 

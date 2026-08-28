@@ -1,0 +1,21 @@
+# Queries that should activate the pulumi-context-api skill
+queries:
+  # Blast radius / impact
+  - "What breaks if I change the outputs of my networking stack?"
+  - "What is the blast radius of deleting this security group?"
+  - "Which resources depend on this RDS instance?"
+  - "If I upgrade the AWS provider in this stack, what does it touch?"
+  # Dependency / reference traversal
+  - "What references this security group, including resources Pulumi doesn't manage?"
+  - "Which stacks consume the outputs of our shared VPC stack?"
+  - "Show me everything downstream of this S3 bucket across our organization"
+  # Inventory by relationship
+  - "Which provider versions are we running, and in which stacks?"
+  - "What resources does this provider instance manage?"
+  - "Query the infrastructure graph for all resources grouped by cloud account"
+  # Orphans / absence
+  - "Which resources in my org have nothing depending on them?"
+  - "Find unreferenced resources in the production project"
+  # Direct mentions
+  - "Use the Pulumi Context API to map dependencies between our stacks"
+  - "Run a graph query against our Pulumi organization"

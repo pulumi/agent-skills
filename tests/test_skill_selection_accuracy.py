@@ -71,6 +71,10 @@ async def test_skill_selection_accuracy(skill: str, queries: list[str]) -> None:
     )
 
 
+def _max_tokens_for(skills: dict[str, Skill]) -> int:
+    return max(1000, 250 * len(skills))
+
+
 async def _select_skills_for_query(
     user_message: str,
     skills: dict[str, Skill] | None = None,
@@ -84,7 +88,8 @@ async def _select_skills_for_query(
 
     kwargs = {
         "model": HAIKU_MODEL,
-        "max_tokens": 1000,
+        # One evaluation per skill in a single call, so this must scale.
+        "max_tokens": _max_tokens_for(skills),
         "temperature": 0,
         "system": _build_system_prompt(skills),
         "tools": [_EVALUATE_SKILLS_TOOL],
@@ -93,6 +98,11 @@ async def _select_skills_for_query(
     }
     for attempt in range(MAX_ATTEMPTS):
         response = await create_message(**kwargs)
+        if response.stop_reason == "max_tokens":
+            raise RuntimeError(
+                f"evaluate_skills response hit max_tokens ({kwargs['max_tokens']}) "
+                f"for {len(skills)} skills; raise the ceiling in _max_tokens_for."
+            )
         tool_calls = get_tool_calls(response)
         if tool_calls:
             return _parse_evaluated_skills(tool_calls, skills)
