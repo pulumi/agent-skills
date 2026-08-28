@@ -25,6 +25,10 @@ Resource Search finds individual resources but cannot follow edges, so
 answering "what depends on X" with repeated searches is slow and usually
 incomplete.
 
+Public preview, for organizations on the Enterprise and Business Critical
+plans. Needs Pulumi CLI v3.243.0 or newer, an active `pulumi login`, and a role
+granting `resources:search` (the default Member and Admin roles do).
+
 ## Step 1: fetch the primer, always
 
 ```bash
@@ -32,15 +36,34 @@ pulumi api GetGraphSchema -F orgName=<org>
 ```
 
 This returns a self-contained guide to composing selectors — vocabulary, edge
-types, engine caps, worked examples, pagination, and the traps that produce a
-confident wrong answer. It is served by the deployment that answers your
-queries, so it is the contract; this skill deliberately does not copy it,
-because a pasted grammar ages and a stale selector 400s.
+types, engine caps, worked examples, pagination, completeness rules, and the
+traps that produce a confident wrong answer instead of an error. It is served
+by the deployment that answers your queries, so it is the contract, and it
+moves between schema versions. This skill bootstraps you to it and stops there;
+everything below defers to it.
 
-**Read it in full — never truncate it with `head`, `tail`, or a byte cap.**
+**Read it in full — never truncate it with `head`, `tail`, or a byte cap.** A
+clipped primer means malformed selectors and rejected queries.
 
-If `pulumi api` doesn't know `GetGraphSchema`, run `pulumi api list
---refresh-spec` first. Use `pulumi org get-default` if you need the org name.
+`pulumi whoami -v` lists every organization the login can reach. Ask which one
+the question is about rather than assuming the default org — that is often an
+individual account with no entitlement.
+
+### If this call fails
+
+You have no primer yet, so handle it here rather than looking it up there:
+
+| Response | Meaning |
+|---|---|
+| `402 Payment Required` | the org's plan doesn't include the Context API |
+| `409 Conflict` | a self-hosted install whose license doesn't enable it |
+| `404 Not Found: '<org>' not found` | bad org name, or the caller lacks permission on it |
+| `404 Not Found`, detail-free | kill switch off, no search cluster, or a wrong path |
+| `503 Service Unavailable` | transient — retry |
+
+Report the gate to the user instead of retrying anything but the 503. If
+`pulumi api` doesn't know `GetGraphSchema` at all, that is not a gate: run
+`pulumi api list --refresh-spec` to refresh the cached spec.
 
 ## Step 2: query
 
@@ -48,39 +71,33 @@ If `pulumi api` doesn't know `GetGraphSchema`, run `pulumi api list
 pulumi api GraphQuery -F orgName=<org> --input selector.json
 ```
 
-The wire format is a JSON selector, not query text — the API maps onto ISO GQL
-semantics but accepts no Cypher, GQL, or GraphQL strings. Compose it from the
-primer rather than from memory.
+The body is a JSON selector, not query text. Compose it from the primer you
+just read, not from memory or from a grammar you recall from another session.
 
-## Step 3: check completeness before answering
+## Step 3: apply the primer's completeness rules before answering
 
-Read three signals in every response, and follow the primer's rules for them:
+Every response carries fidelity signals — `meta.resultMode`, `meta.visibility`,
+and `pageInfo.continuationToken`. Read the primer's rules for them and follow
+them; the remedies differ per signal and a stale paraphrase here would be worse
+than none.
 
-- `meta.resultMode` — `truncated` means engine caps clipped the answer.
-- `meta.visibility` — `trimmed` means RBAC may have hidden part of the walk.
-- `pageInfo.continuationToken` — present means more pages remain.
-
-Any of the three disqualifies a completeness claim: blast radius, "nothing
-depends on this", an exhaustive cleanup list, a total. Narrow the selector, or
-drain the pages, and say what the answer does cover.
-
-## Availability
-
-Public preview, for organizations on the Enterprise and Business Critical
-plans. Needs Pulumi CLI v3.243.0 or newer, an active `pulumi login`, and a role
-granting `resources:search` (the default Member and Admin roles do).
-
-A denial names its gate — `402 Payment Required` is the plan, `409 Conflict` a
-self-hosted license, a 404 naming the org a bad name or missing permission.
-Report the gate to the user instead of retrying. The primer's "When it denies
-you" table covers the rest.
+What matters most: **a completeness claim needs all of them clean.** Blast
+radius, "nothing depends on this", an exhaustive cleanup list, a total across
+groups — none of these survive a truncated result, a trimmed traversal, or an
+undrained page. When you can't get there, say what the answer does cover.
 
 ## Scope of the graph
 
-Resources, stacks, and the relationships between them. Not resource property
-values, deployment or update history, ESC environments, or cost and policy
-data — use Resource Search and the regular REST API for those. Results are
-trimmed to the stacks and accounts the caller can see.
+Resources, stacks, and the relationships between them, trimmed to the stacks
+and accounts the caller can see. The primer's "What it cannot answer yet"
+section is the live boundary — check it before concluding a question is
+unanswerable, and reach for a different API rather than approximating one of
+those gaps with a graph query.
+
+One boundary worth knowing up front, because it decides which API to use:
+resource properties are filterable but not returnable. "Which public buckets
+does anything depend on" is a graph question; the property values themselves
+come back from Resource Search.
 
 Human-readable reference:
 [Context API overview](https://www.pulumi.com/docs/insights/context-api/) and
