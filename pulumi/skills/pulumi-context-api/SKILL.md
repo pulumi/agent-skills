@@ -26,10 +26,24 @@ answering "what depends on X" with repeated searches is slow and usually
 incomplete.
 
 Public preview, for organizations on the Enterprise and Business Critical
-editions. Needs Pulumi CLI v3.243.0 or newer, an active `pulumi login`, and a
-role granting `resources:search` (the default Member and Admin roles do).
+editions, and a role granting `resources:search` (the default Member and Admin
+roles do).
+
+## First: is a graph tool already in the session?
+
+If one is — `graph_query` and `get_graph_schema`, under whatever prefix the
+server registers them — call it and skip Steps 1 and 2. Compose the selector
+from the `graph_query` tool's own description, which carries the grammar; the
+tool resolves the organization and credentials itself and drains pagination for
+you. When that description is not enough, `get_graph_schema` returns the live
+field vocabulary and limits, and will serve the full Step 1 primer when asked
+for it. Step 3 still governs what you do with the result.
+
+Steps 1 and 2 are the path for an agent that has a shell and no such tool.
 
 ## Step 1: fetch the primer, always
+
+Needs Pulumi CLI v3.243.0 or newer and an active `pulumi login`.
 
 ```bash
 pulumi api GetGraphQuerySchema --output=markdown
