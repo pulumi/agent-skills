@@ -1,6 +1,6 @@
 ---
 name: pulumi-debug-failed-operation
-version: 1.1.1
+version: 1.1.2
 description: |
     Debug a Pulumi update or preview that failed: read the failure Pulumi already
     recorded, find what caused it, and fix it. Load this skill when the user asks
@@ -64,6 +64,28 @@ error carries that `error` tag, but a program error, which is the common case wh
 a preview fails, arrives as a stderr diagnostic tagged `info#err`. The trailing
 `sed` strips terminal color codes that Pulumi embeds in the text, which otherwise
 show up as `<{%reset%}>`.
+
+## Read the code the operation ran
+
+CI often deploys from a branch other than the default, so read the program at the
+commit the operation ran, not whatever your clone holds. Pulumi records it on the
+update (for a preview, use `previews/<preview-id>`):
+
+```bash
+pulumi api /api/stacks/{orgName}/{projectName}/{stackName}/updates/<version> \
+  | jq '.info.environment | {"git.head", "git.headName", "git.dirty", "vcs.root"}'
+```
+
+Check out the branch from `git.headName` (`refs/heads/<branch>`) so you have its
+history and deliver any fix there:
+`git fetch origin <branch> && git checkout -B <branch> FETCH_HEAD`. If its tip is not
+`git.head`, the branch moved after the operation: read the program at `git.head`, and
+use `git diff <git.head> HEAD` to see what landed since. If `git.headName` is not a
+branch, check out `git.head` directly. The program is under `vcs.root`.
+
+If `git.dirty` is `"true"`, warn that the deployed code may differ; if `git.head` is
+missing, ask which ref to read rather than assuming the default branch. When asked
+which commit you're on, give the checked-out SHA and whether it matches `git.head`.
 
 ## Find the cause and where the fix belongs
 
