@@ -1,6 +1,6 @@
 ---
 name: pulumi-debug-failed-operation
-version: 1.1.1
+version: 1.1.2
 description: |
     Debug a Pulumi update or preview that failed: read the failure Pulumi already
     recorded, find what caused it, and fix it. Load this skill when the user asks
@@ -64,6 +64,44 @@ error carries that `error` tag, but a program error, which is the common case wh
 a preview fails, arrives as a stderr diagnostic tagged `info#err`. The trailing
 `sed` strips terminal color codes that Pulumi embeds in the text, which otherwise
 show up as `<{%reset%}>`.
+
+## Read the code the operation ran
+
+Read the program at the commit the operation ran, not whatever your checkout
+happens to hold. CI often deploys from a release or feature branch, and a clone of
+the default branch shows different code, so you can "find" a bug that the deployed
+branch already fixed. Pulumi records the source revision with each operation.
+
+For a failed update, read it from the update record:
+
+```bash
+pulumi api /api/stacks/{orgName}/{projectName}/{stackName}/updates/<version> \
+  | jq '.info.environment | {"git.head", "git.headName", "git.dirty", "vcs.root"}'
+```
+
+For a failed preview, the preview record carries the same fields:
+
+```bash
+pulumi api /api/stacks/{orgName}/{projectName}/{stackName}/previews/<preview-id> \
+  | jq '.info.environment | {"git.head", "git.headName", "git.dirty", "vcs.root"}'
+```
+
+`git.head` is the commit, `git.headName` is the ref it ran from, and `vcs.root` is
+the project's directory in the repository. Check out that exact commit. Fetching it
+by SHA works even in a shallow, single-branch clone that cannot see other branches:
+
+```bash
+git fetch --depth 1 origin <git.head> && git checkout <git.head>
+```
+
+Then read the program from `vcs.root`. If `git.dirty` is `"true"`, the operation ran
+with uncommitted changes, so tell the user the deployed code may differ from the
+commit. If `git.head` is missing, for example a local run outside a git repository,
+say so and ask the user which ref to read. Do not fall back to the default branch.
+
+When the user asks which branch or commit you are looking at, answer with the exact
+SHA you checked out (`git rev-parse HEAD`) and whether it matches `git.head`. A
+commit message that names a release does not prove you are on that release.
 
 ## Find the cause and where the fix belongs
 

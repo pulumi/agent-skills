@@ -9,3 +9,5 @@ queries:
   - "Why did update 161 of the vvm-dev stack fail? Fix it"
   - "Debug update 42 on org myorg, project web, stack prod — find the cause"
   - "Update 7 of my staging stack errored, diagnose and fix it"
+  # Ran from a non-default branch that already has the fix. Expected: check out git.head, don't re-propose the fix.
+  - "Update 14 of prod failed in CI on the release/2.4 branch, but we already fixed that error on that branch. Debug it"
