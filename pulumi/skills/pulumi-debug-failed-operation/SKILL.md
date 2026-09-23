@@ -73,14 +73,19 @@ update (for a preview, use `previews/<preview-id>`):
 
 ```bash
 pulumi api /api/stacks/{orgName}/{projectName}/{stackName}/updates/<version> \
-  | jq '.info.environment | {"git.head", "git.dirty", "vcs.root"}'
+  | jq '.info.environment | {"git.head", "git.headName", "git.dirty", "vcs.root"}'
 ```
 
-Check out that commit with `git fetch --depth 1 origin <git.head> && git checkout <git.head>`
-and read the program under `vcs.root`. If `git.dirty` is `"true"`, warn that the
-deployed code may differ; if `git.head` is missing, ask which ref to read rather than
-assuming the default branch. When asked which commit you're on, give the checked-out
-SHA and whether it matches `git.head`.
+Check out the branch from `git.headName` (`refs/heads/<branch>`) so you have its
+history and deliver any fix there:
+`git fetch origin <branch> && git checkout -B <branch> FETCH_HEAD`. If its tip is not
+`git.head`, the branch moved after the operation: read the program at `git.head`, and
+use `git diff <git.head> HEAD` to see what landed since. If `git.headName` is not a
+branch, check out `git.head` directly. The program is under `vcs.root`.
+
+If `git.dirty` is `"true"`, warn that the deployed code may differ; if `git.head` is
+missing, ask which ref to read rather than assuming the default branch. When asked
+which commit you're on, give the checked-out SHA and whether it matches `git.head`.
 
 ## Find the cause and where the fix belongs
 
