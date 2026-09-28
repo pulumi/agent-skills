@@ -1,0 +1,15 @@
+# Queries that should activate the pulumi-gcp-v10-migration skill
+queries:
+  # Explicit v10 upgrade requests
+  - "Upgrade my Pulumi program to pulumi-gcp v10"
+  - "Migrate this stack from the GCP provider v9 to v10"
+  - "Bump @pulumi/gcp to 10.0.0 in my TypeScript project"
+  - "Update github.com/pulumi/pulumi-gcp/sdk/v9 to v10 in our Go Pulumi program"
+  - "Help me move our Python Pulumi project to pulumi-gcp 10.x safely"
+
+  # Breaking changes and post-upgrade breakage
+  - "What are the breaking changes in pulumi-gcp v10?"
+  - "After upgrading to GCP provider v10, gcp.notebooks.Instance no longer exists. What do I do?"
+  - "pulumi-gcp v10 says secretDataWoVersion is required on my SecretVersion"
+  - "My preview wants to replace a compute instance after bumping pulumi-gcp to v10"
+  - "gcp.iap.Brand and gcp.iap.Client are gone in pulumi-gcp 10, how do I migrate without deleting my OAuth client?"

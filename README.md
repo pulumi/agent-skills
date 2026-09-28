@@ -51,6 +51,7 @@ Entry-point and specialized skills for writing and operating Pulumi infrastructu
 | [pulumi-esc](pulumi/skills/pulumi-esc) | Guidance for working with Pulumi ESC (Environments, Secrets, and Configuration) |
 | [pulumi-debug-failed-operation](pulumi/skills/pulumi-debug-failed-operation) | Debug a failed `pulumi up` or `pulumi preview` from the failure Pulumi already recorded |
 | [provider-upgrade](pulumi/skills/provider-upgrade) | Safe workflows for upgrading Pulumi providers without unintended infrastructure changes |
+| [pulumi-gcp-v10-migration](pulumi/skills/pulumi-gcp-v10-migration) | Upgrade a Pulumi program from the GCP provider v9 to v10 without replacing or deleting live resources |
 | [package-usage](pulumi/skills/package-usage) | Track which stacks across an organization use a package and at what versions |
 | [pulumi-context-api](pulumi/skills/pulumi-context-api) | Query the Pulumi Context API graph for relationship and impact-analysis questions across an organization's infrastructure |
 
@@ -122,7 +123,7 @@ Once the marketplace is registered, install plugins from the Codex TUI: run `cod
 Install all end-user skills by installing each plugin group:
 
 ```bash
-npx skills add pulumi/agent-skills/pulumi --skill '*'       # 8 Pulumi skills
+npx skills add pulumi/agent-skills/pulumi --skill '*'       # 10 Pulumi skills
 npx skills add pulumi/agent-skills/migration --skill '*'    # 5 migration skills
 npx skills add pulumi/agent-skills/delegation --skill '*'   # 1 Neo handoff skill
 ```
