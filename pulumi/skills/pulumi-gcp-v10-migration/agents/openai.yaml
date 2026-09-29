@@ -1,4 +1,0 @@
-interface:
-  display_name: "Pulumi GCP v10 Migration"
-  short_description: "Upgrade a Pulumi program to the GCP provider v10"
-  default_prompt: "Use $pulumi-gcp-v10-migration to upgrade this Pulumi program to pulumi-gcp v10 without changing live infrastructure."

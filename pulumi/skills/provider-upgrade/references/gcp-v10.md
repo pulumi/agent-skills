@@ -1,10 +1,48 @@
-# GCP v10 breaking changes index
+# pulumi-gcp v9 to v10
 
 Every breaking change in pulumi-gcp v10.0.0, derived from the v10 migration guide
 (https://www.pulumi.com/registry/packages/gcp/how-to-guides/10-0-migration/). The guide is the
 source of truth: each detailed row links its section, which has a read-only `pulumi stack
 export | jq` detection command and before/after code in every language. Read that section
-before fixing a `REPLACE` or `DELETE` row.
+before fixing a `REPLACE` or `DELETE` row, and cite it when you accept a diff.
+
+## Before the bump
+
+Some v10 changes destroy live resources if the fix is made in the wrong order, so do these
+steps before step 2 of the skill:
+
+1. **Version gate.** The deployed major must be 9 (check `pulumi:providers:gcp` in
+   `pulumi stack export`). On 8.x or older, stop: the user completes the v9 migration first
+   (https://www.pulumi.com/registry/packages/gcp/how-to-guides/9-0-migration/). Do not jump
+   two majors in one step. Already on 10.x: skip to the tables below and work from the preview.
+2. **Clean v9 baseline.** Still on v9, run `pulumi preview --refresh --run-program` per stack.
+   If it is not clean, stop and ask the user to settle it; diffs that exist before the bump
+   will be blamed on v10.
+3. **Find affected resources.** Run the state scan and the code pass below.
+4. **Gate on risk.** Present the affected rows to the user grouped by risk (`REPLACE`,
+   `DELETE`, `UPDATE`, `BUILD`, `VALUE`, `NONE`) before editing anything. For each `REPLACE`
+   or `DELETE` row, state what is destroyed and get the user's choice.
+5. **Order removed types state first.** For `gcp.notebooks.*`, `gcp.iap.Brand`/`Client`,
+   `gcp.beyondcorp.App*`, `gcp.ml.EngineModel` and `gcp.vertex.AiSchedule`, write out
+   `pulumi state delete` commands for the user, dependents first, and only then remove the
+   code. Removing code first makes `pulumi up` send the delete to the v9 provider in state,
+   which destroys the live resource. Adopt a successor with `pulumi import`, never a create.
+
+Fixes that most often go wrong:
+
+- `gcp.compute.Instance` with a `guestAccelerators` entry of `count: 0`: omit the list
+  instead. A replace loses the boot disk and local SSD data.
+- `gcp.secretmanager.SecretVersion` without `secretDataWoVersion`: set it to `""`. Any other
+  value, including `"0"`, replaces the secret version.
+- `gcp.bigquery.Dataset.defaultCollation`: pin the value the live resource has today, read
+  from state.
+- `loadBalancingScheme` unset on a classic `gcp.compute.BackendService` or
+  `GlobalForwardingRule`: set `"EXTERNAL"` explicitly before the bump, as upstream advises.
+
+Never run `pulumi up`, `pulumi refresh`, `pulumi destroy`, `pulumi state delete` or
+`pulumi import` yourself; write them out for the user. `pulumi preview` and
+`pulumi stack export` are read-only. Then return to step 2 of the skill and continue the core
+loop.
 
 ## Risk levels
 
@@ -53,7 +91,9 @@ TypeScript/Java camelCase, Python snake_case, Go/.NET PascalCase and YAML tokens
 (`gcp:notebooks:Instance`). Python `from pulumi_gcp import notebooks` and Go import aliases can
 hide the module prefix: if a file imports the module, also grep for the bare resource name.
 
-## Detailed changes (guide has a full section)
+## Detailed changes
+
+Each row links its guide section, except where marked not yet covered.
 
 | Resource (state type) | What changed | Grep | Action | Risk |
 |---|---|---|---|---|
@@ -69,6 +109,7 @@ hide the module prefix: if a file imports the module, also grep for the bare res
 | `gcp.compute.ServiceAttachment` (`gcp:compute/serviceAttachment:ServiceAttachment`) [guide](https://www.pulumi.com/registry/packages/gcp/how-to-guides/10-0-migration/#gcpcomputeserviceattachment-natsubnets-and-consumerrejectlists-are-now-sets) | `natSubnets` and `consumerRejectLists` are sets. Order in state changes on the first refresh; a recurring v9 diff goes away. | `nat_?subnets\|consumer_?reject_?lists` | Only if code reads an element by index: read from the value the program supplied instead. Make the edit before the first refresh. | `VALUE` |
 | `gcp.container.Cluster` (`gcp:container/cluster:Cluster`) [guide](https://www.pulumi.com/registry/packages/gcp/how-to-guides/10-0-migration/#gcpcontainercluster-the-enablecomponents-fields-are-now-sets) | `loggingConfig.enableComponents` and `monitoringConfig.enableComponents` are sets; read back sorted. | `enable_?components` | Only if code reads by index: switch to a membership test or sort explicitly. | `VALUE` |
 | `gcp.compute.Reservation` (`gcp:compute/reservation:Reservation`), function `getReservation` [guide](https://www.pulumi.com/registry/packages/gcp/how-to-guides/10-0-migration/#gcpcomputereservation-top-level-reservationblockcount-removed) | Top-level `reservationBlockCount` removed (never settable). | `reservation_?block_?count` | Read `resourceStatuses[0].reservationBlockCount` with a `0` fallback (the list is empty for a reservation with no blocks). In interpreted languages an unfixed read silently drops stack outputs. | `BUILD`, `VALUE` |
+| `gcp.compute.BackendService`, `gcp.compute.GlobalForwardingRule` (`gcp:compute/backendService:BackendService`, `gcp:compute/globalForwardingRule:GlobalForwardingRule`) (not yet covered by a guide section) | `loadBalancingScheme` default changed from `EXTERNAL` (classic) to `EXTERNAL_MANAGED`. Tested: a new load balancer left unset fails partway through `pulumi up` with `Error 400`; an existing classic load balancer can silently end up mixed; switching back to `EXTERNAL` is rejected after 90 days and then needs `--replace`. | `BackendService\b\|global_?forwarding_?rule` then check for `load_?balancing_?scheme` | Upstream advice: before upgrading, set `loadBalancingScheme: "EXTERNAL"` explicitly on every classic load balancer's backend services and global forwarding rules where it is unset (confirm the live value in state, `outputs.loadBalancingScheme`). Set it consistently on both halves of each load balancer. Only move to `EXTERNAL_MANAGED` as a deliberate, separate change. | `REPLACE`, `BUILD` |
 
 ## Other changes (guide lists them only)
 
@@ -80,7 +121,6 @@ with `pulumi preview --refresh --run-program`.
 | `gcp.beyondcorp.AppConnection`, `AppConnector`, `AppGateway` (`gcp:beyondcorp/app...`), functions `getAppConnection`, `getAppConnector`, `getAppGateway` | Removed. Successors: `gcp.beyondcorp.SecurityGateway`, `SecurityGatewayApplication`. | `beyondcorp\w*[.:/]\w*App(Connection\|Connector\|Gateway)\|app_(connection\|connector\|gateway)` | Same order as the IAP and notebooks rows: user runs `pulumi state delete` before code is removed; adopt any successor with `pulumi import`. | `DELETE` |
 | `gcp.ml.EngineModel` (`gcp:ml/engineModel:EngineModel`) | Removed; `gcp.ml` module gone. Successor: Vertex AI resources such as `gcp.vertex.AiEndpoint`. | `gcp\w*[.:/]ml[.:/]\|engine_?model` | As above: `pulumi state delete` first, then remove code. | `DELETE` |
 | `gcp.vertex.AiSchedule` (`gcp:vertex/aiSchedule:AiSchedule`) | Removed. Successor: `gcp.colab.Schedule`. | `ai_?schedule` | As above. | `DELETE` |
-| `gcp.compute.BackendService`, `gcp.compute.GlobalForwardingRule` (`gcp:compute/backendService:BackendService`, `gcp:compute/globalForwardingRule:GlobalForwardingRule`) | `loadBalancingScheme` default changed to `EXTERNAL_MANAGED`. | `BackendService\b\|global_?forwarding_?rule` then check for `load_?balancing_?scheme` | Where the program leaves `loadBalancingScheme` unset, set it to the live value in state (`outputs.loadBalancingScheme`, normally `EXTERNAL`) so v10 does not switch the load balancer. | `UPDATE` or `REPLACE` (check preview) |
 | `gcp.bigquery.DataTransferConfig` (`gcp:bigquery/dataTransferConfig:DataTransferConfig`) | Exactly one of `sensitiveParams.secretAccessKey` and `secretAccessKeyWo` must be set; `secretAccessKeyWoVersion` is now a string. | `secret_?access_?key` | Keep exactly one of the two; quote a numeric `secretAccessKeyWoVersion`. | `BUILD` |
 | `gcp.compute.ServiceAttachment` | `consumerAcceptLists[].projectIdOrNum`, `networkUrl`, `endpointUrl` default to `""` instead of null. | `consumer_?accept_?lists` | Only if code reads those back: treat `""` as absent. | `VALUE` |
 | `gcp.applicationintegration.Client` (`gcp:applicationintegration/client:Client`) | `runAsServiceAccount` removed. | `run_?as_?service_?account` | Remove the argument; check preview for a diff. | `BUILD` |
