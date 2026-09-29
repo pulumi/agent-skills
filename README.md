@@ -122,7 +122,7 @@ Once the marketplace is registered, install plugins from the Codex TUI: run `cod
 Install all end-user skills by installing each plugin group:
 
 ```bash
-npx skills add pulumi/agent-skills/pulumi --skill '*'       # 8 Pulumi skills
+npx skills add pulumi/agent-skills/pulumi --skill '*'       # 9 Pulumi skills
 npx skills add pulumi/agent-skills/migration --skill '*'    # 5 migration skills
 npx skills add pulumi/agent-skills/delegation --skill '*'   # 1 Neo handoff skill
 ```
