@@ -117,27 +117,6 @@ codex plugin marketplace add pulumi/agent-skills
 
 Once the marketplace is registered, install plugins from the Codex TUI: run `codex`, open the plugin marketplace with `/plugins`, and pick `pulumi-migration`, `pulumi`, `pulumi-delegation`, or `pulumi-package-maintenance`. As in Claude Code, `pulumi` is the combined plugin with all end-user skills; do not combine it with `pulumi-migration` or `pulumi-delegation`.
 
-### Cursor
-
-The Cursor plugin includes the Pulumi, migration, and Neo handoff skills. Install a local copy from the repository root:
-
-```bash
-(
-  set -e
-  cursor_plugin_dir="$HOME/.cursor/plugins/local/pulumi"
-  mkdir -p "$HOME/.cursor/plugins/local"
-  mkdir "$cursor_plugin_dir"
-  cp -R .cursor-plugin assets pulumi migration delegation "$cursor_plugin_dir/"
-  cp README.md LICENSE "$cursor_plugin_dir/"
-)
-```
-
-The command refuses to overwrite an existing install. Run **Developer: Reload Window** in Cursor, then open
-**Customize > Skills**. See [Cursor's local plugin instructions](https://cursor.com/docs/plugins#test-plugins-locally)
-if the skills do not appear. Each skill documents the tools and credentials its workflow needs.
-
-In Cursor Agent, try: `Use the pulumi-best-practices skill to review this Pulumi program.`
-
 ### Universal (all agents)
 
 Install all end-user skills by installing each plugin group:
