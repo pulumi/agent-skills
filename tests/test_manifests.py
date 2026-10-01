@@ -1,5 +1,5 @@
 """
-Validate plugin manifests for Claude Code and Codex.
+Validate plugin manifests for Claude Code, Codex, and Cursor.
 
 Checks that every plugin.json parses, has the fields each ecosystem requires,
 and that marketplace catalogs reference plugin directories that actually exist.
@@ -9,8 +9,10 @@ Run with:
 """
 
 import json
+import re
 from pathlib import Path
 
+import frontmatter
 import pytest
 
 REPO_ROOT = Path(__file__).parent.parent
@@ -53,6 +55,48 @@ def test_claude_plugin_manifest(manifest: Path) -> None:
     data = json.loads(manifest.read_text())
     for field in CLAUDE_REQUIRED_FIELDS:
         assert field in data, f"{_rel(manifest)}: missing field `{field}`"
+
+
+def test_cursor_plugin_manifest() -> None:
+    manifest = REPO_ROOT / ".cursor-plugin" / "plugin.json"
+    data = json.loads(manifest.read_text())
+    for field in ("name", "version", "description", "author", "license", "skills", "logo"):
+        assert data.get(field), f"{_rel(manifest)}: missing or empty field `{field}`"
+    assert re.fullmatch(r"[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?", data["name"])
+    assert data["author"]["name"]
+    assert isinstance(data["skills"], list) and data["skills"]
+    for entry in [*data["skills"], data["logo"]]:
+        path = Path(entry)
+        assert not path.is_absolute() and ".." not in path.parts, (
+            f"{_rel(manifest)}: path must stay inside the plugin: `{entry}`"
+        )
+        resolved = (REPO_ROOT / path).resolve()
+        assert resolved.is_relative_to(REPO_ROOT.resolve()), (
+            f"{_rel(manifest)}: path resolves outside the plugin: `{entry}`"
+        )
+        assert resolved.exists(), f"{_rel(manifest)}: missing path `{entry}`"
+    assert (REPO_ROOT / data["logo"]).is_file()
+
+
+def test_cursor_skills() -> None:
+    data = json.loads((REPO_ROOT / ".cursor-plugin" / "plugin.json").read_text())
+    names = set()
+    for entry in data["skills"]:
+        skills_dir = REPO_ROOT / entry
+        assert skills_dir.is_dir(), f"Not a skills directory: `{entry}`"
+        skill_files = sorted(skills_dir.glob("*/SKILL.md"))
+        assert skill_files, f"No skills found in `{entry}`"
+        for skill_file in skill_files:
+            skill = frontmatter.loads(skill_file.read_text())
+            name = skill.get("name")
+            assert name == skill_file.parent.name, f"{_rel(skill_file)}: name must match directory"
+            assert re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", name)
+            assert name not in names, f"Duplicate Cursor skill: `{name}`"
+            names.add(name)
+            assert isinstance(skill.get("description"), str) and skill["description"].strip(), (
+                f"{_rel(skill_file)}: missing or empty description"
+            )
+            assert skill.content.strip(), f"{_rel(skill_file)}: missing instructions"
 
 
 def test_codex_marketplace() -> None:
