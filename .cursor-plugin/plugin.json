@@ -4,8 +4,7 @@
   "version": "2.0.7",
   "description": "Teach your agent Pulumi: infrastructure as code in TypeScript, Python, Go, C#, Java, YAML, or HCL. Skills for writing and operating cloud infrastructure, migrating from Terraform, CloudFormation, CDK, and ARM, and delegating work to Pulumi Neo, Pulumi's AI platform engineer.",
   "author": {
-    "name": "Pulumi",
-    "url": "https://github.com/pulumi"
+    "name": "Pulumi"
   },
   "homepage": "https://www.pulumi.com/docs/",
   "repository": "https://github.com/pulumi/agent-skills",
@@ -25,6 +24,7 @@
     "automation-api",
     "neo"
   ],
+  "logo": "assets/logo.png",
   "skills": [
     "./pulumi/skills",
     "./migration/skills",

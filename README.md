@@ -117,12 +117,25 @@ codex plugin marketplace add pulumi/agent-skills
 
 Once the marketplace is registered, install plugins from the Codex TUI: run `codex`, open the plugin marketplace with `/plugins`, and pick `pulumi-migration`, `pulumi`, `pulumi-delegation`, or `pulumi-package-maintenance`. As in Claude Code, `pulumi` is the combined plugin with all end-user skills; do not combine it with `pulumi-migration` or `pulumi-delegation`.
 
+### Cursor
+
+The native Cursor plugin bundles the Pulumi, migration, and Neo handoff skills through
+[.cursor-plugin/plugin.json](.cursor-plugin/plugin.json). It has not yet been submitted to the Cursor marketplace.
+Use the [local installation and release guide](docs/cursor-plugin.md) to try the plugin before publication.
+
+The plugin supplies skill instructions. It does not install the Pulumi CLI or configure credentials.
+Code generation and review need no cloud credentials. For operations, follow the selected skill's
+prerequisites for the Pulumi CLI, language runtime, backend login, and cloud credentials.
+Pulumi Cloud queries and Neo handoff need access to the relevant Pulumi Cloud organization.
+
+In Cursor Agent, try: `Use the pulumi-best-practices skill to review this Pulumi program.`
+
 ### Universal (all agents)
 
 Install all end-user skills by installing each plugin group:
 
 ```bash
-npx skills add pulumi/agent-skills/pulumi --skill '*'       # 8 Pulumi skills
+npx skills add pulumi/agent-skills/pulumi --skill '*'       # 9 Pulumi skills
 npx skills add pulumi/agent-skills/migration --skill '*'    # 5 migration skills
 npx skills add pulumi/agent-skills/delegation --skill '*'   # 1 Neo handoff skill
 ```
