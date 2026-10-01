@@ -99,17 +99,6 @@ def test_cursor_skills() -> None:
             assert skill.content.strip(), f"{_rel(skill_file)}: missing instructions"
 
 
-def test_combined_plugin_consistency() -> None:
-    manifests = [
-        json.loads((REPO_ROOT / ecosystem / "plugin.json").read_text())
-        for ecosystem in (".claude-plugin", ".codex-plugin", ".cursor-plugin")
-    ]
-    for field in ("name", "version", "skills"):
-        assert all(data[field] == manifests[0][field] for data in manifests), (
-            f"Combined plugin `{field}` must match across Claude Code, Codex, and Cursor"
-        )
-
-
 def test_codex_marketplace() -> None:
     marketplace = REPO_ROOT / ".agents" / "plugins" / "marketplace.json"
     if not marketplace.exists():

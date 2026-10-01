@@ -119,14 +119,22 @@ Once the marketplace is registered, install plugins from the Codex TUI: run `cod
 
 ### Cursor
 
-The native Cursor plugin bundles the Pulumi, migration, and Neo handoff skills through
-[.cursor-plugin/plugin.json](.cursor-plugin/plugin.json). It has not yet been submitted to the Cursor marketplace.
-Use the [local installation and release guide](docs/cursor-plugin.md) to try the plugin before publication.
+The Cursor plugin includes the Pulumi, migration, and Neo handoff skills. Install a local copy from the repository root:
 
-The plugin supplies skill instructions. It does not install the Pulumi CLI or configure credentials.
-Code generation and review need no cloud credentials. For operations, follow the selected skill's
-prerequisites for the Pulumi CLI, language runtime, backend login, and cloud credentials.
-Pulumi Cloud queries and Neo handoff need access to the relevant Pulumi Cloud organization.
+```bash
+(
+  set -e
+  cursor_plugin_dir="$HOME/.cursor/plugins/local/pulumi"
+  mkdir -p "$HOME/.cursor/plugins/local"
+  mkdir "$cursor_plugin_dir"
+  cp -R .cursor-plugin assets pulumi migration delegation "$cursor_plugin_dir/"
+  cp README.md LICENSE "$cursor_plugin_dir/"
+)
+```
+
+The command refuses to overwrite an existing install. Run **Developer: Reload Window** in Cursor, then open
+**Customize > Skills**. See [Cursor's local plugin instructions](https://cursor.com/docs/plugins#test-plugins-locally)
+if the skills do not appear. Each skill documents the tools and credentials its workflow needs.
 
 In Cursor Agent, try: `Use the pulumi-best-practices skill to review this Pulumi program.`
 
@@ -135,7 +143,7 @@ In Cursor Agent, try: `Use the pulumi-best-practices skill to review this Pulumi
 Install all end-user skills by installing each plugin group:
 
 ```bash
-npx skills add pulumi/agent-skills/pulumi --skill '*'       # 9 Pulumi skills
+npx skills add pulumi/agent-skills/pulumi --skill '*'       # 8 Pulumi skills
 npx skills add pulumi/agent-skills/migration --skill '*'    # 5 migration skills
 npx skills add pulumi/agent-skills/delegation --skill '*'   # 1 Neo handoff skill
 ```

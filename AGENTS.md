@@ -52,7 +52,7 @@ Skills for handing off in-progress work from coding agents to Pulumi Neo for del
 /plugin install pulumi                        # all end-user skills (authoring + migration + Neo handoff)
 ```
 
-The `pulumi` plugin is the combined plugin defined at the repo root: `.claude-plugin/plugin.json`, `.codex-plugin/plugin.json`, and `.cursor-plugin/plugin.json` list `pulumi/skills/`, `migration/skills/`, and `delegation/skills/` in their `skills` fields. Granular alternatives (do not combine with `pulumi`, which already includes the first two):
+The `pulumi` plugin is the combined plugin defined at the repo root: `.claude-plugin/plugin.json` and `.codex-plugin/plugin.json` list `pulumi/skills/`, `migration/skills/`, and `delegation/skills/` in their `skills` fields. Granular alternatives (do not combine with `pulumi`, which already includes the first two):
 
 ```bash
 /plugin install pulumi-migration              # migration skills only
@@ -68,18 +68,12 @@ codex plugin marketplace add pulumi/agent-skills
 
 After the marketplace registers, install plugins from the Codex TUI: run `codex`, open the plugin marketplace with `/plugins`, and pick `pulumi-migration`, `pulumi`, `pulumi-delegation`, or `pulumi-package-maintenance`. As in Claude Code, `pulumi` is the combined plugin with all end-user skills; do not combine it with `pulumi-migration` or `pulumi-delegation`.
 
-### Cursor
-
-The root `.cursor-plugin/plugin.json` packages the combined end-user plugin with the existing skill directories
-and `assets/logo.png`. See [the Cursor release guide](docs/cursor-plugin.md) for local installation, smoke tests,
-submission, and updates. Cursor package changes use the existing offline manifest test job.
-
 ### Universal (all agents)
 
 Install all end-user skills by installing each plugin group:
 
 ```bash
-npx skills add pulumi/agent-skills/pulumi --skill '*'       # 9 Pulumi skills
+npx skills add pulumi/agent-skills/pulumi --skill '*'       # 8 Pulumi skills
 npx skills add pulumi/agent-skills/migration --skill '*'    # 5 migration skills
 npx skills add pulumi/agent-skills/delegation --skill '*'   # 1 Neo handoff skill
 ```
@@ -141,7 +135,7 @@ The `tests/` directory contains three pytest-based test suites that run automati
 
 ### Manifest validation (`test_manifests.py`)
 
-Validates that the Claude Code, Codex, and Cursor manifests parse, have the required fields, and that the marketplace catalogs reference plugin directories that actually exist. Cursor checks cover component paths, skill frontmatter, duplicate skill names, and the logo. The three root manifests must have matching names, versions, and skill paths. Runs offline and gates PRs from forks before the LLM-driven jobs.
+Validates that each plugin manifest (`<plugin>/.claude-plugin/plugin.json` and `<plugin>/.codex-plugin/plugin.json`) parses, has the required fields, and that the marketplace catalogs reference plugin directories that actually exist. Runs offline and gates PRs from forks before the LLM-driven jobs.
 
 ### Skill routing accuracy (`test_skill_selection_accuracy.py`)
 
@@ -191,10 +185,10 @@ uv run pytest tests/ -v
 4. Add `use_cases.yaml` with representative trigger queries (see [Testing](#testing) above)
 5. Update this AGENTS.md file to list the new skill in the appropriate plugin section
 6. Update [README.md](README.md) to add the skill to the skills table
-7. Bump the containing plugin's patch version in both `<plugin>/.claude-plugin/plugin.json` and `<plugin>/.codex-plugin/plugin.json`. For skills in an end-user group (`pulumi/`, `migration/`, `delegation/`), also bump the root combined manifests `.claude-plugin/plugin.json`, `.codex-plugin/plugin.json`, and `.cursor-plugin/plugin.json`, which ship the same skill
+7. Bump the containing plugin's patch version in both `<plugin>/.claude-plugin/plugin.json` and `<plugin>/.codex-plugin/plugin.json`. For skills in an end-user group (`pulumi/`, `migration/`, `delegation/`), also bump the root combined manifests `.claude-plugin/plugin.json` and `.codex-plugin/plugin.json`, which ship the same skill
 8. Submit a pull request
 
-The skill will automatically be included in its plugin group, but installed plugin users need a plugin version bump to receive changed plugin contents. Any change under an existing plugin directory that affects shipped skills, references, agents, hooks, MCP config, or install-surface metadata must bump that plugin's version in each ecosystem manifest. Keep the three root combined versions in sync, including for Cursor metadata changes. Use a patch bump for skill-content and routing changes unless the change is intentionally breaking or feature-sized. Cursor marketplace releases also require review; follow the release guide after changing the source.
+The skill will automatically be included in its plugin group, but installed plugin users need a plugin version bump to receive changed plugin contents. Any change under an existing plugin directory that affects shipped skills, references, agents, hooks, MCP config, or install-surface metadata must bump that plugin's version in both ecosystem manifests. Use a patch bump for skill-content and routing changes unless the change is intentionally breaking or feature-sized.
 
 Examples:
 
@@ -204,9 +198,9 @@ Examples:
 
 ## Creating a New Plugin Group
 
-Each plugin group ships a manifest for both Claude Code and OpenAI Codex. Cursor uses one combined manifest at the repository root. The skill content is shared; only the per-ecosystem manifest files differ.
+Each plugin group ships a manifest for both Claude Code and OpenAI Codex. The skill content is shared; only the per-ecosystem manifest files differ.
 
-If the new group is end-user facing (not maintainer tooling), also add its `skills/` directory to the `skills` lists in all three root combined plugin manifests, [.claude-plugin/plugin.json](.claude-plugin/plugin.json), [.codex-plugin/plugin.json](.codex-plugin/plugin.json), and [.cursor-plugin/plugin.json](.cursor-plugin/plugin.json), so installing `pulumi` picks it up in each ecosystem.
+If the new group is end-user facing (not maintainer tooling), also add its `skills/` directory to the `skills` lists in both root combined plugin manifests, [.claude-plugin/plugin.json](.claude-plugin/plugin.json) and [.codex-plugin/plugin.json](.codex-plugin/plugin.json), so installing `pulumi` picks it up in both ecosystems.
 
 1. Create the plugin directory structure:
    ```

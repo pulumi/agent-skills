@@ -200,7 +200,7 @@ Before submitting a skill, verify:
 3. Add a `SKILL.md` file following the format above
 4. Update [AGENTS.md](AGENTS.md) to list the new skill in the appropriate plugin section
 5. Update [README.md](README.md) to add the skill to the skills table
-6. Bump the containing plugin's patch version in both `<plugin>/.claude-plugin/plugin.json` and `<plugin>/.codex-plugin/plugin.json`. For end-user skills, also bump all three root combined manifests as described in [AGENTS.md](AGENTS.md#adding-a-new-skill)
+6. Bump the containing plugin's patch version in both `<plugin>/.claude-plugin/plugin.json` and `<plugin>/.codex-plugin/plugin.json`
 7. Test the skill with at least one AI coding assistant
 8. Submit a pull request with:
    - Description of what the skill does
@@ -213,7 +213,7 @@ The skill will automatically be included in its plugin group, but installed plug
 
 1. Fork the repository
 2. Make your changes
-3. Bump the containing plugin's patch version in both `<plugin>/.claude-plugin/plugin.json` and `<plugin>/.codex-plugin/plugin.json`. For end-user skills, also bump all three root combined manifests as described in [AGENTS.md](AGENTS.md#adding-a-new-skill)
+3. Bump the containing plugin's patch version in both `<plugin>/.claude-plugin/plugin.json` and `<plugin>/.codex-plugin/plugin.json`
 4. Test the changes with an AI coding assistant
 5. Submit a pull request with:
    - What you changed and why
