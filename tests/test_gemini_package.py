@@ -4,6 +4,7 @@ import json
 import os
 from pathlib import Path
 import re
+import shutil
 import subprocess
 import sys
 import tarfile
@@ -74,6 +75,30 @@ def test_release_tag_must_match_manifest(tmp_path: Path) -> None:
     assert result.returncode != 0
     assert "Release tag must match" in result.stderr
     assert not list(tmp_path.glob("*.tar.gz"))
+
+
+@pytest.mark.parametrize("version", ["invalid", "01.2.3", "2.0.6-beta", "2.0.6\n"])
+def test_package_rejects_unreleasable_versions(tmp_path: Path, version: str) -> None:
+    script = tmp_path / "scripts/build_gemini_extension.py"
+    script.parent.mkdir()
+    shutil.copyfile(BUILD_SCRIPT, script)
+    manifest = json.loads((REPO_ROOT / "gemini-extension.json").read_text())
+    manifest["version"] = version
+    (tmp_path / "gemini-extension.json").write_text(json.dumps(manifest))
+    (tmp_path / ".claude-plugin").mkdir()
+    (tmp_path / ".claude-plugin/plugin.json").write_text(
+        json.dumps({"skills": ["pulumi/skills"]})
+    )
+    skill = tmp_path / "pulumi/skills/example"
+    skill.mkdir(parents=True)
+    (skill / "SKILL.md").write_text("fixture")
+    (tmp_path / "LICENSE").write_text("fixture")
+    result = subprocess.run(
+        [sys.executable, str(script)], capture_output=True, text=True, timeout=30
+    )
+    assert result.returncode != 0
+    assert "Gemini version must be a stable major.minor.patch version" in result.stderr
+    assert not list(tmp_path.rglob("*.tar.gz"))
 
 
 @pytest.mark.skipif(not os.environ.get("GEMINI_CLI"), reason="GEMINI_CLI is not set")
@@ -158,6 +183,11 @@ def test_release_version_comes_from_merged_manifest(tmp_path: Path, version: str
         ("matching-tag", True, ["create", "upload", "edit"]),
         ("draft", True, ["upload", "edit"]),
         ("published", True, []),
+        ("published-missing-assets", False, []),
+        ("published-empty-assets", False, []),
+        ("older-release", True, ["create", "upload", "edit"]),
+        ("newer-release", True, ["create", "upload", "edit"]),
+        ("latest-api-error", False, ["create", "upload"]),
         ("api-error", False, []),
         ("conflicting-tag", False, []),
         ("conflicting-draft", False, []),
@@ -197,16 +227,36 @@ def test_release_publication(
         with open(os.environ["RELEASE_COMMANDS"], "a") as log:
             log.write(json.dumps(args) + "\\n")
         if args[:2] == ["release", "view"]:
-            assert args[2:] == ["v2.0.6", "--json", "isDraft,targetCommitish"]
+            if args[2] == "--json":
+                if scenario == "older-release":
+                    print("v2.0.7")
+                elif scenario == "newer-release":
+                    print("v2.0.5")
+                elif scenario == "latest-api-error":
+                    print("gh: Forbidden (HTTP 403)", file=sys.stderr)
+                    sys.exit(1)
+                else:
+                    print("release not found", file=sys.stderr)
+                    sys.exit(1)
+                sys.exit(0)
+            assert args[2] == "v2.0.6"
             if scenario == "api-error":
                 print("gh: Forbidden (HTTP 403)", file=sys.stderr)
                 sys.exit(1)
-            if scenario in {"draft", "conflicting-draft", "upload-fails", "published"}:
+            if scenario.startswith("published") or scenario in {"draft", "conflicting-draft", "upload-fails"}:
                 print(json.dumps({
-                    "isDraft": scenario != "published",
+                    "isDraft": not scenario.startswith("published"),
                     "targetCommitish": (
                         "b" * 40 if scenario == "conflicting-draft" else os.environ["GITHUB_SHA"]
                     ),
+                    "assets": [
+                        {
+                            "name": f"{platform}.pulumi-gemini.tar.gz",
+                            "size": 0 if scenario == "published-empty-assets" else 100,
+                        }
+                        for platform in ("darwin", "linux", "win32")
+                        if scenario != "published-missing-assets" or platform != "win32"
+                    ],
                 }))
                 sys.exit(0)
             print("release not found", file=sys.stderr)
@@ -258,4 +308,7 @@ def test_release_publication(
             ]
         elif args[1] == "edit":
             assert "--draft=false" in args
-            assert "--latest" in args
+            if scenario == "older-release":
+                assert "--latest=false" in args
+            else:
+                assert "--latest" in args or "--latest=true" in args

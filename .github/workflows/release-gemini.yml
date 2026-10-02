@@ -53,8 +53,14 @@ jobs:
           GH_REPO: ${{ github.repository }}
         run: |
           error_file="$RUNNER_TEMP/gemini-release-error"
-          if release=$(gh release view "$RELEASE_TAG" --json isDraft,targetCommitish 2> "$error_file"); then
+          if release=$(gh release view "$RELEASE_TAG" --json isDraft,targetCommitish,assets 2> "$error_file"); then
             if [[ $(jq -r '.isDraft' <<< "$release") == "false" ]]; then
+              for archive in dist/gemini/*.tar.gz; do
+                if ! jq -e --arg name "${archive##*/}" '.assets | any(.name == $name and .size > 0)' <<< "$release" > /dev/null; then
+                  echo "Published release $RELEASE_TAG is missing ${archive##*/}; publish a new Gemini version." >&2
+                  exit 1
+                fi
+              done
               echo "Release $RELEASE_TAG is already published; skipping."
               exit 0
             fi
@@ -79,4 +85,13 @@ jobs:
             gh release create "$RELEASE_TAG" --target "$GITHUB_SHA" --draft --title "$RELEASE_TAG" --generate-notes
           fi
           gh release upload "$RELEASE_TAG" dist/gemini/*.tar.gz --clobber
-          gh release edit "$RELEASE_TAG" --draft=false --latest
+
+          make_latest=true
+          if latest_tag=$(gh release view --json tagName --jq '.tagName' 2> "$error_file"); then
+            make_latest=$(jq -nr --arg version "${RELEASE_TAG#v}" --arg latest "${latest_tag#v}" \
+              '[$version, $latest] | map(split(".") | map(tonumber)) | .[0] > .[1]')
+          elif [[ $(cat "$error_file") != "release not found" ]]; then
+            cat "$error_file" >&2
+            exit 1
+          fi
+          gh release edit "$RELEASE_TAG" --draft=false --latest="$make_latest"

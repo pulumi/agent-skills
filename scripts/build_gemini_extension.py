@@ -22,6 +22,10 @@ def build_packages(
             raise ValueError(f"Gemini manifest requires {field}")
     if not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", manifest["name"]):
         raise ValueError("Gemini extension name must be lowercase kebab-case")
+    if not re.fullmatch(
+        r"(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)", manifest["version"]
+    ):
+        raise ValueError("Gemini version must be a stable major.minor.patch version")
     if release_tag is not None and release_tag != f"v{manifest['version']}":
         raise ValueError("Release tag must match the Gemini manifest version")
 
