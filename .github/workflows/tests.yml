@@ -18,8 +18,17 @@ jobs:
       - name: Install dependencies
         run: uv sync --group dev
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install Gemini CLI
+        run: npm install --prefix "$RUNNER_TEMP/gemini-cli" --no-audit --no-fund @google/gemini-cli@0.62.0
+
       - name: Run tests
-        run: uv run pytest tests/test_manifests.py -v --tb=short
+        run: uv run pytest tests/test_manifests.py tests/test_gemini_package.py -v --tb=short
+        env:
+          GEMINI_CLI: ${{ runner.temp }}/gemini-cli/node_modules/.bin/gemini
 
   skill-selection:
     name: Skill selection accuracy
