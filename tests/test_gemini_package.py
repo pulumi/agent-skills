@@ -1,4 +1,10 @@
-"""Check the release archives and install one with Gemini when GEMINI_CLI is set."""
+"""Validate Gemini packaging, skill discovery, and release workflow decisions.
+
+Archive and workflow tests run without network access. Set GEMINI_CLI to a CLI
+executable to also check installation and discovery in a temporary profile.
+Release tests execute the workflow's shell with fake gh and git commands; they
+do not publish releases or exercise GitHub's API.
+"""
 
 import json
 import os
@@ -20,6 +26,7 @@ RELEASE_WORKFLOW = REPO_ROOT / ".github/workflows/release-gemini.yml"
 
 @pytest.fixture
 def packages(tmp_path: Path) -> list[Path]:
+    # Exercise the production builder so archive checks cover what CI will ship.
     output = tmp_path / "packages"
     subprocess.run(
         [sys.executable, str(BUILD_SCRIPT), "--output-dir", str(output)],
@@ -32,12 +39,16 @@ def packages(tmp_path: Path) -> list[Path]:
 
 
 def test_release_assets_preserve_all_end_user_skills(packages: list[Path]) -> None:
+    # The contents are portable, but Gemini needs platform prefixes to select
+    # its archive when a release also contains assets for other plugin systems.
     assert {path.name for path in packages} == {
         "darwin.pulumi-gemini.tar.gz",
         "linux.pulumi-gemini.tar.gz",
         "win32.pulumi-gemini.tar.gz",
     }
     assert len({path.read_bytes() for path in packages}) == 1
+    # Keep the expected groups independent of the builder's manifest lookup.
+    # Comparing every file catches missing references and unwanted extra skills.
     expected = {
         "gemini-extension.json": (REPO_ROOT / "gemini-extension.json").read_bytes(),
         "LICENSE": (REPO_ROOT / "LICENSE").read_bytes(),
@@ -79,6 +90,8 @@ def test_release_tag_must_match_manifest(tmp_path: Path) -> None:
 
 @pytest.mark.parametrize("version", ["invalid", "01.2.3", "2.0.6-beta", "2.0.6\n"])
 def test_package_rejects_unreleasable_versions(tmp_path: Path, version: str) -> None:
+    # The builder locates its repository relative to __file__. Copy it into an
+    # otherwise valid fixture repository so only the version causes rejection.
     script = tmp_path / "scripts/build_gemini_extension.py"
     script.parent.mkdir()
     shutil.copyfile(BUILD_SCRIPT, script)
@@ -107,6 +120,8 @@ def test_gemini_discovers_packaged_skills(packages: list[Path], tmp_path: Path) 
     package.mkdir()
     with tarfile.open(packages[0]) as archive:
         archive.extractall(package, filter="data")
+    # An untrusted temporary folder makes Gemini skip extension skills. Disable
+    # that check only in this isolated profile, leaving the user's settings alone.
     profile = tmp_path / "profile"
     settings = profile / ".gemini/settings.json"
     settings.parent.mkdir(parents=True)
@@ -121,6 +136,7 @@ def test_gemini_discovers_packaged_skills(packages: list[Path], tmp_path: Path) 
         "GEMINI_CLI_NO_RELAUNCH": "1",
         "NO_COLOR": "1",
     }
+    # Inherited Node preload hooks could replace the CLI behavior under test.
     env.pop("NODE_OPTIONS", None)
     cli = os.environ["GEMINI_CLI"]
     result = subprocess.run(
@@ -141,13 +157,17 @@ def test_gemini_discovers_packaged_skills(packages: list[Path], tmp_path: Path) 
         timeout=60,
     )
     assert result.returncode == 0, result.stdout + result.stderr
+    # Installation can succeed even when Gemini discovers no skills. Require
+    # every packaged skill to be enabled, with no skills leaking from the user.
     expected = {path.parent.name for path in (package / "skills").glob("*/SKILL.md")}
     discovered = set(re.findall(r"^([a-z0-9-]+) \[Enabled\]", result.stdout, re.M))
     assert discovered == expected, result.stdout + result.stderr
 
 
+# A newline must not let a manifest value inject another GITHUB_ENV assignment.
 @pytest.mark.parametrize("version", ["2.0.6", "invalid", "2.0.6\nRELEASE_TAG=v9.0.0"])
 def test_release_version_comes_from_merged_manifest(tmp_path: Path, version: str) -> None:
+    # BaseLoader preserves the Actions key "on", which YAML 1.1 treats as True.
     workflow = yaml.load(RELEASE_WORKFLOW.read_text(), Loader=yaml.BaseLoader)
     assert workflow["on"]["push"] == {
         "branches": ["main"],
@@ -176,6 +196,8 @@ def test_release_version_comes_from_merged_manifest(tmp_path: Path, version: str
         assert not output.exists()
 
 
+# Each operations list specifies the allowed GitHub writes, in order. Failed
+# uploads or lookups must stop before the draft can be published.
 @pytest.mark.parametrize(
     ("scenario", "succeeds", "operations"),
     [
@@ -198,6 +220,7 @@ def test_release_version_comes_from_merged_manifest(tmp_path: Path, version: str
 def test_release_publication(
     tmp_path: Path, scenario: str, succeeds: bool, operations: list[str]
 ) -> None:
+    # Run the actual workflow block so changes to its shell logic are tested.
     workflow = yaml.safe_load(RELEASE_WORKFLOW.read_text())
     step = next(
         step for step in workflow["jobs"]["release"]["steps"]
@@ -206,6 +229,8 @@ def test_release_publication(
     commands = tmp_path / "commands.jsonl"
     binaries = tmp_path / "bin"
     binaries.mkdir()
+    # PATH points gh and git at this stub. It models release and tag states and
+    # records commands without making API calls or changing repository refs.
     stub = f"#!{sys.executable}\n" + textwrap.dedent("""\
         import json
         import os
@@ -227,6 +252,7 @@ def test_release_publication(
         with open(os.environ["RELEASE_COMMANDS"], "a") as log:
             log.write(json.dumps(args) + "\\n")
         if args[:2] == ["release", "view"]:
+            # A view without a tag asks for Latest, used to prevent downgrades.
             if args[2] == "--json":
                 if scenario == "older-release":
                     print("v2.0.7")
@@ -271,6 +297,8 @@ def test_release_publication(
         path.chmod(0o755)
     assets = tmp_path / "dist/gemini"
     assets.mkdir(parents=True)
+    # Only filenames matter to the upload command; archive contents are checked
+    # by test_release_assets_preserve_all_end_user_skills above.
     for platform in ("darwin", "linux", "win32"):
         (assets / f"{platform}.pulumi-gemini.tar.gz").touch()
     sha = "a" * 40
