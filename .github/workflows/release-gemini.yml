@@ -1,0 +1,82 @@
+name: Release Gemini extension
+
+on:
+  push:
+    branches: [main]
+    paths: [gemini-extension.json]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gemini-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Read release version
+        run: |
+          version=$(jq -er '.version | select(test("^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"))' gemini-extension.json)
+          echo "RELEASE_TAG=v$version" >> "$GITHUB_ENV"
+
+      - uses: astral-sh/setup-uv@v5
+
+      - name: Install dependencies
+        run: uv sync --group dev
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install Gemini CLI
+        run: npm install --prefix "$RUNNER_TEMP/gemini-cli" --no-audit --no-fund @google/gemini-cli@0.62.0
+
+      - name: Validate package and Gemini installation
+        run: uv run pytest tests/test_manifests.py tests/test_gemini_package.py -v --tb=short
+        env:
+          GEMINI_CLI: ${{ runner.temp }}/gemini-cli/node_modules/.bin/gemini
+
+      - name: Build release assets
+        run: uv run python scripts/build_gemini_extension.py --release-tag "$RELEASE_TAG"
+
+      - name: Publish release with Gemini assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          error_file="$RUNNER_TEMP/gemini-release-error"
+          if release=$(gh release view "$RELEASE_TAG" --json isDraft,targetCommitish 2> "$error_file"); then
+            if [[ $(jq -r '.isDraft' <<< "$release") == "false" ]]; then
+              echo "Release $RELEASE_TAG is already published; skipping."
+              exit 0
+            fi
+          elif [[ $(cat "$error_file") == "release not found" ]]; then
+            release=""
+          else
+            cat "$error_file" >&2
+            exit 1
+          fi
+
+          tag_commit=$(git rev-parse --verify -q "refs/tags/$RELEASE_TAG^{commit}" || true)
+          if [[ -n "$tag_commit" && "$tag_commit" != "$GITHUB_SHA" ]]; then
+            echo "Tag $RELEASE_TAG points to another commit; bump the Gemini version." >&2
+            exit 1
+          fi
+          if [[ -n "$release" ]]; then
+            if [[ -z "$tag_commit" && $(jq -r '.targetCommitish' <<< "$release") != "$GITHUB_SHA" ]]; then
+              echo "Draft $RELEASE_TAG targets another commit; rerun its original workflow." >&2
+              exit 1
+            fi
+          else
+            gh release create "$RELEASE_TAG" --target "$GITHUB_SHA" --draft --title "$RELEASE_TAG" --generate-notes
+          fi
+          gh release upload "$RELEASE_TAG" dist/gemini/*.tar.gz --clobber
+          gh release edit "$RELEASE_TAG" --draft=false --latest
