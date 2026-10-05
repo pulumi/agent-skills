@@ -1,6 +1,7 @@
 """Build Gemini release assets from the combined Pulumi plugin's skill directories."""
 
 import argparse
+import io
 import json
 from pathlib import Path
 import re
@@ -15,8 +16,10 @@ def build_packages(
     repo_root: Path, output_dir: Path, release_tag: str | None = None
 ) -> list[Path]:
     """Package existing skills without changing their source directories."""
-    manifest_path = repo_root / "gemini-extension.json"
+    plugin = json.loads((repo_root / ".claude-plugin/plugin.json").read_text())
+    manifest_path = repo_root / "gemini/gemini-extension.json"
     manifest = json.loads(manifest_path.read_text())
+    manifest["version"] = plugin.get("version")
     for field in ("name", "version", "description"):
         if not isinstance(manifest.get(field), str) or not manifest[field].strip():
             raise ValueError(f"Gemini manifest requires {field}")
@@ -25,11 +28,10 @@ def build_packages(
     if not re.fullmatch(
         r"(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)", manifest["version"]
     ):
-        raise ValueError("Gemini version must be a stable major.minor.patch version")
+        raise ValueError("Combined plugin version must be a stable major.minor.patch version")
     if release_tag is not None and release_tag != f"v{manifest['version']}":
         raise ValueError("Release tag must match the Gemini manifest version")
 
-    plugin = json.loads((repo_root / ".claude-plugin/plugin.json").read_text())
     skills: dict[str, Path] = {}
     for group in plugin["skills"]:
         group_path = repo_root / group
@@ -48,7 +50,10 @@ def build_packages(
         for platform in PLATFORMS
     ]
     with tarfile.open(archives[0], "w:gz") as archive:
-        archive.add(manifest_path, arcname="gemini-extension.json")
+        manifest_bytes = (json.dumps(manifest, indent=2) + "\n").encode()
+        manifest_entry = tarfile.TarInfo("gemini-extension.json")
+        manifest_entry.size = len(manifest_bytes)
+        archive.addfile(manifest_entry, io.BytesIO(manifest_bytes))
         archive.add(repo_root / "LICENSE", arcname="LICENSE")
         for name, directory in sorted(skills.items()):
             archive.add(directory, arcname=f"skills/{name}")

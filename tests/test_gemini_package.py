@@ -25,6 +25,26 @@ RELEASE_WORKFLOW = REPO_ROOT / ".github/workflows/release-gemini.yml"
 
 
 @pytest.fixture
+def package_repo(tmp_path: Path) -> Path:
+    # The builder finds inputs relative to __file__. Use a minimal repository
+    # to vary the shared version without modifying the real manifests.
+    repo = tmp_path / "repo"
+    for relative in ("scripts/build_gemini_extension.py", "gemini/gemini-extension.json"):
+        target = repo / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(REPO_ROOT / relative, target)
+    (repo / ".claude-plugin").mkdir()
+    (repo / ".claude-plugin/plugin.json").write_text(
+        json.dumps({"version": "2.0.6", "skills": ["pulumi/skills"]})
+    )
+    skill = repo / "pulumi/skills/example"
+    skill.mkdir(parents=True)
+    (skill / "SKILL.md").write_text("fixture")
+    (repo / "LICENSE").write_text("fixture")
+    return repo
+
+
+@pytest.fixture
 def packages(tmp_path: Path) -> list[Path]:
     # Exercise the production builder so archive checks cover what CI will ship.
     output = tmp_path / "packages"
@@ -49,10 +69,7 @@ def test_release_assets_preserve_all_end_user_skills(packages: list[Path]) -> No
     assert len({path.read_bytes() for path in packages}) == 1
     # Keep the expected groups independent of the builder's manifest lookup.
     # Comparing every file catches missing references and unwanted extra skills.
-    expected = {
-        "gemini-extension.json": (REPO_ROOT / "gemini-extension.json").read_bytes(),
-        "LICENSE": (REPO_ROOT / "LICENSE").read_bytes(),
-    }
+    expected = {"LICENSE": (REPO_ROOT / "LICENSE").read_bytes()}
     for group in ("pulumi", "migration", "delegation"):
         for skill in (REPO_ROOT / group / "skills").iterdir():
             for source in skill.rglob("*"):
@@ -66,7 +83,41 @@ def test_release_assets_preserve_all_end_user_skills(packages: list[Path]) -> No
             for member in archive.getmembers()
             if member.isfile()
         }
+    manifest = json.loads(actual.pop("gemini-extension.json"))
+    metadata = json.loads((REPO_ROOT / "gemini/gemini-extension.json").read_text())
+    plugin = json.loads((REPO_ROOT / ".claude-plugin/plugin.json").read_text())
+    assert manifest == {**metadata, "version": plugin["version"]}
     assert actual == expected
+    # The source tree has no flattened skills, so it must not be installable.
+    assert not (REPO_ROOT / "gemini-extension.json").exists()
+
+
+@pytest.mark.parametrize("version", ["2.0.7", "2.1.0"])
+def test_package_uses_combined_plugin_version(package_repo: Path, version: str) -> None:
+    plugin_path = package_repo / ".claude-plugin/plugin.json"
+    plugin = json.loads(plugin_path.read_text())
+    plugin["version"] = version
+    plugin_path.write_text(json.dumps(plugin))
+    # Changing only the existing plugin version must update the shipped Gemini
+    # manifest and accept the corresponding tag, without a separate Gemini bump.
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(package_repo / "scripts/build_gemini_extension.py"),
+            "--release-tag",
+            f"v{version}",
+        ],
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    assert result.returncode == 0, result.stderr
+    packages = list((package_repo / "dist/gemini").glob("*.tar.gz"))
+    assert len(packages) == 3
+    for package in packages:
+        with tarfile.open(package) as archive:
+            manifest = json.load(archive.extractfile("gemini-extension.json"))
+        assert manifest["version"] == version
 
 
 def test_release_tag_must_match_manifest(tmp_path: Path) -> None:
@@ -89,37 +140,22 @@ def test_release_tag_must_match_manifest(tmp_path: Path) -> None:
 
 
 @pytest.mark.parametrize("version", ["invalid", "01.2.3", "2.0.6-beta", "2.0.6\n"])
-def test_package_rejects_unreleasable_versions(tmp_path: Path, version: str) -> None:
-    # The builder locates its repository relative to __file__. Copy it into an
-    # otherwise valid fixture repository so only the version causes rejection.
-    script = tmp_path / "scripts/build_gemini_extension.py"
-    script.parent.mkdir()
-    shutil.copyfile(BUILD_SCRIPT, script)
-    manifest = json.loads((REPO_ROOT / "gemini-extension.json").read_text())
-    manifest["version"] = version
-    (tmp_path / "gemini-extension.json").write_text(json.dumps(manifest))
-    (tmp_path / ".claude-plugin").mkdir()
-    (tmp_path / ".claude-plugin/plugin.json").write_text(
-        json.dumps({"skills": ["pulumi/skills"]})
-    )
-    skill = tmp_path / "pulumi/skills/example"
-    skill.mkdir(parents=True)
-    (skill / "SKILL.md").write_text("fixture")
-    (tmp_path / "LICENSE").write_text("fixture")
+def test_package_rejects_unreleasable_versions(package_repo: Path, version: str) -> None:
+    plugin_path = package_repo / ".claude-plugin/plugin.json"
+    plugin = json.loads(plugin_path.read_text())
+    plugin["version"] = version
+    plugin_path.write_text(json.dumps(plugin))
     result = subprocess.run(
-        [sys.executable, str(script)], capture_output=True, text=True, timeout=30
+        [sys.executable, str(package_repo / "scripts/build_gemini_extension.py")],
+        capture_output=True, text=True, timeout=30,
     )
     assert result.returncode != 0
-    assert "Gemini version must be a stable major.minor.patch version" in result.stderr
-    assert not list(tmp_path.rglob("*.tar.gz"))
+    assert "Combined plugin version must be a stable major.minor.patch version" in result.stderr
+    assert not list(package_repo.rglob("*.tar.gz"))
 
 
-@pytest.mark.skipif(not os.environ.get("GEMINI_CLI"), reason="GEMINI_CLI is not set")
-def test_gemini_discovers_packaged_skills(packages: list[Path], tmp_path: Path) -> None:
-    package = tmp_path / "extension"
-    package.mkdir()
-    with tarfile.open(packages[0]) as archive:
-        archive.extractall(package, filter="data")
+@pytest.fixture
+def gemini_env(tmp_path: Path) -> dict[str, str]:
     # An untrusted temporary folder makes Gemini skip extension skills. Disable
     # that check only in this isolated profile, leaving the user's settings alone.
     profile = tmp_path / "profile"
@@ -138,11 +174,22 @@ def test_gemini_discovers_packaged_skills(packages: list[Path], tmp_path: Path) 
     }
     # Inherited Node preload hooks could replace the CLI behavior under test.
     env.pop("NODE_OPTIONS", None)
+    return env
+
+
+@pytest.mark.skipif(not os.environ.get("GEMINI_CLI"), reason="GEMINI_CLI is not set")
+def test_gemini_discovers_packaged_skills(
+    packages: list[Path], tmp_path: Path, gemini_env: dict[str, str]
+) -> None:
+    package = tmp_path / "extension"
+    package.mkdir()
+    with tarfile.open(packages[0]) as archive:
+        archive.extractall(package, filter="data")
     cli = os.environ["GEMINI_CLI"]
     result = subprocess.run(
         [cli, "extensions", "install", str(package), "--consent"],
         cwd=tmp_path,
-        env=env,
+        env=gemini_env,
         capture_output=True,
         text=True,
         timeout=60,
@@ -151,7 +198,7 @@ def test_gemini_discovers_packaged_skills(packages: list[Path], tmp_path: Path) 
     result = subprocess.run(
         [cli, "skills", "list"],
         cwd=tmp_path,
-        env=env,
+        env=gemini_env,
         capture_output=True,
         text=True,
         timeout=60,
@@ -164,21 +211,40 @@ def test_gemini_discovers_packaged_skills(packages: list[Path], tmp_path: Path) 
     assert discovered == expected, result.stdout + result.stderr
 
 
+@pytest.mark.skipif(not os.environ.get("GEMINI_CLI"), reason="GEMINI_CLI is not set")
+def test_gemini_rejects_unpackaged_source(
+    tmp_path: Path, gemini_env: dict[str, str]
+) -> None:
+    # Git/source-archive fallbacks expose this layout. A root manifest used to
+    # make installation report success even though no skills were discovered.
+    result = subprocess.run(
+        [os.environ["GEMINI_CLI"], "extensions", "install", str(REPO_ROOT), "--consent"],
+        cwd=tmp_path,
+        env=gemini_env,
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+    assert result.returncode != 0, result.stdout + result.stderr
+    assert "Configuration file not found" in result.stderr
+
+
 # A newline must not let a manifest value inject another GITHUB_ENV assignment.
-@pytest.mark.parametrize("version", ["2.0.6", "invalid", "2.0.6\nRELEASE_TAG=v9.0.0"])
-def test_release_version_comes_from_merged_manifest(tmp_path: Path, version: str) -> None:
+@pytest.mark.parametrize("version", ["2.0.6", "2.0.7", "invalid", "2.0.6\nRELEASE_TAG=v9.0.0"])
+def test_release_version_comes_from_combined_manifest(tmp_path: Path, version: str) -> None:
     # BaseLoader preserves the Actions key "on", which YAML 1.1 treats as True.
     workflow = yaml.load(RELEASE_WORKFLOW.read_text(), Loader=yaml.BaseLoader)
     assert workflow["on"]["push"] == {
         "branches": ["main"],
-        "paths": ["gemini-extension.json"],
+        "paths": [".claude-plugin/plugin.json", "gemini/gemini-extension.json"],
     }
     assert workflow["jobs"]["release"]["if"] == "github.ref == 'refs/heads/main'"
     step = next(
         step for step in workflow["jobs"]["release"]["steps"]
         if step.get("name") == "Read release version"
     )
-    (tmp_path / "gemini-extension.json").write_text(json.dumps({"version": version}))
+    (tmp_path / ".claude-plugin").mkdir()
+    (tmp_path / ".claude-plugin/plugin.json").write_text(json.dumps({"version": version}))
     output = tmp_path / "env"
     result = subprocess.run(
         ["bash", "-e", "-o", "pipefail", "-c", step["run"]],
@@ -188,9 +254,9 @@ def test_release_version_comes_from_merged_manifest(tmp_path: Path, version: str
         text=True,
         timeout=30,
     )
-    if version == "2.0.6":
+    if version in {"2.0.6", "2.0.7"}:
         assert result.returncode == 0, result.stderr
-        assert output.read_text() == "RELEASE_TAG=v2.0.6\n"
+        assert output.read_text() == f"RELEASE_TAG=v{version}\n"
     else:
         assert result.returncode != 0
         assert not output.exists()

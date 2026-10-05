@@ -3,7 +3,9 @@ name: Release Gemini extension
 on:
   push:
     branches: [main]
-    paths: [gemini-extension.json]
+    paths:
+      - .claude-plugin/plugin.json
+      - gemini/gemini-extension.json
   workflow_dispatch:
 
 permissions:
@@ -24,7 +26,7 @@ jobs:
 
       - name: Read release version
         run: |
-          version=$(jq -er '.version | select(test("^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"))' gemini-extension.json)
+          version=$(jq -er '.version | select(test("^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"))' .claude-plugin/plugin.json)
           echo "RELEASE_TAG=v$version" >> "$GITHUB_ENV"
 
       - uses: astral-sh/setup-uv@v5
@@ -57,7 +59,7 @@ jobs:
             if [[ $(jq -r '.isDraft' <<< "$release") == "false" ]]; then
               for archive in dist/gemini/*.tar.gz; do
                 if ! jq -e --arg name "${archive##*/}" '.assets | any(.name == $name and .size > 0)' <<< "$release" > /dev/null; then
-                  echo "Published release $RELEASE_TAG is missing ${archive##*/}; publish a new Gemini version." >&2
+                  echo "Published release $RELEASE_TAG is missing ${archive##*/}; bump the combined plugin version." >&2
                   exit 1
                 fi
               done
@@ -73,7 +75,7 @@ jobs:
 
           tag_commit=$(git rev-parse --verify -q "refs/tags/$RELEASE_TAG^{commit}" || true)
           if [[ -n "$tag_commit" && "$tag_commit" != "$GITHUB_SHA" ]]; then
-            echo "Tag $RELEASE_TAG points to another commit; bump the Gemini version." >&2
+            echo "Tag $RELEASE_TAG points to another commit; bump the combined plugin version." >&2
             exit 1
           fi
           if [[ -n "$release" ]]; then

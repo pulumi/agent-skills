@@ -209,6 +209,8 @@ Before submitting a skill, verify:
 
 The skill will automatically be included in its plugin group, but installed plugin users need a plugin version bump to receive changed plugin contents. Use a patch bump for new skills and non-breaking skill-content updates unless the change is intentionally breaking or feature-sized.
 
+For new or changed skills in `pulumi/`, `migration/`, or `delegation/`, also bump both root combined manifests, `.claude-plugin/plugin.json` and `.codex-plugin/plugin.json`. Gemini takes its version from the root Claude manifest and publishes automatically when that version bump merges into `main`. There is no separate Gemini version to maintain; changes to `gemini/gemini-extension.json` also require bumping both root combined manifests.
+
 ### Improving Existing Skills
 
 1. Fork the repository

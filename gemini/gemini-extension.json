@@ -1,5 +1,4 @@
 {
   "name": "pulumi",
-  "version": "2.0.6",
   "description": "Pulumi skills for infrastructure code, migration, secrets management, and handing off work to Pulumi Neo."
 }

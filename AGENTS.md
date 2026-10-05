@@ -190,6 +190,8 @@ uv run pytest tests/ -v
 
 The skill will automatically be included in its plugin group, but installed plugin users need a plugin version bump to receive changed plugin contents. Any change under an existing plugin directory that affects shipped skills, references, agents, hooks, MCP config, or install-surface metadata must bump that plugin's version in both ecosystem manifests. Use a patch bump for skill-content and routing changes unless the change is intentionally breaking or feature-sized.
 
+Gemini releases use the root combined version from `.claude-plugin/plugin.json` and publish automatically when its version bump merges into `main`. The build adds that version to the metadata in `gemini/gemini-extension.json`; there is no separate Gemini version to bump. Changes to that metadata also require bumping both root combined manifests. Keep the Gemini manifest out of the repository root because only the built archive contains the `skills/` layout Gemini needs.
+
 Examples:
 
 - Editing `package-maintenance/skills/pulumi-upgrade-provider/SKILL.md` requires bumping both `package-maintenance/.claude-plugin/plugin.json` and `package-maintenance/.codex-plugin/plugin.json`.
