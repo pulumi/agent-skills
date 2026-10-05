@@ -17,6 +17,8 @@ queries:
   - "How do I add an alias for a renamed resource after a provider major version bump?"
   - "My provider upgrade preview shows a create for infrastructure that already exists"
   - "How do I handle deletes after a Pulumi provider major version upgrade?"
+  - "Upgrade pulumi-gcp to v10"
+  - "After upgrading to GCP provider v10, gcp.notebooks.Instance no longer exists. What do I do?"
 
   # Dependency management
   - "How do I update @pulumi/aws to a newer version in my npm project?"
