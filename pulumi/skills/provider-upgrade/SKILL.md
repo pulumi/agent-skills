@@ -5,7 +5,9 @@ description: >
   users want to upgrade or update a provider (including editing package.json, requirements.txt,
   pyproject.toml, go.mod, or Pulumi.yaml to bump a provider SDK), check for breaking changes
   before or during an upgrade, fix resources that broke after a provider upgrade, or resolve
-  unexpected replacements, creates, or deletes in a post-upgrade preview. Applies to all
+  unexpected replacements, creates, or deletes in a post-upgrade preview, including
+  pulumi-gcp v10 errors such as a missing gcp.notebooks or gcp.iap.Brand type or a required
+  secretDataWoVersion. Applies to all
   providers (aws, azure-native, gcp, kubernetes, aws-native, cloudflare, datadog, etc.) — not
   just Tier 1. Do NOT use for querying which stacks use what package versions; use skill
   `package-usage` for cross-stack audits. Do NOT use for general infrastructure tasks.
@@ -251,6 +253,14 @@ Default to the latest stable version if the user hasn't specified a target versi
 If the user asks which stacks or projects are affected, use skill `package-usage` or
 the best available package inventory tooling before making changes.
 
+### 1a. Check for a provider-specific reference
+
+Some major versions have breaking changes that destroy live resources if fixed in the wrong
+order, which preview alone does not reveal. If `references/` has a file for this provider and
+target major (for example `gcp-v10.md` for `pulumi-gcp` to 10.x), read it now and follow its
+"Before the bump" section before step 2. For that upgrade it overrides the "Do not research
+breaking changes first" rule in step 3.
+
 ### 2. Update the dependency
 
 - **TypeScript/JavaScript**: `npm install @pulumi/{provider}@^{version}` or `yarn add @pulumi/{provider}@^{version}`
@@ -330,3 +340,5 @@ report and ask the user how they'd like to proceed before creating a PR.
 - `references/diagnostic-toolbox.md` - upgrade guides, schema-tools (install, run,
   interpret output), stack state inspection, SDK types, GitHub issues. Read when
   investigating Category B diffs.
+- `references/gcp-v10.md` - every pulumi-gcp v10 breaking change with state scan, grep
+  patterns, fix order and risk. Read before bumping pulumi-gcp to 10.x (see step 1a).
