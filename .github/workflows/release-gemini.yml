@@ -40,7 +40,7 @@ jobs:
           node-version: "22"
 
       - name: Install Gemini CLI
-        run: npm install --prefix "$RUNNER_TEMP/gemini-cli" --no-audit --no-fund @google/gemini-cli@0.62.0
+        run: npm install --prefix "$RUNNER_TEMP/gemini-cli" --no-audit --no-fund --omit=optional --ignore-scripts @google/gemini-cli@0.62.0
 
       - name: Validate package and Gemini installation
         run: uv run pytest tests/test_manifests.py tests/test_gemini_package.py -v --tb=short
