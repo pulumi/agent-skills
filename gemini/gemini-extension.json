@@ -1,0 +1,4 @@
+{
+  "name": "pulumi",
+  "description": "Pulumi skills for infrastructure code, migration, secrets management, and handing off work to Pulumi Neo."
+}

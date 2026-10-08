@@ -11,6 +11,7 @@ Agent Skills are reusable knowledge packages that teach AI coding assistants dom
 - [Cursor](https://cursor.sh)
 - [VS Code](https://code.visualstudio.com/docs/copilot)
 - [OpenAI Codex](https://openai.com/api/)
+- [Gemini CLI](https://geminicli.com/)
 
 ## Repository Structure
 
@@ -116,6 +117,20 @@ codex plugin marketplace add pulumi/agent-skills
 ```
 
 Once the marketplace is registered, install plugins from the Codex TUI: run `codex`, open the plugin marketplace with `/plugins`, and pick `pulumi-migration`, `pulumi`, `pulumi-delegation`, or `pulumi-package-maintenance`. As in Claude Code, `pulumi` is the combined plugin with all end-user skills; do not combine it with `pulumi-migration` or `pulumi-delegation`.
+
+### Gemini CLI
+
+Install the latest published Pulumi extension:
+
+```bash
+gemini extensions install https://github.com/pulumi/agent-skills
+```
+
+The extension includes the Pulumi, migration, and Neo handoff skills. To update it:
+
+```bash
+gemini extensions update pulumi
+```
 
 ### Universal (all agents)
 

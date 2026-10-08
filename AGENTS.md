@@ -131,11 +131,15 @@ Example:
 
 ## Testing
 
-The `tests/` directory contains three pytest-based test suites that run automatically on every pull request via `.github/workflows/tests.yml`. Two require `ANTHROPIC_API_KEY`; the manifest test runs offline.
+The `tests/` directory contains four pytest-based test suites that run automatically on every pull request via `.github/workflows/tests.yml`. Skill routing and quality tests require `ANTHROPIC_API_KEY`; manifest and Gemini packaging tests run offline.
 
 ### Manifest validation (`test_manifests.py`)
 
 Validates that each plugin manifest (`<plugin>/.claude-plugin/plugin.json` and `<plugin>/.codex-plugin/plugin.json`) parses, has the required fields, and that the marketplace catalogs reference plugin directories that actually exist. Runs offline and gates PRs from forks before the LLM-driven jobs.
+
+### Gemini packaging (`test_gemini_package.py`)
+
+Validates release archive contents, shared version handling, and release workflow decisions. Its two Gemini installation tests check that packaged skills are discovered and unpackaged source is rejected. Both skip unless `GEMINI_CLI` points to a Gemini CLI executable; CI installs the CLI and sets this variable. Release workflow tests use fake `gh` and `git` commands and do not publish releases.
 
 ### Skill routing accuracy (`test_skill_selection_accuracy.py`)
 
@@ -189,6 +193,8 @@ uv run pytest tests/ -v
 8. Submit a pull request
 
 The skill will automatically be included in its plugin group, but installed plugin users need a plugin version bump to receive changed plugin contents. Any change under an existing plugin directory that affects shipped skills, references, agents, hooks, MCP config, or install-surface metadata must bump that plugin's version in both ecosystem manifests. Use a patch bump for skill-content and routing changes unless the change is intentionally breaking or feature-sized.
+
+Gemini releases use the root combined version from `.claude-plugin/plugin.json` and publish automatically when its version bump merges into `main`. The build adds that version to the metadata in `gemini/gemini-extension.json`; there is no separate Gemini version to bump. Changes to that metadata also require bumping both root combined manifests. Keep the Gemini manifest out of the repository root because only the built archive contains the `skills/` layout Gemini needs.
 
 Examples:
 
