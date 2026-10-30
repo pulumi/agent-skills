@@ -1,0 +1,5 @@
+queries:
+  - "Create a reusable Pulumi Agent to investigate failed deployments in my checkout project."
+  - "Help me create a Pulumi Agent with saved instructions, a read-only role, and selected integrations."
+  - "Create a Pulumi Agent for cost reviews and ask me whether to add a schedule."
+  - "Set up a new Pulumi Agent that my team can assign infrastructure investigations to."
