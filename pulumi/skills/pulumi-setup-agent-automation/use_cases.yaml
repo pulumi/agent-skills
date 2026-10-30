@@ -1,0 +1,5 @@
+queries:
+  - "Schedule my existing Pulumi Agent to review checkout costs every Monday at 09:00 UTC."
+  - "Add a stack event trigger to this saved Pulumi Agent."
+  - "Pause automation automation-123 in my Pulumi organization even if its saved agent is unavailable."
+  - "Resume the automation for my existing Pulumi Agent after verifying its access."
