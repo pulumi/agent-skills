@@ -8,4 +8,4 @@ Webhook creation may return a one-time secret. Verify protected capture with non
 
 If the harness cannot ensure capture and direct transfer, stop before creating the webhook. Do not display secret-bearing dry-run output, automatically retry after a response error, regenerate or rotate a secret, or recreate the resource to recover a missing response. Reconcile uncertain creation through supported nonsecret reads.
 
-Webhook capture and sender setup remain unvalidated. Sender delivery permission does not establish investigation access.
+Verify protected capture and sender setup before reporting them as complete. Sender delivery permission does not establish investigation access.

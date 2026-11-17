@@ -1,8 +1,8 @@
 # Automation capability contract
 
-On October 30, 2026, refreshed public API discovery exposed `CreateAgentAutomationV2`, `GetAgentAutomationV2`, `ListAgentAutomationsV2`, and `UpdateAgentAutomationV2Paused`. Describe confirmed the create and pause request shapes below. This verifies published schema availability, not organization entitlement, authorization, credential dispatch, or successful execution. Recheck the target backend before use.
+Discover and describe `CreateAgentAutomationV2`, `GetAgentAutomationV2`, `ListAgentAutomationsV2`, and `UpdateAgentAutomationV2Paused` on the target backend before using them. Check the request and response fields needed for the requested action. Schema availability does not establish authorization or successful execution.
 
-Discover and describe the actual supported operations on the target backend. Never invoke an unsupported route merely because its name is known.
+Never invoke an unsupported route merely because its name is known.
 
 For a usable supported route, verify these semantics through describe and readback:
 
@@ -14,9 +14,9 @@ For a usable supported route, verify these semantics through describe and readba
 | Mode | `kind` selects scheduled or triggered; creation supplies the corresponding rule |
 | Schedule | Five-field UTC `scheduleCron`, with a production minimum interval of ten minutes; no time-zone field in this request |
 | Event | A typed `trigger` contract; discover accepted types and per-source settings rather than inventing them |
-| Activation | The inspected create requests have no paused field and create active resources; pausing afterward leaves a real execution window |
+| Activation | Check whether creation supports a paused state. If creation is active-only, pausing afterward leaves a real execution window |
 | Reconciliation | Verify list scope, pagination, identity, and matching configuration; name matching is not durable idempotency |
-| Execution access | The definition supplies role, approval, and MCP integrations each turn. CLI credentials are separate: the published V2 request accepts `task.cliIntegrations`. Omission inherits configured organization CLI handles; an explicit empty list selects none. Runtime dispatch was not exercised by the schema check. Do not claim the agent MCP selection bounds those credentials. |
+| Execution access | The definition supplies role, approval, and MCP integrations each turn. CLI credentials are separate: the published V2 request accepts `task.cliIntegrations`. Omission inherits configured organization CLI handles; an explicit empty list selects none. Selecting credentials does not verify that a dispatched task can use them. Do not claim the agent MCP selection bounds those credentials. |
 | Webhook | Creation may include a one-time secret; later reads cannot be assumed to recover it |
 
 A fixed UTC schedule can shift local execution time across daylight-saving changes. Resolve that choice rather than assuming the API supports a local time zone. If the user's cadence or initially paused requirement cannot be represented, preserve the draft and report the limitation.

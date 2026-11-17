@@ -6,7 +6,7 @@ Discover and describe the supported task creation and read operations. Use the v
 
 Verify the supported task operation’s CLI credential-selection semantics separately from MCP integrations and roles. Reuse an explicit user selection and serialize the resolved selection, including an explicit empty list for no CLI credentials when supported. If a required restriction cannot be expressed or verified through the supported contract, retain the agent and task draft and stop before creating the task. Use a proper JSON serializer and CLI file input. Inspect the prepared request, and honor any explicit request to show it first without requiring another approval for fully specified, already-authorized work.
 
-On October 30, 2026, the public catalog exposed `CreateTasks`, `GetTask`, `ListTasks`, and `GetTaskEvents`. `CreateTasks` documents the CLI selection semantics above and returns `taskId`. `GetTask` exposes the agent binding and status, but not CLI selection or the initial message. Use supported event reads for the visible initial message and report the CLI-selection readback limit. Recheck these contracts on the target backend.
+Discover `CreateTasks`, `GetTask`, `ListTasks`, and `GetTaskEvents` on the target backend and describe the supported operations before use. Verify the CLI selection semantics and the returned `taskId` field. Check which fields task reads expose; use supported event reads for the initial message when it is absent from `GetTask`. If CLI selection is not exposed by readback, report that verification limit.
 
 Before submission, state the resolved CLI selection and explain that omitting it inherits configured organization handles when that is the supported contract. Do not silently inherit credentials.
 
