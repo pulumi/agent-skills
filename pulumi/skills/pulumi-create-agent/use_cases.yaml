@@ -1,0 +1,10 @@
+queries:
+  - "Create a reusable Pulumi Agent to investigate failed deployments in my checkout project."
+  - "Help me create a Pulumi Agent with saved instructions, a read-only role, and selected integrations."
+  - "Create a Pulumi Agent for cost reviews and ask me whether to add a schedule."
+  - "Set up a new Pulumi Agent that my team can assign infrastructure investigations to."
+  - "Check whether the public CLI supports creating a reusable Pulumi Agent, then help me configure one."
+  - "Create a Pulumi Agent and let me choose from the integrations already connected to my organization."
+  - "Help me create a Pulumi Agent; if you cannot list connected integrations, save the configuration as a draft and explain what is missing."
+  - "Help me create a Pulumi Agent with a role it can actually use; exclude unsupported built-in roles."
+  - "Create a reusable Pulumi Agent without MCP integrations, then start a first task without CLI connections."
