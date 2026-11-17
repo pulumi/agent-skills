@@ -1,9 +1,12 @@
 # CLI contract and required capabilities
 
-On October 30, 2026, refreshed `AgentDefinition` discovery returned zero operations on the checked public schema. Task creation and V2 automation operations are discoverable, but they do not supply reusable-agent definition create/get/list. The complete creation workflow must remain blocked until the target backend exposes those capabilities.
+On November 16, 2026, refreshed public `AgentDefinition` discovery exposed `CreateAgentDefinition`, `GetAgentDefinition`, and `ListAgentDefinitions`. Describe confirmed their public request and response schemas. This establishes schema availability, not organization entitlement, caller authorization, availability of every required access read, or successful end-to-end creation.
 
 ```sh
 pulumi api list --filter AgentDefinition --output=json --refresh-spec
+pulumi api describe CreateAgentDefinition --output=json
+pulumi api describe GetAgentDefinition --output=json
+pulumi api describe ListAgentDefinitions --output=json
 ```
 
 Recheck the target backend each time. Do not infer support from a newer CLI version, a task-creation operation, or an undocumented route. If discovery still lacks a required operation, preserve a Markdown draft and report the missing capability without mutation.
@@ -17,10 +20,35 @@ Discover and describe supported operations for each capability before using para
 | List active agent definitions | Explicit organization scope, pagination if present, and treatment of deleted definitions |
 | Create an agent definition | Supported request fields and response identity |
 | Get an agent definition | Organization and definition identity, including active versus deleted state |
-| List assignable roles and read grants | Caller eligibility, returned role IDs, and actual grants |
-| List configured MCP integrations | Returned integration IDs and accepted reference shape |
+| List assignable roles and read grants | Exclude built-in Admin and Billing Manager; verify organization membership, caller assignment authority, returned role IDs, and actual grants |
+| List configured MCP integrations | `ListAgentIntegrations` with explicit `orgName`; select entries from `integrations` where `configured` is true and use their `integrationId` |
 
 The main skill names the role and integration read operations it requires. Describe them on the target backend; operation names alone do not establish availability or authorization. Obtain applicable team instructions from the user when no supported read exists. Requested tasks and triggers need separate capability checks.
+
+## Integration selection
+
+Discover `ListAgentIntegrations` in the target backend's public catalog and describe it before use. Refresh the catalog once if it is missing. After discovery confirms support, read it with the verified organization:
+
+```sh
+pulumi api describe ListAgentIntegrations --output=json
+pulumi api ListAgentIntegrations -F orgName=ORG --output=json
+```
+
+The response includes the full catalog, not just connected tools. Filter `integrations` to entries with `configured: true`. Present their names to the user and serialize selected `integrationId` values as `enabledIntegrations: [{"id": "SELECTED_ID"}]`, using only verified IDs. An explicit selection of none is `enabledIntegrations: []`. Credential-field labels, placeholders, and help text describe connection setup; they are not credential values and do not establish that an integration is connected. Do not enable or configure a new connection as part of selecting existing integrations.
+
+### If integration discovery is unavailable
+
+If `ListAgentIntegrations` is still absent after one catalog refresh, or discovery, describe, or the read fails, stop before creating the agent. Preserve a local Markdown draft containing the resolved settings, complete saved instructions, requested integration selection, unresolved choices, and the exact failed operation. Do not discard completed preparation or call the draft a created agent.
+
+Explain the observed failure precisely: an operation absent from the refreshed catalog is unavailable through that backend's published API; an authentication or permission error means the read could not be authorized; a timeout or other service error leaves connection status unverified. None of these establishes that the organization has no connected integrations. Do not guess IDs, substitute internal HTTP, omit `enabledIntegrations` to inherit all connections, or replace the requested selection with `[]`.
+
+Report the saved draft location and the next step appropriate to the failure: retry discovery after API availability changes, resolve authentication or access, or retry the read after a transient failure. Resume from integration verification under the existing authorization, revalidating the organization and IDs before submission. Do not repeatedly retry during the same attempt.
+
+For an operation missing from the refreshed catalog, use wording such as:
+
+> I prepared the agent configuration, but this backend's public API does not currently expose the operation needed to list connected integrations. No agent was created. I saved the draft at [local path], including your requested integrations. Once the operation is available, I can verify those connections and continue from this step.
+
+Adapt the explanation to the actual error; do not use the availability wording for an access failure or timeout.
 
 ## Request construction
 

@@ -57,7 +57,7 @@ Entry-point and specialized skills for writing and operating Pulumi infrastructu
 | [pulumi-create-agent](pulumi/skills/pulumi-create-agent) | Prepare and create a reusable Pulumi Agent through supported CLI operations |
 | [pulumi-setup-agent-automation](pulumi/skills/pulumi-setup-agent-automation) | Configure schedules and event triggers for saved Pulumi Agents, or pause and resume automations |
 
-Agent creation requires discoverable definition APIs. The October 30, 2026 public schema check did not expose those operations; the creation skill preserves a draft when required capabilities are unavailable.
+The public schema exposes agent definition creation, retrieval, and listing. The creation skill also requires supported role and integration reads; publication of `ListAgentIntegrations` is an assumed release dependency. If a required operation is unavailable or integration verification fails, the skill preserves a local draft, explains the blocker, and stops before creating the agent without changing the requested integration selection.
 
 ### Package Maintenance Skills
 

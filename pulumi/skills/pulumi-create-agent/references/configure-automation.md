@@ -4,6 +4,8 @@
 
 Use the organization, returned agent ID/name, role, approval mode, and automation preference verified by the creation workflow. Do not recreate the agent or bind an uncertain or deleted identity.
 
+Read the saved agent's current `pausedAt` value through `GetAgentDefinition`, even when its identity was verified earlier. A non-null value means the agent starts no new runs from any source, including schedules and triggers. Roster membership does not establish that the agent is unpaused. Report the agent pause state separately from the automation's paused flag. Do not resume the agent as a side effect of automation setup. If setup is already authorized, it may proceed with the agent paused, but explain that new runs remain blocked until the agent is separately resumed. Pausing the agent does not satisfy a requirement to create the automation itself paused.
+
 Read [CLI contract](automation-cli-contract.md). Discover through `pulumi api list --filter AgentAutomation --output=json`, refreshing once if operations are absent. Describe every operation before using it. Require supported create, get, and list operations with explicit saved-agent binding. Never substitute internal HTTP, guessed commands, or an older operation with a different execution identity.
 
 If support or authentication is missing, retain the verified agent and a Markdown automation draft with known settings, unresolved choices, and the exact blocker. A failed read does not prove absence. Do not claim a draft is configured automation.
@@ -36,6 +38,6 @@ If a material choice or authorization is missing, show the proposed configuratio
 
 GET the returned ID and verify list membership, bound agent, mode, literal task message, CLI selection, exact rule, notifications, and active/paused state. For a timeout, uncertain ownership, or differing readback, follow [Recovery](automation-recovery.md) before any further mutation.
 
-Report actual agent/automation IDs, saved rule/state, remaining setup, and service-returned links only. Separate saved configuration from sender setup, event delivery, credential access, and task execution. Do not start a task, send an event, or wait for future execution unless requested.
+Re-read the agent's `pausedAt` value and report its pause state separately from the automation state. If the agent is paused, explain that new runs remain blocked even when the automation is active. Report actual agent/automation IDs, saved rule/state, remaining setup, and service-returned links only. Separate saved configuration from sender setup, event delivery, credential access, and task execution. Do not start a task, send an event, or wait for future execution unless requested.
 
 When blocked on a decision, report verified IDs and state, explain unfinished work, and ask the actual unresolved question, including in headless output. Retain the agent and draft, and resume only the incomplete step. Silence does not authorize mutation.
