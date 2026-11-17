@@ -1,19 +1,19 @@
 # Automation recovery
 
-Retain the verified agent and known automation IDs. Do not recreate resources, delete as rollback, broaden access, or switch identities. Report only successful reads actually present in the command history. Authentication/authorization errors are not proof that no automation exists or the operation is unsupported.
+Keep the agent and known automation IDs. Fix only the unfinished step; do not recreate the agent or delete it as a rollback.
 
-## Saved configuration differs
+## Saved settings differ
 
-Report the exact requested versus saved values, resource ID, and actual active/paused state. An active automation may run with the saved settings. Do not repair, pause, resume, delete, or recreate unless that specific action is already authorized. If an active resource needs a recovery decision, ask whether to pause its actual ID. Do not act on silence. If pausing is authorized, use skill `pulumi-setup-agent-automation` for its pause/resume procedure. If that skill is unavailable, retain the IDs and pending pause request, and report the missing skill before any mutation.
+Report the automation ID, requested versus saved values, and active or paused state. An active automation may run with the saved settings. Ask whether to pause that ID unless the pause is already authorized.
+
+For an authorized pause, use skill `pulumi-setup-agent-automation`. If it is not installed, retain the ID and pending pause request and explain that the recovery procedure is unavailable.
 
 ## Create response was lost
 
-Reconcile through supported list and GET reads before considering a retry. Follow relevant pagination. Establish list scope and authoritative visibility before relying on absence. A configuration match alone does not establish that this attempt created it. Use operation-bound returned identity when available. While ownership is uncertain, do not retry, duplicate, adopt, or automatically pause candidates.
+Use `ListAgentAutomationsV2` and `GetAgentAutomationV2` to check whether creation succeeded. Follow all relevant pages. Use returned request or resource identifiers where available; a matching name or configuration alone does not establish which request created it.
 
-Prominently report each candidate ID and active/paused state, say ownership is uncertain, and explain that active candidates may keep running. Ask whether to pause each active candidate by ID; pausing requires that specific authorization and the pause/resume procedure.
+If the outcome remains uncertain, report candidate IDs and states without retrying, adopting, or automatically pausing them. Explain that active candidates may run and ask whether the user wants a specific ID paused. A failed or incomplete read is not proof that nothing was created.
 
-If uncertainty remains, stop with that outcome. Do not claim confirmed creation or generate/rotate a webhook secret to recover from a missing response. Secret recovery follows [Secret handling](automation-webhook-secrets.md).
+## Resume later
 
-## Pending information or later setup
-
-Follow the workflow’s pending-decision reporting rule, including in headless runs. Retain a Markdown draft and confirmed IDs. Sender setup, event delivery, credential access, and actual task execution remain separate from saved configuration. Resume only the incomplete step under the user's existing scope.
+Retain the draft, confirmed IDs, and unresolved choices. Resume the incomplete step after the required decision or access is available. Distinguish saved configuration from sender setup and actual task execution.

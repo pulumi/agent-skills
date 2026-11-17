@@ -1,43 +1,38 @@
 # Configure automation
 
-## 1. Verify the saved agent and supported route
+## 1. Verify the agent
 
-Use the organization, returned agent ID/name, role, approval mode, and automation preference verified by the creation workflow. Do not recreate the agent or bind an uncertain or deleted identity.
+Confirm the organization and saved agent ID. Read the agent and check active roster membership; do not bind an uncertain or deleted identity. Reuse the creation workflow's verified settings when available.
 
-Read the saved agent's current `pausedAt` value through `GetAgentDefinition`, even when its identity was verified earlier. A non-null value means the agent starts no new runs from any source, including schedules and triggers. Roster membership does not establish that the agent is unpaused. Report the agent pause state separately from the automation's paused flag. Do not resume the agent as a side effect of automation setup. If setup is already authorized, it may proceed with the agent paused, but explain that new runs remain blocked until the agent is separately resumed. Pausing the agent does not satisfy a requirement to create the automation itself paused.
+Check `pausedAt`. A paused agent starts no new runs even when its automation is active. Report that state without resuming the agent.
 
-Read [CLI contract](automation-cli-contract.md). Discover through `pulumi api list --filter AgentAutomation --output=json`, refreshing once if operations are absent. Describe every operation before using it. Require supported create, get, and list operations with explicit saved-agent binding. Never substitute internal HTTP, guessed commands, or an older operation with a different execution identity.
+Read [API contract](automation-cli-contract.md) and discover the operations needed for setup. If a required API or access is unavailable, keep the agent and save an automation draft explaining the blocker.
 
-If support or authentication is missing, retain the verified agent and a Markdown automation draft with known settings, unresolved choices, and the exact blocker. A failed read does not prove absence. Do not claim a draft is configured automation.
+## 2. Resolve the rule
 
-## 2. Resolve the rule and access
+Use the user's choices and ask for missing details:
 
-Reuse supplied choices and authorization. Ask only for missing material choices:
+- **Schedule:** cadence, time, and named time zone. The API uses UTC cron, so resolve whether the user wants fixed UTC time or local wall-clock time through daylight-saving changes.
+- **Event:** source, target stacks or other identifiers, filters, and quiet period. For stack events, the first matching event dispatches immediately; `quietPeriodSeconds` groups later events with that task rather than delaying the first dispatch.
+- **Task:** per-run instructions, expected output, event context, and notification destinations. Keep these instructions separate from the agent's reusable instructions.
+- **CLI connections:** set `task.cliIntegrations` to the requested connections. Omission enables all organization CLI connections; `[]` enables none. This is separate from the agent's role and MCP integrations.
 
-- Schedule: frequency, time, named time zone, and fixed UTC versus local wall-clock behavior through daylight-saving changes. Validate cadence against the discovered contract. Ask if either is unresolved; do not guess a conversion.
-- Event: source/type, organization/project/stack/repository identifiers, filters, and quiet period. Verify identifiers and sender readiness through supported reads. Do not substitute polling or a schedule. For the supported stack-operation contract, the first matching event dispatches immediately; the quiet period bounds event association with one task, not the first dispatch. Resolve unclear or conflicting expectations about first-event timing before activation. For an already specified, authorized rule, report these semantics with the result.
-- Invocation: exact per-run task instructions, expected output, event-provided context, and requested notification destinations. Keep per-run text separate from the agent's reusable instructions. Event delivery does not establish investigation access.
-- Activation: determine whether creation is active. If the user requires initially paused setup and create is active-only, stop before creation. Creating and immediately pausing exposes a firing window and does not meet that requirement. Manual approval can leave unattended work waiting for a person.
-- CLI credentials: explicit selection is separate from MCP integrations and roles. The published V2 automation request accepts `task.cliIntegrations`: omitted inherits configured organization handles; `[]` selects none. Verify backend support, disclose inheritance, and resolve narrower-access requirements before creation. Do not broaden access or claim credentials were exercised merely because they were selected.
+Check creation's activation behavior. If the user requires an initially paused automation and the API creates active resources only, save a draft instead. Creating and immediately pausing leaves a window in which it can run. A paused agent is not a substitute for a paused automation. Manual approval can also leave unattended work waiting for a person.
 
-For webhooks, read [Secret handling](automation-webhook-secrets.md) before preparing any request. If protected request/response handling or required sender setup is unavailable, preserve a draft and stop before secret-bearing creation.
+For webhooks, read [Webhook secrets](automation-webhook-secrets.md) before preparing the request. Event delivery credentials do not establish the agent's access to investigate the event.
 
-## 3. Check duplicates and prepare the request
+## 3. Prepare and create
 
-List automations and follow all relevant pages within the authorized scope. An existing same-name automation does not authorize adoption or changes; report its ID and state and leave the decision open. Do not overwrite it or invent a suffix. Honor a request to report a duplicate and stop.
+List existing automations, following pagination. If the name is already used, show the existing ID and state and resolve whether the user means that automation or a new one.
 
-Serialize the resolved configuration using a proper JSON serializer and CLI file input. Include the nonempty returned `task.agentDefinitionId`, full literal task message, and resolved CLI selection. Omit task-level role, approval, permission-mode, and MCP overrides because they do not narrow the bound definition's settings. Dry-run if supported and compare the actual body with the user's request. Local preparation does not save an automation or establish server authorization. Stop if a material difference is unexplained. For webhooks, follow the protected request procedure; neither secrets nor the dry-run body may appear in the transcript.
+Build the JSON request using the [API contract](automation-cli-contract.md). Include the saved agent ID, complete task message, selected CLI connections, rule, and notifications. The agent supplies its role, approval mode, and MCP integrations; task-level overrides do not narrow those settings.
 
-## 4. Create the authorized automation once
+Inspect the dry-run request before submission, except for secret-bearing webhook requests, which use protected handling. Show a proposal if choices remain unresolved or the user asked to review it. Otherwise, create the already-authorized automation once and retain its ID.
 
-Honor any explicit request to show the configuration before saving it. If the configuration is fully specified and already authorized, submit the prepared request once without requiring a repeated proposal or another approval. Retain the returned identity for verification.
+## 4. Verify and report
 
-If a material choice or authorization is missing, show the proposed configuration and ask before mutation. Include the actual saved agent identity, literal task instructions, rule, credential selection, notifications, and activation behavior needed to decide. Resolve any behavior that conflicts with the request, including first-event timing or an initially paused requirement. Never display secrets, broaden access, or treat silence as consent.
+Read the automation and verify list membership, agent binding, task message, CLI selection, rule, notifications, and paused state. Check the agent's pause state separately. If a field is not returned, report that verification limit.
 
-## 5. Verify and report observed results
+Return the IDs and saved configuration, plus any remaining sender setup. Do not report successful execution from configuration alone or send a test event unless requested.
 
-GET the returned ID and verify list membership, bound agent, mode, literal task message, CLI selection, exact rule, notifications, and active/paused state. For a timeout, uncertain ownership, or differing readback, follow [Recovery](automation-recovery.md) before any further mutation.
-
-Re-read the agent's `pausedAt` value and report its pause state separately from the automation state. If the agent is paused, explain that new runs remain blocked even when the automation is active. Report actual agent/automation IDs, saved rule/state, remaining setup, and service-returned links only. Separate saved configuration from sender setup, event delivery, credential access, and task execution. Do not start a task, send an event, or wait for future execution unless requested.
-
-When blocked on a decision, report verified IDs and state, explain unfinished work, and ask the actual unresolved question, including in headless output. Retain the agent and draft, and resume only the incomplete step. Silence does not authorize mutation.
+For a lost response or differing saved values, follow [Recovery](automation-recovery.md). Keep the agent if automation setup fails.

@@ -1,11 +1,13 @@
 # Webhook secrets
 
-Read this before preparing a webhook request. Keep request signing credentials and response secrets outside chat, model-visible reads or writes, command arguments, and dry-run output. Inject request credentials from an authorized private source directly into a protected request file. If protected construction or required sender setup is unavailable, retain a draft and stop before creation.
+Arrange delivery of webhook credentials to the sender before creating the automation.
 
-## Protected response capture
+Keep signing credentials and response secrets out of chat, command arguments, and dry-run output. Read request credentials directly from an authorized private source into a protected request file.
 
-Webhook creation may return a one-time secret. Verify protected capture with nonsecret fixture data first. A shell harness can set `umask 077`, create a unique private directory with `mktemp -d`, and redirect create stdout into a new response file inside it. Disable shell tracing. Keep the file path private and never print or read the whole file through model-visible tools. Extract only allowlisted nonsecret fields for reporting, and transfer the secret directly to the authorized sender configuration.
+## Capture the response
 
-If the harness cannot ensure capture and direct transfer, stop before creating the webhook. Do not display secret-bearing dry-run output, automatically retry after a response error, regenerate or rotate a secret, or recreate the resource to recover a missing response. Reconcile uncertain creation through supported nonsecret reads.
+Disable shell tracing, set `umask 077`, and create a unique directory with `mktemp -d`. Redirect create stdout to a new file there. Extract only the ID and other nonsecret fields for reporting; transfer the secret directly to the authorized sender configuration without printing the complete response.
 
-Verify protected capture and sender setup before reporting them as complete. Sender delivery permission does not establish investigation access.
+If protected capture or required sender setup is unavailable, keep a draft and explain what is missing before creation.
+
+Report which sender setup steps are complete. Delivery permission is separate from the agent's access to investigate the event.

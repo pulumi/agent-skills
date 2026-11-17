@@ -1,75 +1,69 @@
 ---
 name: pulumi-create-agent
-description: Create a new reusable Pulumi Agent through the Pulumi CLI, including its name, saved instructions, role, and connected integrations. Use when the user asks to create, define, or set up a new Pulumi Agent.
+description: Create a reusable Pulumi Agent with saved instructions, a role, and selected integrations. Use when the user asks to create, define, or set up a new Pulumi Agent.
 ---
 
 # Create a Pulumi Agent
 
-This workflow creates a saved Pulumi Agent definition. It does not create a coding-harness subagent or Pulumi program, update an existing agent, or start a one-time task unless separately requested.
-
-Follow this sequence: discover support and access, **tell the user exactly what you will save**, serialize that text, create once, verify the result, and address whether the user wants automation.
-
-Read [CLI contract](references/cli-contract.md) before discovery. Verify definition create, get, and list operations and required access reads on the target backend; operation names alone do not establish availability, authorization, or successful creation.
+Create a saved agent definition. Starting a task or configuring automation is a separate action.
 
 ## Discover and resolve
 
-Run `pulumi version`, `pulumi api --help`, and `pulumi whoami -v`. Identify the backend, account, and intended organization. A current stack, repository owner, or default organization does not select the target. If installation or authentication is missing, report that prerequisite and stop before organization reads. Do not inspect credentials, install software, change accounts, or change backends silently.
+Confirm the target organization and current login with `pulumi whoami -v`. Do not infer the organization from the current stack or repository. Read [CLI contract](references/cli-contract.md) for operation discovery, request fields, and integration selection.
 
-List operations with `pulumi api list --filter AgentDefinition --output=json`. If none appear, refresh once with `--refresh-spec`. Run `pulumi api describe OPERATION --output=json` for every operation before using its parameters or response fields. A listing, even if it includes metadata, does not replace describe. Required capabilities are definition create/list/get and the reads needed to verify access: `ListRolesByOrgIDAndUXPurpose` (`uxPurpose=role`), `GetRole` (`roleID`), and `ListAgentIntegrations`. Raw paths still require a matching supported schema. Do not substitute internal HTTP or task creation.
+Check existing agents before choosing a name. If the name is taken, show the existing agent and ask how to proceed.
 
-Read the target organization's active agents, assignable roles and grants, and integration catalog. From `ListAgentIntegrations`, offer only entries with `configured: true`, and use their `integrationId` values for the selected integrations. Catalog entries without that flag are available integration types, not connected tools. If integration discovery or the read is unavailable, follow the [integration discovery fallback](references/cli-contract.md#if-integration-discovery-is-unavailable): preserve the draft, explain the exact blocker, and stop before creation without changing the requested selection. Use returned IDs and explicit organization parameters. If the name is taken, show the existing agent and leave the naming decision open. Do not replace it or invent a suffix. Verify supplied IDs too.
+Resolve these settings from the user's request and project context:
 
-Use the request and relevant project instructions to resolve:
+- Name, display name, responsibility, resource scope, and expected output.
+- Saved instructions, including relevant team requirements. These replace organization AI preferences, so include requirements the agent must retain.
+- An organization role the caller may assign. Check its grants and exclude built-in Admin and Billing Manager roles. Instructions and deprecated `permissionMode` do not restrict authority.
+- Connected MCP integrations. Set the selection explicitly, including `[]` for none; omission inherits all organization integrations.
+- Approval mode. If unresolved, propose manual approval and explain that unattended runs may wait for a person.
 
-- Name, display name, responsibility, exact resource scope, and expected output.
-- Reusable instructions including applicable team requirements, evidence standards, and when to ask for help. Saved instructions replace organization AI preferences. Obtain missing requirements from the user if no supported read exists. Keep one-time incident IDs in task assignments.
-- An assignable organization role with verified grants. Exclude the built-in Admin and Billing Manager roles, which the server rejects for agents. Verify the selected role belongs to the organization and is within the caller's assignment authority; holding a role alone does not establish that authority. Instructions and deprecated `permissionMode` do not enforce authority. Pulumi roles do not establish the scope of separate external credentials.
-- Explicit integration IDs, including `[]` for none. Omission can inherit all organization MCP integrations. MCP selection does not bound CLI connections or ESC access.
-- Explicit approval mode. Propose manual if unresolved, explaining unattended work may wait for a person; do not silently select auto. If approval mode remains unresolved and no human is available, stop without creating.
-- Direct assignment or the user's requested event/schedule. Record any explicit automation preference. Creation alone does not authorize a task or automation.
+Local files and uncommitted changes are not automatically available to the remote agent. Check that it can reach the repositories and connections needed for its responsibility. MCP selection does not control separate CLI credentials.
 
-Local files, tools, credentials, and uncommitted changes are not automatically available to the remote agent. Verify relevant connections or report the gap. Never embed secrets.
+Ask only for missing choices. If a required API is unavailable or access cannot be verified, save a local draft with the known settings, complete instructions, and remaining questions. Explain the blocker without changing the requested access.
 
-Ask only about unresolved material choices. Reuse supplied facts and authorization. If a material choice is unresolved and no human is available, or required CLI capabilities are absent, stop without mutation. Fully specified, authorized requests can proceed non-interactively. Save a Markdown draft with confirmed settings, literal draft instructions, unresolved choices, and the blocker in a dedicated local directory or the user's chosen location. Do not overwrite files or call an incomplete draft submit-ready. Resume by revalidating capabilities and IDs.
+## Tell the user, then create
 
-## Tell the user, then write
-
-Before preparing the create request, show the complete configuration and literal saved instructions in an assistant message. Serialize those exact values; show a revised complete proposal if they change. Continue without another approval when creation is already authorized. Use this template:
+Show the complete configuration and literal instructions that will be saved:
 
 ```text
-I will create:
-Organization: ...
-Name: ...
-Display name: ...
-Responsibility: ...
-Role: ... (verified ID and scope)
-MCP integrations: ... (verified IDs, or none)
-Approval: ...
-Invocation: ...
+Organization:
+Name and display name:
+Responsibility and resource scope:
+Role:
+MCP integrations:
+Approval mode:
 Saved instructions:
-[complete literal instruction text]
+[complete text]
 ```
 
-Generate only instructions within the requested responsibility. When the user specifies a fixed resource boundary, preserve it without exceptions that let a future task expand it. For work outside that boundary, instruct the agent to report the dependency and ask for an explicitly revised responsibility, rather than investigate outside its scope. Before saving, compare the generated instructions with that boundary as well as the role and integrations. Serialize the displayed settings and instructions with a proper JSON serializer into a local file. Use CLI file input, not shell interpolation. If dry-run is supported, inspect it and compare it to the proposal message you sent. Dry-run checks request construction, not server authorization or agent readiness.
+Keep the instructions within the requested responsibility and resource boundary. For work outside that boundary, tell the agent to report the dependency and request a revised responsibility.
 
-## Create and verify
+Submit exactly the displayed values using the request-file workflow in [CLI contract](references/cli-contract.md). If creation is already authorized and all choices are resolved, proceed without asking again.
 
-Before submitting, confirm the complete proposal was shown in assistant text; if absent, show it now.
+## Verify the result
 
-Submit one request. Retain the returned identity, GET it, and check active roster membership; GET may include deleted records. Compare name, display name, purpose, literal instructions, role, integrations, and approval mode. If persisted values differ, report exactly what was saved and what failed verification. Do not silently repair, recreate, broaden access, or delete as rollback.
+Read the returned agent ID and check active roster membership. Compare the saved name, display name, purpose, instructions, role, integrations, and approval mode with the proposal.
 
-After a timeout, creation is uncertain. Reconcile the intended name and exact configuration through supported reads before considering a retry. A match alone does not establish that this attempt created it. Use returned request/resource identifiers when available. If identity remains uncertain, show the candidate and ask whether to use it, or leave that choice open when headless. If no candidate appears, establish that the roster read is authoritative before considering a retry. Stop while uncertainty remains. Name uniqueness is not durable idempotency: deletion can release a name. A 409 does not authorize updates or renaming. A permission rejection does not authorize a fallback role.
+If values differ, report the saved result and the mismatch before making another change. Do not recreate or delete the agent as a rollback.
 
-Report the verified ID, organization, settings, and saved instructions or a link to the complete configuration. Use a service-returned URL only. Separate saved configuration from tested access and task success. Describe only actions actually observed in the command history and assistant messages.
+If the create response is lost, check the agent list and retrieve candidates before retrying. Follow all pages. A matching name alone does not prove the agent came from this request; use returned resource or request identifiers where available. If the outcome remains uncertain, report it rather than creating another agent. Do not treat a failed or incomplete listing as proof that creation failed.
 
-## Always address automation
+Return the verified agent ID, organization, and saved configuration. Creation confirms the settings, not that the agent has successfully completed a task.
 
-An unanswered automation preference does not block independently authorized agent creation. Keep that separate choice pending until the agent is verified. After verified creation, always address the automation choice. If the user has not already answered it, ask in your assistant response:
+## Address automation
+
+After creation, ask unless the user already supplied a preference:
 
 “Would you like to set up automation for this agent: a schedule, an event trigger, or no automation for now?”
 
-Do not finish an ordinary agent-creation request without this question. It does not authorize automation by itself. If no human can answer, still include the question in the final response, leave the choice pending, and retain the verified agent without configuring automation.
+An unanswered automation choice does not block agent creation. Leave that choice pending if no answer is available.
 
-An explicit schedule or event request already answers yes; read [Configure automation](references/configure-automation.md) and continue with the verified organization and saved agent ID. Keep the created agent if automation is blocked. An explicit decline already answers no; acknowledge manual invocation without asking again. Never treat silence as consent or decline. Defer automation-specific discovery and preparation until the agent is verified. Do not configure automation for an uncertain agent identity. For an explicitly requested immediate task, follow [additional outcomes](references/additional-outcomes.md); a one-time task does not answer the recurring-automation question.
+If the user requested a schedule or trigger, continue with [Configure automation](references/configure-automation.md). If they declined, acknowledge manual invocation without asking again. Keep the created agent if automation setup fails.
 
-Automation references: [API contract](references/automation-cli-contract.md) for supported request fields; [webhook handling](references/automation-webhook-secrets.md) before preparing a webhook; [recovery](references/automation-recovery.md) after an uncertain response or differing readback. Load these only for the relevant automation step.
+For an explicitly requested first task, read [Requested immediate task](references/additional-outcomes.md). A one-time task does not answer the recurring-automation question.
+
+Load automation details only when needed: [API contract](references/automation-cli-contract.md) for commands, [webhook secrets](references/automation-webhook-secrets.md) before webhook creation, and [recovery](references/automation-recovery.md) after an uncertain or mismatched result.

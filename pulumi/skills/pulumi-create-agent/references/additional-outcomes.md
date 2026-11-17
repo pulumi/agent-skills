@@ -1,19 +1,15 @@
-# Requested immediate task
+# Start a first task
 
-Read this when the user explicitly asks for a first task in addition to creating the agent. Creation alone does not authorize a task.
+Use this procedure only when the user asks for an immediate task in addition to creating the agent.
 
-Discover and describe the supported task creation and read operations. Use the verified organization and saved agent ID; do not switch execution identity. Resolve the literal task instructions and required access before submission. Keep the task within the agent’s saved responsibility.
+Discover and describe `CreateTasks`, `GetTask`, `ListTasks`, and `GetTaskEvents` on the target backend. Use the verified organization and saved agent ID. Keep the task within the agent's responsibility.
 
-Verify the supported task operation’s CLI credential-selection semantics separately from MCP integrations and roles. Reuse an explicit user selection and serialize the resolved selection, including an explicit empty list for no CLI credentials when supported. If a required restriction cannot be expressed or verified through the supported contract, retain the agent and task draft and stop before creating the task. Use a proper JSON serializer and CLI file input. Inspect the prepared request, and honor any explicit request to show it first without requiring another approval for fully specified, already-authorized work.
+Choose which CLI connections the task may use, separately from the agent's role and MCP integrations. Set `cliIntegrations` explicitly: omitting it enables all configured CLI connections; `[]` enables none. Use the requested connections and explain this default before submission. If the API cannot apply the selection, keep the task as a draft.
 
-Discover `CreateTasks`, `GetTask`, `ListTasks`, and `GetTaskEvents` on the target backend and describe the supported operations before use. Verify the CLI selection semantics and the returned `taskId` field. Check which fields task reads expose; use supported event reads for the initial message when it is absent from `GetTask`. If CLI selection is not exposed by readback, report that verification limit.
+Write the task message, agent ID, and CLI selection to a JSON request file using the described schema. Submit with `--input` and retain the returned `taskId`.
 
-Before submission, state the resolved CLI selection and explain that omitting it inherits configured organization handles when that is the supported contract. Do not silently inherit credentials.
+Read the task back to verify its agent binding and status. Use task events to check the initial message if `GetTask` does not expose it. Report any field, such as CLI selection, that the API does not return rather than claiming it was verified. Check execution within a bounded wait and distinguish task creation from successful completion.
 
-Submit once, retain the returned task ID, and use supported reads to verify the saved agent binding, literal task instructions, and CLI selection where exposed. If readback does not expose a field, report that verification limit instead of claiming it was verified. Check execution within a bounded wait. Task creation does not establish task success or usable credentials. Report access errors without broadening permissions automatically.
+If creation times out, use task list and get operations to reconcile the outcome before retrying. Follow all pages and use returned identifiers where available; matching text alone does not establish which request created a task. If the result remains uncertain, report the candidate IDs and states without retrying or cancelling them.
 
-After a timeout or lost create response, creation is uncertain, not a confirmed failure. Do not repeat the create call. Reconcile through supported task reads for the verified organization and agent, following relevant pagination. Use operation-bound returned identifiers when available; matching instructions or timing alone do not establish ownership. Report candidate IDs and states without adopting, cancelling, or retrying while identity remains uncertain. If supported reads cannot resolve the outcome, stop and retain that uncertainty, including in a headless final response. Before considering a retry after finding no candidate, establish that the reads have authoritative scope and visibility; absence from an incomplete listing is not proof of failure.
-
-Retain the created agent ID if task setup fails. Resume only a known incomplete step under existing authorization; do not recreate the agent, delete it as rollback, or resubmit uncertain task creation. If an operation is unsupported, report the capability gap without substituting internal HTTP.
-
-An immediate task is separate from recurring automation. Still address the schedule/event/no-automation choice in the parent skill. For schedules and triggers, read [Configure automation](configure-automation.md), or use skill `pulumi-setup-agent-automation` when it is available.
+Keep the created agent if task setup fails. Resume only the unfinished step. A first task does not replace the creation skill's question about recurring automation.
