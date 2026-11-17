@@ -1,6 +1,6 @@
 # CLI contract and required capabilities
 
-On November 16, 2026, refreshed public `AgentDefinition` discovery exposed `CreateAgentDefinition`, `GetAgentDefinition`, and `ListAgentDefinitions`. Describe confirmed their public request and response schemas. This establishes schema availability, not organization entitlement, caller authorization, availability of every required access read, or successful end-to-end creation.
+Discover the target backend's supported definition operations before constructing a request. Confirm `CreateAgentDefinition`, `GetAgentDefinition`, and `ListAgentDefinitions` through the public catalog and describe each available operation. Schema discovery does not establish caller authorization or successful creation.
 
 ```sh
 pulumi api list --filter AgentDefinition --output=json --refresh-spec

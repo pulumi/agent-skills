@@ -5,3 +5,4 @@ queries:
   - "Resume the automation for my existing Pulumi Agent after verifying its access."
   - "Set up a weekly automation for my paused Pulumi Agent, leaving the agent paused."
   - "Resume automation automation-123 and tell me whether its agent is still paused."
+  - "Yes, set up the weekly schedule you proposed for my existing Pulumi Agent."

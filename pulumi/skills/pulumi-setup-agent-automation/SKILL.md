@@ -1,11 +1,15 @@
 ---
 name: pulumi-setup-agent-automation
-description: Create a schedule or event trigger for a verified Pulumi Agent through supported Pulumi CLI operations, or pause or resume an existing automation. Use when a user accepts automation setup, requests recurring or event-driven work, or asks to pause or resume an automation. Not for creating another agent or starting an immediate task.
+description: Create a schedule or event-trigger automation for an existing Pulumi Agent, or pause or resume an existing automation. Use when the user requests recurring or event-driven agent work, says yes to a proposed schedule or trigger, or asks to pause or resume an automation.
 ---
 
 # Set up agent automation
 
-An automation is separate from its saved agent. For an accepted schedule or event trigger, read [Configure automation](references/configure-automation.md). Reuse resolved choices and existing authorization; honor explicit requests for a proposal and resolve missing material choices before mutation.
+An automation is a saved schedule or event trigger bound to an existing Pulumi Agent. This skill creates that automation resource, not a new agent definition or an immediate one-time task.
+
+## Create a schedule or event trigger
+
+For a request to create a schedule or event trigger, read [Configure automation](references/configure-automation.md) before preparing the request or making changes. Follow that procedure to verify the saved agent, resolve the rule and access, create the automation, and verify it. Reuse resolved choices and existing authorization; honor explicit requests for a proposal and resolve missing material choices before mutation.
 
 For an explicit pause or resume request, follow the pause/resume procedure below. If the user declined automation, acknowledge the manual-only choice without asking again or mutating anything. If their choice is unanswered, ask whether they want a schedule, an event trigger, or no automation.
 
@@ -22,6 +26,6 @@ Automation references: [API contract](references/cli-contract.md) for supported 
 
 ## Report the result
 
-Return the verified organization and automation ID, the requested action, and the observed state. For creation, include the saved agent binding and schedule or trigger, distinguishing saved configuration from tested execution. For pause/resume, say whether the state changed or was already set, and whether readback confirmed the rule was unchanged. Example: "Automation automation-123 in example-org is paused; readback confirms the rule is unchanged. Already started tasks were not cancelled."
+Return the verified organization and automation ID, the requested action, and the observed state. For automation creation, include the saved agent binding and schedule or trigger, distinguishing saved configuration from tested execution. For pause/resume, say whether the state changed or was already set, and whether readback confirmed the rule was unchanged. Example: "Automation automation-123 in example-org is paused; readback confirms the rule is unchanged. Already started tasks were not cancelled."
 
 If blocked or uncertain, state what is verified, what remains unfinished or unverified, and the next check or actual unresolved question. Do not report success from a failed call or read.

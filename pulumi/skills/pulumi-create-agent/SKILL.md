@@ -1,13 +1,15 @@
 ---
 name: pulumi-create-agent
-description: Prepare and create a reusable Pulumi Agent through supported Pulumi CLI operations, with saved instructions, a verified role, and explicit integrations. Use for creating a new Pulumi Agent, not a coding-harness subagent, Pulumi program, task assignment, or update to an existing agent.
+description: Create a new reusable Pulumi Agent through the Pulumi CLI, including its name, saved instructions, role, and connected integrations. Use when the user asks to create, define, or set up a new Pulumi Agent.
 ---
 
 # Create a Pulumi Agent
 
+This workflow creates a saved Pulumi Agent definition. It does not create a coding-harness subagent or Pulumi program, update an existing agent, or start a one-time task unless separately requested.
+
 Follow this sequence: discover support and access, **tell the user exactly what you will save**, serialize that text, create once, verify the result, and address whether the user wants automation.
 
-Read [CLI contract](references/cli-contract.md). The November 16, 2026 public schema check exposed `CreateAgentDefinition`, `GetAgentDefinition`, and `ListAgentDefinitions`. Recheck the target backend and required access reads; published operations do not establish authorization or successful creation.
+Read [CLI contract](references/cli-contract.md) before discovery. Verify definition create, get, and list operations and required access reads on the target backend; operation names alone do not establish availability, authorization, or successful creation.
 
 ## Discover and resolve
 
