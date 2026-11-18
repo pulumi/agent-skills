@@ -12,6 +12,7 @@ Collect these facts before you write code. Do not ask the user for what you can 
 - **Default branch.** `git symbolic-ref refs/remotes/origin/HEAD`.
 - **Pulumi projects.** Find every `Pulumi.yaml` (`git ls-files '*Pulumi.yaml'`). For each, record the directory, the project `name` and the stack config files (`Pulumi.<stack>.yaml`). These are the candidate target stacks.
 - **Existing stacks.** `pulumi stack ls --organization <org> --project <project>` or `pulumi api ListUserStacks`. A target stack must exist before the first run.
+- **An existing pipeline.** A `Pulumi.<stack>.yaml` with a `delivery:source` key belongs to a pipeline stack. Read `operating.md` to see whether it is registered.
 - **Credentials.** Look for an `environment:` import in each `Pulumi.<stack>.yaml`. That ESC environment gives the update its cloud credentials. If it has none, see "Credentials" below.
 - **Existing CI and Deployments.** `.github/workflows/`, `.gitlab-ci.yml`, `azure-pipelines.yml`, `bitbucket-pipelines.yml`, and Deployment settings (`pulumi api GetDeploymentSettings`). If any of these deploys Pulumi stacks, read `migrating.md`.
 
@@ -25,20 +26,23 @@ Confirm in one short message:
 - Checks after a deploy (smoke tests) as `Job` members.
 - The trigger: every push to the branch, or only pushes that change some paths.
 
-Do not invent approver names. Use `approval()` only when the organization has the Approvals feature; otherwise use `manual()`.
+Do not invent approver names. Use `approval()` only when the organization has the Approvals feature (Pro and Enterprise editions); otherwise use `manual()`.
+
+Do not set an identity unless the user asks for one. Without `servicePrincipal`, Delivery generates a service principal for the pipeline (see "Identity").
 
 ## 3. Write the program
 
 Layout (the convention; any directory works):
 
 ```
-delivery/        the pipeline program
+delivery/            the pipeline program
   Pulumi.yaml
+  Pulumi.main.yaml   config of the pipeline stack, with delivery:source
   package.json
   tsconfig.json
   index.ts
-  smoke.sh       optional job scripts
-infra/           an existing project of the target stacks
+  smoke.sh           optional job scripts
+infra/               an existing project of the target stacks
 ```
 
 `delivery/Pulumi.yaml`:
@@ -48,18 +52,32 @@ name: shop-delivery
 runtime: nodejs
 ```
 
-Then add the SDK in `delivery/`, only if `pulumi version` is 3.272.0 or later:
+`delivery/Pulumi.main.yaml` says where the program lives. `url` is the clone URL with no credentials. `branch` and `directory` are optional; `directory` is relative to the repository root.
 
-```sh
-pulumi package add delivery
-npm install
+```yaml
+config:
+  delivery:source:
+    url: https://github.com/acme/shop
+    branch: main
+    directory: delivery
 ```
 
-`pulumi package add delivery` writes a `delivery` entry under `packages` in `Pulumi.yaml` (`delivery: pulumi/pulumi/delivery@<version>`) and generates the SDK. Keep that entry: the hosted runner reads it and runs `pulumi install`. Do not add `@pulumi/delivery` to `package.json` from npm by hand.
+Install the SDK in `delivery/` with the package manager of the language:
 
-With an older CLI, do not run `pulumi package add`: older versions fail or generate a broken SDK. If the command fails for any reason, stop after one attempt (hard rule 14 in `SKILL.md`). In both cases, write the program against the names in `schema.md`, tell the user that it is not type-checked, and leave this step to the user in step 5. The version in your shell is not the version on the user's machine, so do not report it as theirs.
+| Language | Install |
+| --- | --- |
+| TypeScript | `npm install @pulumi/delivery` |
+| Python | Add `pulumi_delivery` to `requirements.txt`, then `pulumi install` |
+| Go | `go get github.com/pulumi/pulumi-delivery/sdk` |
+| C# | `dotnet add package Pulumi.Delivery` |
+| Java | Add the dependency `com.pulumi:delivery` to `pom.xml` |
+| YAML | `pulumi package add delivery`, which writes a `packages` entry to `Pulumi.yaml` |
 
-Use TypeScript unless the repository already uses another Pulumi language. Other languages use the SDK that `pulumi package add` generates; read its types for the names (Python `pulumi_delivery`, functions `approval`, `manual`, `all_of`, `any_of` and their `_output` forms; Go `delivery.NewStage`, rules as `delivery.RuleArgs`).
+Commit the dependency file and its lock file (for example `package.json` and `package-lock.json`). The hosted runner runs `pulumi install` and installs the SDK from them. The CLI downloads the provider plugin when a program needs it.
+
+If the install fails, stop after one attempt (hard rule 14 in `SKILL.md`). Write the program against the names in `schema.md`, tell the user that it is not type-checked, and leave this step to the user in step 5.
+
+Use TypeScript unless the repository already uses another Pulumi language. In Python, the names are `pulumi_delivery`, `from_`, `StacksEntryArgs` and `SourceTriggerArgs`, and a rule is a plain `delivery.RuleArgs(kind="approval", approvers=[...])`. In Go, a rule is `delivery.RuleArgs{Kind: pulumi.String(delivery.RuleKindManual), ...}`. Read the installed SDK for other names.
 
 ### Patterns
 
@@ -73,7 +91,7 @@ const repo = new delivery.GitHubSource("repo", {
     branch: "main",
     trigger: { paths: ["app/**", "delivery/**"] },
 });
-const pipeline = new delivery.Pipeline("shop", { program: { source: repo, directory: "delivery" } });
+const pipeline = new delivery.Pipeline("shop");
 
 function deploy(stage: delivery.Stage, env: string) {
     const app = new delivery.Stacks(env, {
@@ -152,7 +170,9 @@ const platform = new delivery.PipelineSource("platform", { pipeline: "platform-d
 // use platform.artifacts["clusterEndpoint"] in config (not secret) or environment (secret)
 ```
 
-**Monorepo with several pipelines.** Give each pipeline its own program directory, its own pipeline stack and a source whose `trigger.paths` cover only its own directories.
+**Monorepo with several pipelines.** Give each pipeline its own program directory, its own pipeline stack and a source whose `trigger.paths` cover only its own directories. Set `directory` in the `delivery:source` of each pipeline stack to the directory of its program, and register each one in its own directory.
+
+**Custom agent in a stage.** An `Agent` member runs a custom agent of the organization once for each release and gives its answer as the `response` output. Use it only when the user names the custom agent. See `schema.md`.
 
 ### Rules for the program
 
@@ -161,8 +181,25 @@ const platform = new delivery.PipelineSource("platform", { pipeline: "platform-d
 - `config` and `environment` values are strings. `config` holds no secrets.
 - Normal code (`if`, loops, `.apply` on member outputs) decides which stages and members a run has.
 - `dependsOn` orders only Delivery members. A non-Delivery resource waits for a member through a member output.
-- Do not add error hooks to members. Do not derive names from `pulumi.getStack()` (it is the run stack name).
-- `DELIVERY_*` variables are not set in a manual `pulumi up`. Use a fallback such as `process.env.DELIVERY_RUN ?? "manual"`.
+- Keep cloud resources out of the pipeline program. Put them in target stacks.
+- Do not add error hooks to members. Do not derive names from `pulumi.getStack()` (it is the run stack name in a run).
+- `DELIVERY_*` variables are not set outside a member. Use a fallback such as `process.env.DELIVERY_RUN ?? "manual"`.
+
+### Identity
+
+Every stack update and job of a run acts as the identity of the pipeline. The person who starts or approves a run does not lend the run their access.
+
+| The `Pipeline` sets | The pipeline runs as | Access that Delivery grants |
+| --- | --- | --- |
+| Nothing (the default) | A service principal that Delivery generates, named `Delivery <project> <stack>` | Stack Write on the pipeline stack and on each target stack, Stack Read on each upstream pipeline stack |
+| `servicePrincipal: { userId }` | A service principal of the organization, by ID or login | Stack Write on the pipeline stack only |
+| `servicePrincipal: { teamName }` | A team, with the roles of the team | Write on the pipeline stack only |
+
+- Delivery makes the grants for the generated principal when a person registers, with the permissions of that person. Where the person cannot grant access, the registration warns, and the pipeline fails at that stack until a stack admin grants it.
+- Delivery never grants access to ESC environments or to stacks that a program reads with a stack reference. A person grants the identity Environment Open or Stack Read there.
+- A push that adds a target stack does not grant access to it. The user registers again or grants Stack Write on the new target.
+- Only `pulumi delivery register` by a person sets or changes the identity. A push that changes it fails to register.
+- On the Free edition, every pipeline runs as the admin of the organization, and the program cannot set `servicePrincipal`.
 
 ### Credentials
 
@@ -176,10 +213,10 @@ Delivery does not use Deployment settings and does not do its own OIDC exchange.
     - aws-login/dev-sandbox
   ```
 
-  The update runs with a short-lived token that has the organization's default deployment role. That role must be allowed to open the environment.
+  The update runs as the identity of the pipeline. A person must give that identity Environment Open on the environment. The user's own access is not enough.
 - Secret values in the member's `environment`.
 
-A `Job` cannot import an ESC environment. Give a job that calls a cloud API its credentials as secret values in `environment`. A job with no credentials has only what the runner has, so never rely on that.
+A `Job` has no stack config file, so it imports no ESC environment. Give a job that calls a cloud API its credentials as secret values in `environment`. Never rely on what the runner has.
 
 ## 4. Create the stacks
 
@@ -193,49 +230,52 @@ pulumi stack init <org>/<project>/<stack>
 pulumi stack init <org>/<pipeline project>/main
 ```
 
-Commit the config file of the pipeline stack if it has one. The runner reads it from the repository.
+Commit the config file of the pipeline stack. The runner reads it from the repository.
 
 ## 5. Register
 
-Registration is `pulumi up` on the pipeline stack, with CLI v3.272.0 or later, from a checkout at the head of the source branch with no uncommitted changes.
+Registration is `pulumi delivery register` in the directory of the pipeline program, with CLI v3.277.0 or later. It stores the pipeline in Pulumi Cloud and starts no run. Run it from a clean checkout at a commit that is pushed to the tracked branch.
 
 **In Neo** you cannot run it (see the hard rules in `SKILL.md`). Open a pull request with the program. Tell the user to merge it, then to run this in `delivery/` on an up-to-date checkout of the branch:
 
 ```sh
-pulumi package add delivery        # only if Pulumi.yaml has no `packages: delivery` entry yet; commit and push it
+npm install                        # or the install step of the language
 pulumi stack select <org>/<pipeline project>/main
-pulumi up
+pulumi delivery register
 ```
 
-**Elsewhere**, with the user's agreement, commit and push to the source branch, then run `pulumi up --yes` in `delivery/`.
+**Elsewhere**, with the user's agreement, commit and push to the tracked branch, then run `pulumi delivery register` in `delivery/`. The command accepts the flags of `pulumi up`, for example `--yes`.
 
-`pulumi up` exits with code 10. Read the message:
+Read the output:
 
-| Message | Meaning and next step |
+| Output | Meaning and next step |
 | --- | --- |
-| "Registered. A run starts for commit abc1234 when this update finishes." | Done. Watch the run. |
-| "Registered. No run starts because commit abc1234 is not the head of branch main." | Push the commit, or pull the latest commit and register again. |
-| "Registered. No run starts because the checkout has uncommitted changes." | Commit and push. The push starts a run if the source has a trigger. |
-| "Registered. No run starts because the update has no git commit." | Run `pulumi up` from a Git checkout. |
+| "Registered the pipeline of `<stack>`." and a link | Done. No run starts. The next push that matches a trigger starts a run, or dispatch one (`operating.md`). |
+| "Wrote delivery:source (...) to `<file>`; commit it." | The stack config had no `delivery:source`, so the command detected it from the checkout. Commit and push the file. |
+| A warning that names access it could not grant | The generated principal has no access to that stack. A stack admin grants it, or a person with enough access registers again. |
+| A warning about the checkout or the commit | The definition comes from a tree that the next push to the tracked branch replaces. Commit, push and merge, then register again. |
+| An error | Nothing registered. Read `debugging.md`. |
 
-Any other non-zero exit code is a real failure. Read `debugging.md`.
+### Run from a checkout
+
+A plain `pulumi up` on the pipeline stack starts a run from the checkout and waits until it ends. It needs no registration. The stack updates and jobs run in Pulumi Cloud, as the person, at the latest pushed commit of their sources. The stages, gates and approvals of the pipeline apply. A member whose inputs and source commits did not change since the last `pulumi up` does not run again. Ctrl-C stops the run: members that already run finish, and no new member starts.
+
+This is a deployment. Do it only when the user asks to try a pipeline from a branch, and say which stacks it updates. In Neo you cannot do it. A pipeline that is not registered has no triggers and cannot be dispatched.
 
 ### Change a registered pipeline
 
-There are two ways, and users mix them up. Pick one for each change and tell the user which one you use.
+- **Push.** A push to the tracked branch updates the pipeline: Delivery registers the pushed commit, then starts the run that the push triggers. This is the normal way, and the only way in Neo. Open a pull request and let the user merge it.
+- **`pulumi delivery register`.** It registers the checkout at once and starts no run. A person uses it for the first registration, to set or change the identity, to change the repository, branch or directory in `delivery:source`, to grant the generated principal access to new target stacks, and after a pipeline stack is restored.
 
-- **Push.** Each run executes the program at the run's commit, so a pushed change to the pipeline program takes effect in the run that the push starts. This is the normal way, and the only way in Neo.
-- **`pulumi up` on the pipeline stack.** It registers the change at once. It starts a run only from a clean checkout at the head of the branch; read the message in the table above. Use it to register a change without a run, or after a pipeline stack is restored.
-
-Do not do both for one change: the push already starts a run with the new program.
+A run never changes the pipeline definition.
 
 ## 6. Verify
 
-Check the registration through the API. This works when the user registered, because you cannot see their CLI output:
+Check the registration through the API with the `/tmp/dapi` wrapper from `SKILL.md`. This works when the user registered, because you cannot see their CLI output:
 
 ```sh
 /tmp/dapi GET "/api/preview/stacks/<org>/<project>/<stack>/delivery/program" \
-  | jq '{registered, registering, registration, lastFailedRegistration}'
+  | jq '{registered, registering, registration, lastFailedRegistration, latestRegistration}'
 ```
 
-`registered: true` means an active registration. `lastFailedRegistration` carries the `reason` and `warnings` of a failed one: read `debugging.md`. Then read the first run (`operating.md`) and give the user the console link. A first run is healthy when the entry stage is admitted and its members start.
+`registered: true` means an active registration. `lastFailedRegistration` carries the `reason` and `warnings` of a failed one: read `debugging.md`. Give the user the console link. After the first run starts, read it (`operating.md`). A first run is healthy when the entry stage is admitted and its members start.

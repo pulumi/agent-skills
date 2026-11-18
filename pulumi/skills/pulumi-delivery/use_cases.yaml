@@ -6,5 +6,6 @@ queries:
   - "Retry the failed run of the shop-delivery pipeline in Pulumi Delivery."
   - "Move our GitHub Actions deploy workflow to Pulumi Delivery."
   - "Migrate these stacks from Pulumi Deployments push-to-deploy to a Pulumi Delivery pipeline."
-  - "pulumi up on my delivery pipeline stack exited with code 10. Is the pipeline registered?"
+  - "Register my Pulumi Delivery pipeline with pulumi delivery register and check that it is active."
+  - "Pause the prod stage of our Pulumi Delivery pipeline until the incident is over."
   - "Continue the manual gate on run 12 of our Pulumi Delivery pipeline."
