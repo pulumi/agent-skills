@@ -251,9 +251,9 @@ When new upstream resources appear, token mapping can fail with errors like:
 * "google_observability_trace_scope": could not find a module that prefixes 'observability_trace_scope' in '[...]'
 ```
 
-Fix by updating `provider/resources.go` (or the repo-equivalent file):
+In `pulumi-gcp`, `make tfgen` already retries this automatically for the common, unambiguous case (as of [pulumi/pulumi-gcp#4267](https://github.com/pulumi/pulumi-gcp/pull/4267): see `.mk/tfgen-repair.mk` and `scripts/new_resources --fix`) before `upgrade-provider` ever sees a failure. If you still hit this error there, either the fix declined (it prints why, e.g. two resources disagreeing on the product, or a product already reachable through a shorter existing key) or the repo predates that change; either way, resolve it by hand:
 
-1. Determine the Terraform module name (usually the first segment after the provider prefix). In the example, use `observability`.
+1. Run [`scripts/new_resources`](https://github.com/pulumi/pulumi-gcp/blob/main/scripts/new_resources/README.md) (or `--fix` to have it patch the file itself) to look up the real magic-modules product for the new resource, instead of guessing from the resource name. **Do not assume the module name is "the first segment after the provider prefix"** — magic-modules product names routinely span more than one segment (e.g. `google_design_center_application`'s product is `design_center`, not `design`; guessing the shorter, wrong segment either fails the same way again under a different name or, worse, happens to compile because it collides with an unrelated existing key), and this is exactly the class of mistake `scripts/new_resources` exists to avoid by resolving the product from the upstream PR's magic-modules link rather than from the resource name's shape. Other providers that hit this error (it is not GCP-specific — `pulumi-azure` and `pulumi-openstack` use the same `moduleMapping`/`MappedModules` pattern) have no equivalent tool yet, so there determining the module name is still a judgment call; prefer the shortest key that does not already resolve the resource via prefix matching (see step 2 below for why), and check the upstream provider's own module/package layout for the resource rather than guessing from its name alone.
 2. Add a module mapping in `moduleMapping`:
 
 ```go
@@ -262,6 +262,7 @@ var moduleMapping = map[string]string{
 }
 ```
 
+   Before adding a new key, check whether a *shorter* existing key already resolves the resource: `MappedModules` matches the longest prefix of the stripped resource name present in `moduleMapping`, so if e.g. `vertex` is already a key, a new, more specific `vertex_ai` product does not need (and must not get) its own key purely to fix a tfgen failure — there isn't one, `vertex` already catches it. Adding the longer key anyway would be a reorg, not a fix: it silently moves every other already-shipped `vertex`-prefixed resource whose name also starts with `vertex_ai` into a new module, changing its Pulumi token.
 3. If related resources already map to a different module, map the new resource individually instead of adding a new module key. Example:
 
 ```go
