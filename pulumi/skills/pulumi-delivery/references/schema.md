@@ -1,6 +1,6 @@
 # Delivery package reference
 
-The `delivery` package: `@pulumi/delivery` on npm, `pulumi_delivery` on PyPI, `Pulumi.Delivery` on NuGet, `com.pulumi:delivery` on Maven and the Go module `github.com/pulumi/pulumi-delivery/sdk`. Type tokens are `delivery:index:<Name>`. `*` marks a required input. This reference matches SDK 0.1.0 of the public preview; the installed SDK is the final authority.
+The `delivery` package: `@pulumi/delivery` on npm, `pulumi_delivery` on PyPI, `Pulumi.Delivery` on NuGet, `com.pulumi:delivery` on Maven and the Go module `github.com/pulumi/pulumi-delivery/sdk`. Type tokens are `delivery:index:<Name>`. `*` marks a required input. This reference matches SDK 0.2.0 of the public preview; the installed SDK is the final authority.
 
 ## Stack config
 
@@ -127,13 +127,24 @@ Output: `response` (the structured answer). The person who registers must be all
 | --- | --- | --- |
 | `approval()` | `approvers` (users or teams), `count` (default 1), `name` | Needs the Approvals feature (Pro and Enterprise editions); registration rejects it otherwise. Empty `approvers`: anyone with `pipeline:approve` on the pipeline stack. Registration rejects names that are not users or teams of the organization. Uses change requests. |
 | `manual()` | `name` (default `manual`), `description` | Waits until someone with `pipeline:approve` continues the gate. Works on every edition. |
+| `decision()` | `questions`* (map of a name to `{ instructions*, maximumRisk* }`), `context`, `description`, `name` | Needs the Pro edition or higher. Delivery evaluates the previews of the stacks of the stage against each question. The gate passes when the risk of every question is at most its `maximumRisk` (0 to 1). A denied decision fails the run. The stage needs a `Stacks` member. `context` is JSON-like data for the evaluation: no secrets, at most 16 KiB. |
 | `allOf()` | `rules`*, `name` | All rules pass. |
 | `anyOf()` | `rules`*, `name` | One rule passes. |
 | `http()` | `url`*, `successExpression`*, ... | Rejected at registration. Do not use. |
 
-Rules nest up to three levels. Rule names are unique within a gate, so name each rule when a gate has two of the same kind. In TypeScript, `rules` takes the `Output` forms (`approvalOutput`, `manualOutput`, `allOfOutput`, `anyOfOutput`). In Python, build a rule as `delivery.RuleArgs(kind="manual", ...)`. In Go, build a rule as `delivery.RuleArgs{Kind: pulumi.String(delivery.RuleKindManual), ...}`. The kinds are `approval`, `manual`, `all` and `any`.
+Rules nest up to three levels. Rule names are unique within a gate, so name each rule when a gate has two of the same kind. In TypeScript, `rules` takes the `Output` forms (`approvalOutput`, `manualOutput`, `decisionOutput`, `allOfOutput`, `anyOfOutput`). In Python, build a rule as `delivery.RuleArgs(kind="manual", ...)`. In Go, build a rule as `delivery.RuleArgs{Kind: pulumi.String(delivery.RuleKindManual), ...}`. The kinds are `approval`, `manual`, `decision`, `all` and `any`.
 
-The user documentation also describes decision gates (`decision()`, Pro edition or higher), which evaluate the preview of a stage against questions. SDK 0.1.0 has no `decision` function. Use one only when the installed SDK exports it.
+A decision gate asks narrow questions about the planned changes:
+
+```typescript
+when: delivery.decision({
+    questions: {
+        dataLoss: { instructions: "Does the preview delete or replace a database or a bucket?", maximumRisk: 0.05 },
+    },
+}),
+```
+
+SDK 0.1.0 has no `decision` function. If the installed SDK does not export it, upgrade the SDK to 0.2.0 or later.
 
 ## Environment variables in members
 

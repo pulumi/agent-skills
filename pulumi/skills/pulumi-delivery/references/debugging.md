@@ -42,7 +42,7 @@ For a failed `Stacks` member, `currentAttempt.updateId` and `updateVersion` iden
 
 | Symptom | Cause | Fix |
 | --- | --- | --- |
-| `pulumi delivery` is an unknown command | CLI older than 3.277.0 | Upgrade the Pulumi CLI. In Neo, hand registration to the user. |
+| `pulumi delivery` is an unknown command | CLI older than 3.277.0 | Upgrade the Pulumi CLI. |
 | `pulumi up` on the pipeline stack starts a run, or is refused with a message to register | A plain `pulumi up` does not register | Register with `pulumi delivery register`. |
 | The service says to upgrade the Delivery provider package | The installed SDK is older than the service accepts | Update the SDK (for example `npm install @pulumi/delivery@latest`), commit the dependency files, register again. |
 | The program sets `program` on the `Pipeline` and fails to compile | The `program` input was removed | Remove it. Set `delivery:source` in the config of the pipeline stack. |
@@ -58,7 +58,8 @@ For a failed `Stacks` member, `currentAttempt.updateId` and `updateVersion` iden
 | "This organization is on the Free plan, where pipelines run as its admin. Remove servicePrincipal from the pipeline." | The Free edition has no pipeline identities | Remove `servicePrincipal`. |
 | "Starting a run of this agent requires holding the agent's role, or permission to manage the organization." | The person who registers cannot run the custom agent of an `Agent` member | A person who holds the role of the agent registers, or the program names another agent. |
 | A secret value in `config` is rejected | `config` takes plain strings | Move the value to `environment` or to the target stack's config or ESC environment. |
-| "the rule kind ... is not one of approval, decision, manual, all, any" | An `http()` rule | Use `manual()` or `approval()`. |
+| "the rule kind ... is not one of approval, decision, manual, all, any" | An `http()` rule | Use `manual()`, `approval()` or `decision()`. |
+| "Decision gates require the Pro plan or higher." | The edition of the organization has no decision gates | Use `manual()` or `approval()`. |
 | "The approver ... is not a user or a team of this organization." | An `approvers` name is wrong | Use Pulumi user logins or team names of the organization. |
 | A message that says to use `delivery.manual()` or to upgrade for named approvers | The organization has no Approvals feature | Use `manual()`. |
 | A dispatch returns 409 "The pipeline has no active registration." | No successful registration. A pipeline that was registered with `pulumi up` before `pulumi delivery register` existed has none. | A person runs `pulumi delivery register`. |
@@ -76,6 +77,8 @@ For a failed `Stacks` member, `currentAttempt.updateId` and `updateVersion` iden
 | A downstream run waits or fails with "has no deployed release" | The upstream stage of a `PipelineSource` has not deployed yet | Let the upstream pipeline deploy that stage first. |
 | "The service principal ... of this pipeline cannot read the pipeline ..." | The identity of the pipeline has no Stack Read on the upstream pipeline stack. The user's own access is not enough. | A stack admin of the upstream grants Stack Read, or a person with that access runs `pulumi delivery register` on this pipeline. Then retry. |
 | A run has the status `superseded` | A newer release reached the gate or the queue of the stage where this run waited | Nothing to fix. Follow the newer run. To deploy the older release anyway, promote it (`operating.md`). |
+| A run fails with "A deployment decision denied this gate." | A `decision()` gate judged that the risk of a question is higher than its `maximumRisk` | Read the gate and its conditions, and tell the user which question denied it. Push a fix for a new run. Do not promote past the gate unless the user asks. |
+| A `decision()` gate stays pending with "this decision gate needs an in-scope stack preview" | The stage has no `Stacks` member, so there is no preview to evaluate | Put the gate on a stage that has a `Stacks` member. |
 | A run fails at an approval gate with no failed member | Someone rejected the approval (closed its change request) | Ask who rejected it and why. A retry asks for a new approval. |
 | "The stack <name>-r<N> already exists" | A run stack name is taken | Tell the user; do not delete stacks to clear it without asking. |
 | A `pulumi up` on the pipeline stack fails with "The update ended before the run finished." or "The update stopped responding." | A run from a checkout ends when its update ends | Start it again. A run from a checkout cannot be retried. |

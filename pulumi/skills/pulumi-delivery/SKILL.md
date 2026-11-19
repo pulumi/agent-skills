@@ -12,7 +12,7 @@ Delivery is in **public preview**. Resource inputs, API routes and behavior can 
 ## Requirements
 
 - The organization has Delivery enabled. Ask the user if you are not sure.
-- Any edition of Pulumi Cloud. The Free edition has one pipeline. `approval()` gates need the Pro or Enterprise edition.
+- Any edition of Pulumi Cloud. The Free edition has one pipeline. `approval()` gates need the Pro or Enterprise edition. `decision()` gates need the Pro edition or higher.
 - Pulumi CLI v3.277.0 or later, for `pulumi delivery register` and for a run from a checkout. Check with `pulumi version`.
 - A Pulumi Cloud backend. Delivery does not work with a file backend or self-hosted Pulumi Cloud.
 - A version control integration (GitHub app, GitLab, Bitbucket or Azure DevOps) with access to every repository that a source names, including the repository of the pipeline program.
@@ -27,7 +27,7 @@ Delivery is in **public preview**. Resource inputs, API routes and behavior can 
 - **Member.** A resource that does work in a stage: `Stacks` (updates existing target stacks), `Job` (runs a shell command), `Artifact` (publishes a value for other pipelines), `Agent` (runs a custom agent).
 - **Source and release.** A source is a repository and branch (`GitHubSource`, `GitLabSource`, `BitbucketSource`, `AzureDevOpsSource`) or another pipeline's stage (`PipelineSource`). A run locks the commit of each source. The sources form the release.
 - **Trigger.** `trigger: true` or `trigger: { paths: [...] }` on a source starts a run on push. A source without `trigger` never starts a run.
-- **Gate.** The `when` rule of a stage: `approval()`, `manual()`, `allOf()`, `anyOf()`.
+- **Gate.** The `when` rule of a stage: `approval()`, `manual()`, `decision()`, `allOf()`, `anyOf()`.
 - **Identity.** A pipeline runs as one identity, by default a service principal that Delivery generates at registration. Every stack update and job acts with the access of that identity, not with the access of the person who started the run.
 
 ## Hard rules
@@ -35,7 +35,7 @@ Delivery is in **public preview**. Resource inputs, API routes and behavior can 
 Follow these. Each one prevents a failure that users hit.
 
 1. Register a pipeline with `pulumi delivery register`, never with `pulumi up`. A plain `pulumi up` on a pipeline stack starts a run, and that run deploys.
-2. In Neo, you cannot register or run a pipeline. `pulumi up` is blocked in your shell, and the service refuses a run that an agent credential starts, so never use `pulumi_up` on a pipeline stack. Do not run `pulumi delivery register` either: registration sets the identity of the pipeline and grants it access with the permissions of the person who registers, so a person does it. Open a pull request and hand registration to the user (`references/authoring.md`, step 5).
+2. Register a pipeline, or start a run from a checkout, only after the user agrees. Registration sets the identity of the pipeline and grants it access with the permissions of the person who registers. The service refuses a run from a checkout for a credential that is not the user's own access token (an agent token, an OIDC token or a scoped token): hand that run to the user.
 3. Never run `pulumi up`, `pulumi refresh` or `pulumi destroy` on a run stack (`<pipeline stack>-r<N>`).
 4. Create every target stack before the first run (`pulumi stack init <org>/<project>/<stack>`). A target cannot be a pipeline stack or a run stack.
 5. Write `stack` in a `Stacks` entry and `pipeline` in a `PipelineSource` as `project/stack`, in the organization of the pipeline. The provider adds the organization, so service messages show `organization/project/stack`.
@@ -49,6 +49,7 @@ Follow these. Each one prevents a failure that users hit.
 13. Delivery does not use Deployment settings. Give members cloud credentials through `environment` or an ESC environment that the target stack imports. The identity of the pipeline needs Environment Open on that environment.
 14. If the SDK install fails (for example `npm install @pulumi/delivery`), stop after one attempt. Do not install it another way and do not write your own types for `@pulumi/delivery`. Write the program from `references/schema.md`, say that it is not type-checked, and leave the SDK step to the user.
 15. Send `$PULUMI_ACCESS_TOKEN` only to the host in `$PULUMI_API`. Never put another host in a `curl` command that carries the token.
+16. Never promote a release past an `approval()` gate unless the user asks for that promotion. Promote skips the gate, so it replaces the approval of a person. Say that before you do it.
 
 ## Call the Delivery API
 

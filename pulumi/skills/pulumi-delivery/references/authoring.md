@@ -22,7 +22,7 @@ Confirm in one short message:
 
 - The stages and their order, for example `dev` then `staging` then `prod`.
 - The stacks that each stage updates.
-- The gate of each stage: none, `manual()`, or `approval()` with named Pulumi users or teams.
+- The gate of each stage: none, `manual()`, `approval()` with named Pulumi users or teams, or `decision()` with questions about the planned changes.
 - Checks after a deploy (smoke tests) as `Job` members.
 - The trigger: every push to the branch, or only pushes that change some paths.
 
@@ -236,7 +236,7 @@ Commit the config file of the pipeline stack. The runner reads it from the repos
 
 Registration is `pulumi delivery register` in the directory of the pipeline program, with CLI v3.277.0 or later. It stores the pipeline in Pulumi Cloud and starts no run. Run it from a clean checkout at a commit that is pushed to the tracked branch.
 
-**In Neo** you cannot run it (see the hard rules in `SKILL.md`). Open a pull request with the program. Tell the user to merge it, then to run this in `delivery/` on an up-to-date checkout of the branch:
+Register only after the user agrees: registration grants the identity of the pipeline access with the permissions of the person who registers. The program must be on the tracked branch first, so open a pull request and wait until the user merges it. Then run this in `delivery/` on an up-to-date checkout of the branch:
 
 ```sh
 npm install                        # or the install step of the language
@@ -244,7 +244,7 @@ pulumi stack select <org>/<pipeline project>/main
 pulumi delivery register
 ```
 
-**Elsewhere**, with the user's agreement, commit and push to the tracked branch, then run `pulumi delivery register` in `delivery/`. The command accepts the flags of `pulumi up`, for example `--yes`.
+The command accepts the flags of `pulumi up`, for example `--yes`. If you cannot run it (an older CLI, or no access), give these commands to the user.
 
 Read the output:
 
@@ -260,12 +260,12 @@ Read the output:
 
 A plain `pulumi up` on the pipeline stack starts a run from the checkout and waits until it ends. It needs no registration. The stack updates and jobs run in Pulumi Cloud, as the person, at the latest pushed commit of their sources. The stages, gates and approvals of the pipeline apply. A member whose inputs and source commits did not change since the last `pulumi up` does not run again. Ctrl-C stops the run: members that already run finish, and no new member starts.
 
-This is a deployment. Do it only when the user asks to try a pipeline from a branch, and say which stacks it updates. In Neo you cannot do it. A pipeline that is not registered has no triggers and cannot be dispatched.
+This is a deployment. Do it only when the user asks to try a pipeline from a branch, and say which stacks it updates. The service refuses it for a credential that is not the user's own access token (an agent token, an OIDC token or a scoped token). A pipeline that is not registered has no triggers and cannot be dispatched.
 
 ### Change a registered pipeline
 
-- **Push.** A push to the tracked branch updates the pipeline: Delivery registers the pushed commit, then starts the run that the push triggers. This is the normal way, and the only way in Neo. Open a pull request and let the user merge it.
-- **`pulumi delivery register`.** It registers the checkout at once and starts no run. A person uses it for the first registration, to set or change the identity, to change the repository, branch or directory in `delivery:source`, to grant the generated principal access to new target stacks, and after a pipeline stack is restored.
+- **Push.** A push to the tracked branch updates the pipeline: Delivery registers the pushed commit, then starts the run that the push triggers. This is the normal way. Open a pull request and let the user merge it.
+- **`pulumi delivery register`.** It registers the checkout at once and starts no run. Use it for the first registration, to set or change the identity, to change the repository, branch or directory in `delivery:source`, to grant the generated principal access to new target stacks, and after a pipeline stack is restored.
 
 A run never changes the pipeline definition.
 

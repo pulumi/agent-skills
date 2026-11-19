@@ -6,21 +6,21 @@ In the examples, `<org>/<project>/<stack>` is the pipeline stack, for example `a
 
 ## Who can do what
 
-Outside Neo, your token is the Pulumi access token of the user. In Neo, it acts on behalf of the user who started the task. Each action needs its own permission on the pipeline stack. The Stack Write and Stack Admin roles grant all of them, and Stack Read grants none. A custom role has only the permissions that someone added to it.
+Your token is the Pulumi access token of the user. Each action needs its own permission on the pipeline stack. The Stack Write and Stack Admin roles grant all of them, and Stack Read grants none. A custom role has only the permissions that someone added to it.
 
 | Action | Permission | Can you do it? |
 | --- | --- | --- |
 | Read pipelines, runs, stages, gates, members, logs | Read access to the pipeline stack | Yes |
-| Dispatch a run | `pipeline:dispatch` (a `ref` or source pins also need `stack:write`) | Yes, and not in read-only mode |
-| Cancel a run | `pipeline:cancel` | Yes, and not in read-only mode |
-| Retry a run | `pipeline:retry` | Yes, and not in read-only mode |
-| Continue a manual gate | `pipeline:approve` | Yes, and not in read-only mode |
-| Redeploy, roll back or force-promote a stage | `pipeline:redeploy`, `pipeline:rollback`, `pipeline:force_promote` | Yes, and not in read-only mode |
-| Pause or resume a stage | `pipeline:pause` | Yes, and not in read-only mode |
+| Dispatch a run | `pipeline:dispatch` (a `ref` or source pins also need `stack:write`) | Yes |
+| Cancel a run | `pipeline:cancel` | Yes |
+| Retry a run | `pipeline:retry` | Yes |
+| Continue a manual gate | `pipeline:approve` | Yes |
+| Redeploy, roll back or force-promote a stage | `pipeline:redeploy`, `pipeline:rollback`, `pipeline:force_promote` | Yes |
+| Pause or resume a stage | `pipeline:pause` | Yes |
 | Approve or reject an approval gate | Named in `approvers`, or `pipeline:approve` when the gate names nobody | **No.** A person approves or rejects. Give the user the console link to the gate or the approvals inbox. |
-| Register the pipeline, or run it with `pulumi up` | See `authoring.md` | In Neo, no. Elsewhere, only with the agreement of the user. |
+| Register the pipeline, or run it with `pulumi up` | See `authoring.md` | Only with the agreement of the user |
 
-These actions deploy infrastructure or stop deployments. Ask the user before each one, and say which stage, release and stacks it affects. A 403 names the missing permission, or means that the task is read-only; tell the user, do not retry.
+These actions deploy infrastructure or stop deployments. Ask the user before each one, and say which stage, release and stacks it affects. A 403 names the missing permission; tell the user, do not retry.
 
 ## Find the pipeline and its runs
 
@@ -132,7 +132,7 @@ Rollback, redeploy and promote create a new run for one stage from an earlier ru
 
 - **Rollback** deploys an earlier release that converged this stage and is older than the release deployed now. List the candidates with `/tmp/dapi GET "/api/preview/stacks/<org>/<project>/<stack>/delivery/releases?rollbackStage=prod"`. A rollback pauses the stage, so newer runs wait until someone resumes it. Tell the user to resume the stage after the cause is fixed.
 - **Redeploy** deploys the stage's current release again.
-- **Promote** (force-promote) moves a ready release to the stage without its gate. The upstream stages of that stage must have converged for the release.
+- **Promote** (force-promote) moves a ready release to the stage without its gate. The upstream stages of that stage must have converged for the release. It also skips an `approval()` gate, so never use it there unless the user asks (hard rule 16 in `SKILL.md`).
 - **Pause** stops the stage from admitting new runs. A run that holds the stage keeps it. **Resume** lets the stage admit runs again.
 
 The stage call returns `stage` (with `paused`, `lockRunNumber` and `queueLength`) and `actions.rollback`, `actions.redeploy`, `actions.forcePromote`, `actions.pause` and `actions.resume` with `allowed` and `reason`. Check them first.
