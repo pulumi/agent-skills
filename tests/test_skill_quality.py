@@ -11,12 +11,39 @@ Run with:
     uv run pytest tests/test_skill_quality.py -v -s
 """
 
-import asyncio
-import json
 from pathlib import Path
 
 import pytest
-from llm_client import MAX_ATTEMPTS, RETRY_BASE_DELAY, SONNET_MODEL, create_message
+from llm_client import SONNET_MODEL, create_message, get_tool_calls
+
+_REPORT_TOOL = {
+    "name": "report_review",
+    "description": "Submit the quality review of the skill.",
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "overall_score": {"type": "integer", "minimum": 0, "maximum": 10},
+            "summary": {"type": "string"},
+            "issues": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "severity": {"type": "string", "enum": ["high", "medium", "low"]},
+                        "area": {
+                            "type": "string",
+                            "enum": ["description", "body", "structure", "progressive_disclosure"],
+                        },
+                        "description": {"type": "string"},
+                        "suggestion": {"type": "string"},
+                    },
+                    "required": ["severity", "area", "description", "suggestion"],
+                },
+            },
+        },
+        "required": ["overall_score", "summary", "issues"],
+    },
+}
 
 
 def _skills_to_tests() -> list[pytest.param]:
@@ -36,6 +63,8 @@ async def test_skill_quality(skill_name: str, skill_content: str) -> None:
         "model": SONNET_MODEL,
         "max_tokens": 4096,
         "temperature": 0,
+        "tools": [_REPORT_TOOL],
+        "tool_choice": {"type": "tool", "name": _REPORT_TOOL["name"]},
         "system": _QUALITY_JUDGEMENT_SYSTEM_PROMPT,
         "messages": [
             {
@@ -44,19 +73,14 @@ async def test_skill_quality(skill_name: str, skill_content: str) -> None:
             }
         ],
     }
-    result: dict = {}
-    for attempt in range(MAX_ATTEMPTS):
-        response = await create_message(**kwargs)
-        raw = response.content[0].text  # type: ignore[union-attr]
-        try:
-            result = json.loads(raw)
-            break
-        except json.JSONDecodeError:
-            if attempt >= MAX_ATTEMPTS - 1:
-                pytest.fail(
-                    f"Judge returned non-JSON response after all retries:\n{raw}"
-                )
-            await asyncio.sleep(RETRY_BASE_DELAY)
+    # Forcing a tool call makes the API return the review as parsed JSON.
+    # Asking for raw JSON text failed whenever the judge quoted the skill with
+    # unescaped double quotes, and at temperature 0 retries repeat the same text.
+    response = await create_message(**kwargs)
+    calls = [c for c in get_tool_calls(response) if c.name == _REPORT_TOOL["name"]]
+    if not calls:
+        pytest.fail(f"Judge did not call {_REPORT_TOOL['name']}: {response.content}")
+    result: dict = calls[0].input
 
     score: int = result.get("overall_score", 0)
     summary: str = result.get("summary", "")
@@ -138,21 +162,10 @@ load a skill. It must:
 - **low**: Minor polish. Nice to have.
 
 ## Output format
-Respond with ONLY a JSON object — no markdown fences, no explanation outside
-the JSON:
-
-{
-  "overall_score": <integer 0-10, where 10 is excellent>,
-  "summary": "<two-sentence overall assessment>",
-  "issues": [
-    {
-      "severity": "high" | "medium" | "low",
-      "area": "description" | "body" | "structure" | "progressive_disclosure",
-      "description": "<specific problem, quoting the skill where helpful>",
-      "suggestion": "<concrete fix>"
-    }
-  ]
-}
+Submit your review by calling the `report_review` tool. Give an integer
+`overall_score` from 0 to 10 (10 is excellent), a two-sentence `summary`, and
+one `issues` entry per problem with its severity, area, a specific description
+(quoting the skill where helpful) and a concrete suggestion.
 
 If the skill is excellent, return an empty `issues` array.
 """
