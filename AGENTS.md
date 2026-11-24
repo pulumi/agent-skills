@@ -31,6 +31,7 @@ Entry-point and specialized skills for writing and operating Pulumi infrastructu
 - **pulumi-context-api**: Query the Pulumi Context API graph for relationship and impact-analysis questions across an organization's infrastructure
 - **pulumi-create-agent**: Prepare and create a reusable Pulumi Agent through supported CLI operations
 - **pulumi-setup-agent-automation**: Configure schedules and event triggers for saved Pulumi Agents, or pause and resume automations
+- **pulumi-delivery**: Author, register, operate, debug and migrate to Pulumi Delivery pipelines (delivery as code)
 
 ### Package Maintenance Plugin (`package-maintenance/`)
 
@@ -75,7 +76,7 @@ After the marketplace registers, install plugins from the Codex TUI: run `codex`
 Install all end-user skills by installing each plugin group:
 
 ```bash
-npx skills add pulumi/agent-skills/pulumi --skill '*'       # 11 Pulumi skills
+npx skills add pulumi/agent-skills/pulumi --skill '*'       # 12 Pulumi skills
 npx skills add pulumi/agent-skills/migration --skill '*'    # 5 migration skills
 npx skills add pulumi/agent-skills/delegation --skill '*'   # 1 Neo handoff skill
 ```
